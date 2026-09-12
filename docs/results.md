@@ -199,6 +199,95 @@ the same loss surface.
 **No configuration dominates any other** across the eight compared metrics — five of five
 survive as genuine trade-offs, each best at something.
 
+## Experiment 3 — a 3x larger, more diverse training set
+
+The experiment the previous section asked for. Step 2 ended by arguing that the next real gain
+"has to come from more information (more minority images, external data), not from reshaping the
+same loss surface." This tests that directly: ISIC 2019 as training data, **3.1x the images and
+5.4x the melanoma**, with every validation and test lesion held back so the test set does not
+move. One variable changes — the training corpus. Same architecture, epochs, learning rate,
+class weighting, and the same 1,508 validation images.
+
+| | baseline (HAM10000) | ISIC 2019 |
+|---|---:|---:|
+| training images | 7,014 | **21,770** |
+| melanoma in training | 774 | **4,183** |
+| validation balanced accuracy | 0.7236 | 0.7244 |
+
+### What did not change
+
+| Metric | baseline | ISIC 2019 | Established? |
+|---|---:|---:|---|
+| Top-1 accuracy | 0.796 [0.78, 0.82] | 0.806 [0.79, 0.83] | no — intervals overlap |
+| Top-3 accuracy | 0.976 [0.97, 0.98] | 0.977 [0.97, 0.98] | no |
+| Balanced accuracy | 0.728 | 0.713 | — |
+| Melanoma sensitivity | 0.638 [0.56, 0.71] | 0.620 [0.54, 0.69] | no |
+| BCC sensitivity | 0.855 [0.76, 0.92] | 0.750 [0.64, 0.83] | no |
+| Actinic keratoses sensitivity | 0.566 [0.43, 0.69] | 0.358 [0.24, 0.49] | no |
+| Membership-inference AUC | 0.558 [0.53, 0.59] | 0.539 [0.51, 0.57] | no |
+
+**Not one of those differences is established.** Every interval overlaps, so by this project's
+own rule none of them is a claim — including the +1.0 point of top-1 accuracy, which is the sort
+of number a paper would report as an improvement.
+
+Melanoma sensitivity, the metric this whole line of work is about, moved **-1.8 points** on 5.4x
+the melanoma images.
+
+### What did change
+
+Robustness, and it is the only demonstrated gain in the project so far:
+
+| Corruption | baseline | ISIC 2019 | Established? |
+|---|---:|---:|---|
+| Gaussian noise | 0.638 [0.613, 0.662] | 0.722 [0.699, 0.744] | **yes, +8.4 points** |
+| Brightness | 0.776 [0.754, 0.797] | 0.822 [0.802, 0.840] | **yes, +4.6 points** |
+| Blur | 0.717 [0.694, 0.740] | 0.741 [0.719, 0.763] | no |
+| JPEG | 0.738 [0.715, 0.760] | 0.776 [0.754, 0.796] | no |
+
+That is what the extra data actually bought, and it is explicable: ISIC 2019 aggregates several
+contributing archives, so the corpus spans more cameras, magnifications and lighting than
+HAM10000 alone. The model became harder to perturb without becoming more accurate.
+
+### And what got worse
+
+| Subgroup (ITA-estimated) | baseline | ISIC 2019 |
+|---|---:|---:|
+| light (I–II), n=1,325 | 0.785 | 0.806 |
+| medium (III–IV), n=108 | 0.963 | 0.926 |
+| **dark (V–VI), n=60** | **0.750** | **0.600** |
+| largest gap | 0.213 | **0.326** |
+
+The gap is separated in both runs, so each is a real finding rather than noise. Accuracy on the
+darkest bin fell 15 points while accuracy on the lightest bin rose — the aggregate improved by
+concentrating its gains where the data already was. On n=60 the dark-skin estimate is
+individually fragile, which is exactly why the pillar reports the bin count next to it; the
+direction is still the opposite of what more data is assumed to do.
+
+!!! note "Why this is the most useful result yet"
+    Three interventions have now been measured against the same frozen test set. Focal loss and
+    oversampling did nothing. Tripling the training set did nothing to accuracy or melanoma
+    sensitivity. A **free change to the decision rule** — no retraining, no new data — moved
+    melanoma sensitivity from 0.638 to 0.945.
+
+    Top-3 accuracy is 0.974–0.979 across all six configurations, HAM10000 and ISIC alike. Three
+    times the data did not change what the model *knows*. The bottleneck was never the number of
+    images, and it is not the loss function either: it is where the model commits, which is a
+    property of the decision rule and costs nothing to change.
+
+### Two caveats that belong with the numbers
+
+**The training and test distributions are no longer the same.** ISIC 2019 is a mixture of
+archives; the test set is pure HAM10000. Part of the missing accuracy gain is likely that the
+model now optimises for a distribution wider than the one it is scored on. Testing that needs an
+external test set, not a larger training one — which makes the last bullet of roadmap step 5 the
+interesting one.
+
+**Actinic keratoses is not quite the same class in both vocabularies.** ISIC splits what
+HAM10000 lumps: 197 images HAM calls `actinic_keratoses` are `SCC` to ISIC, and dropping SCC
+removed 129 of them from training. The model therefore learned a narrower AK than the test set
+asks it to predict, and AK shows the largest nominal drop of any class (-20.8 points, the closest
+of any metric to separating). That is a label-definition artefact, not a data-volume effect.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

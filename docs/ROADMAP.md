@@ -375,8 +375,45 @@ honest gain comes from data drawn from somewhere else entirely.
       threshold tuned on different pixels than the checkpoint was selected on.
       `_materialize.json` records both provenances, since that is the only place
       the distinction survives
-- [ ] Download the zip, run the materializer, train (~15 min on MPS by the
-      throughput in pipeline.md), and evaluate
+- [x] Downloaded, materialized, trained and evaluated. 23,278 images at 320px
+      came to 360 MB (8,393 copied byte-identical, 14,885 encoded from the zip);
+      training took 13.5 min on MPS, close to the 15 min projected from
+      pipeline.md. **Integrity passed on real data**: none of the 1,493 test
+      images shares a lesion or an image with the 23,278 trained on, and the run
+      landed in the same comparability group as the existing five
+
+**Result: a second negative result, with one real gain.** See
+[Experiment 3](results.md#experiment-3-a-3x-larger-more-diverse-training-set).
+
+3.1x the training images and 5.4x the melanoma produced **no established change**
+in top-1 accuracy, top-3, melanoma sensitivity, or membership-inference AUC —
+every interval overlaps the baseline's. Melanoma sensitivity moved -1.8 points.
+
+What it did buy is **robustness**, the only demonstrated gain in the project so
+far: +8.4 points under Gaussian noise and +4.6 under brightness, both with
+separated intervals. ISIC aggregates several archives, so the corpus spans more
+cameras and lighting than HAM10000 — the model got harder to perturb without
+getting more accurate.
+
+What it cost is **fairness**: the skin-tone gap widened from 0.213 to 0.326, with
+accuracy on the darkest bin falling 0.750 -> 0.600 (n=60) while the lightest bin
+rose. The aggregate improved by concentrating its gains where the data already
+was.
+
+Top-3 accuracy is 0.974-0.979 across all six configurations. Three interventions
+have now been measured against this test set and the free decision-rule change
+remains the only one that moved melanoma sensitivity at all (+30.7 points). The
+bottleneck was never the number of images, and it is not the loss function
+either.
+
+- [ ] **Next, and now the interesting one:** a genuinely external test set (PH2,
+      Derm7pt, PAD-UFES-20). The training corpus is now a mixture of archives
+      while the test set is pure HAM10000, so part of the missing accuracy gain
+      is probably distribution mismatch — and that is only measurable against
+      data from somewhere else entirely
+- [ ] Re-tune the decision rule on the new model's validation split
+      (`scripts/tune_decision.py`, never on test). Given experiments 1-3, this is
+      where the remaining melanoma sensitivity is, not in more training data
 
 **Image directories are per-corpus, not merged.** ISIC images go to
 `data/raw/isic2019/`, self-contained, including re-materialized copies of the
