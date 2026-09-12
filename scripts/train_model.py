@@ -22,6 +22,32 @@ import yaml
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
+
+def _trust_certifi() -> None:
+    """Point SSL at certifi so torchvision can fetch pretrained weights.
+
+    python.org builds on macOS ship without root certificates, so
+    `torch.hub.download_url_to_file` dies with CERTIFICATE_VERIFY_FAILED on the
+    first architecture whose weights are not already cached. `build_splits.py`
+    already works around this for its own downloads; torch.hub reads the
+    environment instead, so it needs setting here.
+
+    Only fills a gap: an SSL_CERT_FILE already in the environment is respected,
+    and a missing certifi is not an error because cached weights need no network.
+    """
+    import os
+    if os.environ.get("SSL_CERT_FILE"):
+        return
+    try:
+        import certifi
+    except ImportError:
+        return
+    os.environ["SSL_CERT_FILE"] = certifi.where()
+    os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+
+
+_trust_certifi()
+
 from verifai.datasets.loaders import load_image_manifest          # noqa: E402
 from verifai.models.image import build_preprocess, resolve_device  # noqa: E402
 

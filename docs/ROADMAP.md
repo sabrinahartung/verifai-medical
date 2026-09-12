@@ -71,7 +71,7 @@ Not every pillar is blocked by leakage, which is worth knowing:
 
 **Acceptance: met.** Re-running `scenarios/skin_cancer.yaml` with no scenario edits
 produced findings identical to the pre-refactor baseline (top-1 100%, faithfulness
-0.669, stability 75%). 53 contract tests in `tests/` cover the seams; run them with
+0.669, stability 75%). 54 contract tests in `tests/` cover the seams; run them with
 `.venv/bin/python -m pytest tests/ -q`.
 
 Measured while doing this: MPS is **slower** than CPU here (5.5s vs 3.2s at n=7),
@@ -432,10 +432,34 @@ sample-size problem, not a modelling one.
       step for two independent reasons: the training corpus is a mixture of
       archives while the test set is pure HAM10000, and 163 melanomas is too few
       to resolve the differences the tuning sweep suggests are real
-- [ ] Consider resolution and architecture. Top-3 accuracy is 0.974-0.979 across
-      all seven configurations, so no intervention so far has changed what the
-      model *knows* — only where it commits. 320px inputs at 224px training crop
-      is the obvious untested lever
+- [x] Architecture tested and **negative**. ResNet50, 2.2x the parameters
+      (25.6M vs 11.7M), every other setting fixed: validation balanced accuracy
+      rose 0.724 -> 0.744 but none of it survived to test — top-1 0.806 -> 0.801,
+      top-3 0.9766 -> 0.9752, intervals overlapping. See
+      [Experiment 5](results.md#experiment-5-resnet50-capacity-is-not-the-ceiling-either)
+- [x] Resolution ruled out as a lever, not merely untried. The frozen test images
+      are 320x240, so training above ~240 on the short side only interpolates,
+      and re-materializing them higher would change the pixels seven published
+      runs were scored on. The 320px storage choice, made for disk, quietly
+      became a measurement commitment — worth knowing before the next such
+      decision
+
+**Top-3 accuracy is 0.975-0.977 across all eight configurations** — two corpora,
+two architectures, two loss functions, a sampling scheme, three decision rules.
+Nothing has changed what the model knows. That is a statement about the
+information in the inputs, not about the models.
+
+- [ ] **Use the metadata.** `age`, `sex` and `localization` sit on every manifest
+      row (98% / 98% / 90% populated in training, 100% in test) and feed no model
+      at all — they exist only as fairness grouping keys. A dermatologist uses
+      site and age; an image-only classifier cannot. This is the one untested
+      lever that adds *signal* rather than parameters, and it needs no new data.
+      Note it also raises a fairness question worth stating up front: conditioning
+      on sex or age makes the model's subgroup behaviour a design choice rather
+      than an artefact
+- [ ] An external test set remains the other half. 163 melanomas cannot resolve
+      differences under ~5 points, so several of these negative results are
+      "not demonstrated" rather than "demonstrated absent"
 
 **Image directories are per-corpus, not merged.** ISIC images go to
 `data/raw/isic2019/`, self-contained, including re-materialized copies of the

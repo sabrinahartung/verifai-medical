@@ -747,3 +747,32 @@ def test_the_manifests_are_the_source_of_truth_for_which_images_are_needed():
     # Training reads both splits, so both have to be materialized.
     assert len(want) > 20000
     assert all(f.endswith(".jpg") for f in want.values())
+
+
+def test_pretrained_weight_downloads_get_a_ca_bundle():
+    """python.org macOS builds have no root certs, so torch.hub cannot fetch.
+
+    ResNet18 only worked because its weights were already cached; the first
+    uncached architecture died with CERTIFICATE_VERIFY_FAILED. build_splits.py
+    already solves this for its own downloads via certifi, but torch.hub reads
+    the environment, so train_model.py has to set it.
+    """
+    import os
+    sys.path.insert(0, str(REPO / "scripts"))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_tm", REPO / "scripts" / "train_model.py")
+    tm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tm)
+
+    pytest.importorskip("certifi")
+    assert os.environ.get("SSL_CERT_FILE"), "importing train_model must set a CA bundle"
+    assert Path(os.environ["SSL_CERT_FILE"]).exists()
+
+    # An explicit choice must win over the fallback.
+    prior = os.environ["SSL_CERT_FILE"]
+    try:
+        os.environ["SSL_CERT_FILE"] = "/tmp/explicit-choice.pem"
+        tm._trust_certifi()
+        assert os.environ["SSL_CERT_FILE"] == "/tmp/explicit-choice.pem"
+    finally:
+        os.environ["SSL_CERT_FILE"] = prior

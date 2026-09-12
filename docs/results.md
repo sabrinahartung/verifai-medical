@@ -346,6 +346,54 @@ alarm costs a biopsy and a miss can cost a life — that is often the right trad
 resembling diagnosis it plainly is not. The model cannot make that call; it can only report both
 numbers honestly, which is the whole point of the framework.
 
+## Experiment 5 — ResNet50: capacity is not the ceiling either
+
+Resolution is not available as a lever here. The frozen test images are stored at 320x240, so
+training above ~240 on the short side would only interpolate, and re-materializing them at higher
+resolution would change the pixels seven published runs were scored on. That leaves capacity, so:
+ResNet50 in place of ResNet18, **2.2x the parameters** (25.6M vs 11.7M), with every other setting
+held fixed — same corpus, epochs, batch size, learning rate, image size, class weighting, seed.
+
+| | ResNet18 | ResNet50 |
+|---|---:|---:|
+| parameters | 11.7M | 25.6M |
+| training time (12 epochs, MPS) | 13.5 min | 37 min |
+| **validation** balanced accuracy | 0.724 | **0.744** |
+| test top-1 | 0.806 [0.79, 0.83] | 0.801 [0.78, 0.82] |
+| **test top-3** | **0.9766 [0.968, 0.983]** | **0.9752 [0.966, 0.982]** |
+
+The 2-point validation gain did not survive to test. Top-1 is unchanged, and top-3 came out
+**0.0014 lower** with overlapping intervals.
+
+**Top-3 accuracy is now 0.975-0.977 across all eight configurations** — two training corpora, two
+architectures, two loss functions, a sampling scheme and three decision rules. Nothing tried so
+far has changed what the model *knows*. Doubling the parameters was the cleanest test of the
+capacity hypothesis available, and it came back negative.
+
+Tuned on validation, the two frontiers differ by at most 0.04 in either direction with no
+consistent sign (ResNet50 slightly ahead in the mid range, slightly behind at the extremes) — noise,
+not a moved curve.
+
+### What that leaves
+
+Four levers have now been measured against the same frozen test set:
+
+| Lever | Result |
+|---|---|
+| Loss function (focal, oversampling) | no effect |
+| Training data volume (3.1x) | robustness +8.4 pts; accuracy unchanged; tuned frontier moved |
+| **Decision rule** | **+30.7 pts melanoma sensitivity — the only large win** |
+| Model capacity (2.2x parameters) | no effect |
+| Resolution | foreclosed by the 320px test corpus |
+
+A stable top-3 under all of that is a statement about the **information in the inputs**, not about
+the models. And there is information in this dataset that no configuration has used: `age`, `sex`
+and `localization` are carried on every manifest row — 98%, 98% and 90% populated in training,
+100% in test — and feed **no model at all**. They exist only as fairness grouping keys.
+
+A dermatologist uses site and age. An image-only classifier cannot. That is the next untested
+lever, it costs no new data, and unlike capacity it adds signal rather than parameters.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

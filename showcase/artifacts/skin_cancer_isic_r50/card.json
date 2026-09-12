@@ -1,0 +1,11 @@
+{
+  "id": "skin_cancer_isic_r50",
+  "name": "Skin-Lesion ResNet50 (ISIC 2019)",
+  "emoji": "🔬",
+  "domain": "image",
+  "dataset": "ham10000-clean-test",
+  "description": "ResNet50 on the same ISIC 2019 corpus as the ResNet18 run — an architecture test with every other setting held fixed, evaluated on the same 1,493 images.",
+  "sample": false,
+  "group": "Skin lesion — HAM10000 (verified split)",
+  "lineage": "ResNet50 · ISIC 2019 training set"
+}
