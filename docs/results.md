@@ -288,6 +288,64 @@ removed 129 of them from training. The model therefore learned a narrower AK tha
 asks it to predict, and AK shows the largest nominal drop of any class (-20.8 points, the closest
 of any metric to separating). That is a label-definition artefact, not a data-volume effect.
 
+## Experiment 4 — tuning the new model, and where experiment 3 was wrong
+
+Experiment 3 compared a *tuned* old model against an *untuned* new one, and concluded that 3x the
+training data bought no accuracy. At `argmax` that is true. It was also the wrong place to look.
+
+`scripts/tune_decision.py` sweeps the melanoma weight on **validation** for both models. Below
+`w=5` the two frontiers are identical. Above it they separate:
+
+| matched validation PPV | old model | ISIC model | |
+|---|---:|---:|---|
+| 0.37 | 0.744 | 0.744 | same |
+| 0.32 | 0.784 | 0.869 | +8.5, overlap |
+| **0.26** | **0.852 [0.79, 0.90]** | **0.949 [0.91, 0.97]** | **+9.7, separated** |
+| **0.24** | **0.881 [0.82, 0.92]** | **0.972 [0.94, 0.99]** | **+9.1, separated** |
+
+More melanoma examples did not make the model more accurate. They made it **hold up better when
+pushed**. Upweighting melanoma on the old model starts surfacing noise; on the ISIC model it
+surfaces melanomas. The extra data moved the frontier — in the screening regime only, which is
+precisely the regime this task cares about, and exactly where `argmax` cannot see.
+
+### The one honest look at test
+
+`w=30` is the ISIC analogue of the old model's `w=50`: it matches its **validation** PPV (0.263 vs
+0.260), which is the only fair way to line two operating points up. Chosen on validation, then
+evaluated once:
+
+| Configuration | Melanoma sensitivity | Caught | **Missed** | PPV | False alarms | Top-1 |
+|---|---:|---:|---:|---:|---:|---:|
+| old, argmax | 0.638 [0.56, 0.71] | 104 | 59 | 0.495 | 106 | 0.796 |
+| old, melanoma x50 | 0.945 [0.90, 0.97] | 154 | 9 | 0.264 | 430 | 0.656 |
+| ISIC, argmax | 0.620 [0.54, 0.69] | 101 | 62 | 0.502 | 100 | 0.806 |
+| **ISIC, melanoma x30** | **0.976 [0.94, 0.99]** | **159** | **4** | 0.259 | 456 | 0.657 |
+
+**The best melanoma detector here misses 4 of 163.** But the +9.7 point validation advantage came
+out as **+3.1 on test, with overlapping intervals** — so against the old model's `w=50` it is *not*
+an established improvement.
+
+!!! warning "That shrinkage is the lesson, not a disappointment"
+    The weight was *selected* on validation, so validation necessarily flatters the point it
+    selected. Test is the number that counts, and it is seen once. Had we swept on test and
+    reported the best cell, we would have published +9.7 and it would have been fiction — a
+    quieter form of the leakage this project exists to catch, and one the integrity check cannot
+    detect because no image is shared.
+
+**The test set is also now the binding constraint.** With 163 melanomas, a sensitivity near 0.97
+carries an interval of roughly +/-0.03, so differences smaller than about 5 points cannot be
+resolved on this data at all. Establishing a 3-point gain is not a modelling problem, it is a
+sample-size problem — which is another argument for an external test set rather than a larger
+training one.
+
+### What this means for choosing a model
+
+Nothing here is a diagnostic claim. At `w=30` the PPV is 0.259: roughly three of every four
+melanoma flags are wrong, 456 false alarms to catch those 159. For **screening** — where a false
+alarm costs a biopsy and a miss can cost a life — that is often the right trade. For anything
+resembling diagnosis it plainly is not. The model cannot make that call; it can only report both
+numbers honestly, which is the whole point of the framework.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

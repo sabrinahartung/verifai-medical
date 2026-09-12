@@ -411,9 +411,31 @@ either.
       while the test set is pure HAM10000, so part of the missing accuracy gain
       is probably distribution mismatch — and that is only measurable against
       data from somewhere else entirely
-- [ ] Re-tune the decision rule on the new model's validation split
-      (`scripts/tune_decision.py`, never on test). Given experiments 1-3, this is
-      where the remaining melanoma sensitivity is, not in more training data
+- [x] Re-tuned the decision rule on the new model's validation split, and it
+      **corrected experiment 3's conclusion**. Below `w=5` the two models'
+      frontiers are identical; at matched validation PPV 0.26 the ISIC model
+      reaches 0.949 sensitivity against the old model's 0.852, intervals
+      separated. The extra data did move the frontier — in the screening regime
+      only, which is where `argmax` cannot see it. `w=30` evaluated once on test:
+      **0.976 sensitivity, 4 of 163 melanomas missed**, the best of any
+      configuration. The +9.7 validation advantage came out as +3.1 on test with
+      overlapping intervals, which is what selecting a weight on validation does
+      and why test is seen once. See
+      [Experiment 4](results.md#experiment-4-tuning-the-new-model-and-where-experiment-3-was-wrong)
+
+**The test set is now the binding constraint.** With 163 melanomas, sensitivity
+near 0.97 carries an interval of about ±0.03, so differences under ~5 points
+cannot be resolved on this data at all. Establishing the remaining gain is a
+sample-size problem, not a modelling one.
+
+- [ ] An external test set (PH2, Derm7pt, PAD-UFES-20) — now the highest-value
+      step for two independent reasons: the training corpus is a mixture of
+      archives while the test set is pure HAM10000, and 163 melanomas is too few
+      to resolve the differences the tuning sweep suggests are real
+- [ ] Consider resolution and architecture. Top-3 accuracy is 0.974-0.979 across
+      all seven configurations, so no intervention so far has changed what the
+      model *knows* — only where it commits. 320px inputs at 224px training crop
+      is the obvious untested lever
 
 **Image directories are per-corpus, not merged.** ISIC images go to
 `data/raw/isic2019/`, self-contained, including re-materialized copies of the
