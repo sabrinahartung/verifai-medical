@@ -22,7 +22,7 @@
         "example_shared_groups": [],
         "example_shared_ids": []
       },
-      "verdict": "pass",
+      "verdict": "measured",
       "summary": "Clean split: none of the 1,493 test images shares a lesion or an image with the 8,522 the model trained on.",
       "details": {
         "better": {
@@ -39,7 +39,7 @@
           "data/manifests/ham10000_train.csv",
           "data/manifests/ham10000_val.csv"
         ],
-        "test_manifest": "/Users/sabrina/Development/verifai-showcase/data/manifests/ham10000_test.csv",
+        "test_manifest": "/Users/sabrina/Development/verifai-medical/data/manifests/ham10000_test.csv",
         "chart": {
           "kind": "scale",
           "title": "Share of the test set seen during training",
@@ -245,7 +245,7 @@
           "vascular_lesions": 22
         }
       },
-      "verdict": "pass",
+      "verdict": "measured",
       "summary": "Top-1 accuracy 0.784 [0.76–0.80] on 1493 labeled examples; balanced 0.6981. Weakest class actinic_keratoses: sensitivity 0.415 [0.29–0.55] on 53 images.",
       "details": {
         "explain": {
@@ -12427,7 +12427,7 @@
         "n_overlays": 7,
         "mean_deletion_faithfulness": 0.32
       },
-      "verdict": "info",
+      "verdict": "measured",
       "summary": "Grad-CAM overlays for 7 examples; mean deletion faithfulness 0.32 (probability drop when the highlighted region is masked out).",
       "details": {
         "explain": {
@@ -12547,7 +12547,7 @@
         "mean_stability": 0.721,
         "n": 1493
       },
-      "verdict": "warn",
+      "verdict": "measured",
       "summary": "The prediction stays stable under corruptions for 72% of the images on average.",
       "details": {
         "better": {
@@ -12632,7 +12632,7 @@
         "accuracy_gap": 0.313,
         "gap_is_separated": true
       },
-      "verdict": "fail",
+      "verdict": "measured",
       "summary": "Subgroup accuracy by ITA skin type; largest gap 31 points between dark (V–VI) (0.65, n=60) and medium (III–IV) (0.96, n=108), n=1493. Their 95% intervals do not overlap, so the difference is supported.",
       "details": {
         "explain": {
@@ -24658,8 +24658,8 @@
         "mean_confidence_members": 0.7881,
         "mean_confidence_non_members": 0.7035
       },
-      "verdict": "pass",
-      "summary": "Membership-inference AUC 0.5629 [0.53-0.59] from 750 training and 750 held-out images (0.5 = an attacker cannot tell them apart). Mean confidence in the true class was 0.7881 on training images against 0.7035 on unseen ones.",
+      "verdict": "measured",
+      "summary": "Membership is distinguishable: the interval lies entirely above 0.5 (chance). Membership-inference AUC 0.5629 [0.53-0.59] from 750 training and 750 held-out images (0.5 = an attacker cannot tell them apart). Mean confidence in the true class was 0.7881 on training images against 0.7035 on unseen ones.",
       "details": {
         "better": {
           "mia_auc": "lower"
@@ -24717,11 +24717,11 @@
     "sample_size": 1493,
     "device": "mps",
     "eval_set": {
-      "manifest": "/Users/sabrina/Development/verifai-showcase/data/manifests/ham10000_test.csv",
+      "manifest": "/Users/sabrina/Development/verifai-medical/data/manifests/ham10000_test.csv",
       "sha256": "469669d0f340a335",
       "n": 1493
     },
     "label": "Focal loss (γ=2)"
   },
-  "created_at": "2026-09-09T18:42:39.243457+00:00"
+  "created_at": "2026-09-14T13:25:26.877932+00:00"
 }

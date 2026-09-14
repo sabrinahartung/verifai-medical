@@ -12,7 +12,7 @@
         "status": "not_checkable",
         "reason": "no training manifests are declared"
       },
-      "verdict": "info",
+      "verdict": "unavailable",
       "summary": "Split integrity could not be verified: no training manifests are declared. Every number in this report therefore rests on an unverified assumption — that the model never saw this data.",
       "details": {
         "explain": {
@@ -189,7 +189,7 @@
           "vascular_lesions": 1
         }
       },
-      "verdict": "info",
+      "verdict": "insufficient",
       "summary": "Top-1 accuracy 1.000 [0.65–1.00] on 7 labeled examples; balanced 1.0. Weakest class actinic_keratoses: sensitivity 1.000 [0.21–1.00] on 1 images. Small sample (n=7) — a plausibility check, not a benchmark.",
       "details": {
         "explain": {
@@ -317,7 +317,7 @@
         "n_overlays": 7,
         "mean_deletion_faithfulness": 0.669
       },
-      "verdict": "info",
+      "verdict": "measured",
       "summary": "Grad-CAM overlays for 7 examples; mean deletion faithfulness 0.669 (probability drop when the highlighted region is masked out).",
       "details": {
         "explain": {
@@ -437,7 +437,7 @@
         "mean_stability": 0.75,
         "n": 7
       },
-      "verdict": "info",
+      "verdict": "insufficient",
       "summary": "The prediction stays stable under corruptions for 75% of the images on average. Small sample (n=7) — illustrative only.",
       "details": {
         "better": {
@@ -501,7 +501,7 @@
         },
         "n": 7
       },
-      "verdict": "warn",
+      "verdict": "insufficient",
       "summary": "Skin-tone coverage (ITA-estimated) over n=7: light 6, medium 0, dark 1. The sample is small and skewed towards light skin types — a documented HAM10000 limitation. Use the full subset run for a meaningful subgroup accuracy.",
       "details": {
         "explain": {
@@ -600,7 +600,7 @@
         "mia_auc": null,
         "status": "requires_members"
       },
-      "verdict": "info",
+      "verdict": "unavailable",
       "summary": "Membership inference needs training vs. holdout images. This scenario declares no members set — so no number is invented here. Point privacy.members at the training manifest to enable it.",
       "details": {
         "explain": {
@@ -618,11 +618,11 @@
     "sample_size": 7,
     "device": "cpu",
     "eval_set": {
-      "manifest": "/Users/sabrina/Development/verifai-showcase/data/manifests/ham10000_examples.csv",
+      "manifest": "/Users/sabrina/Development/verifai-medical/data/manifests/ham10000_examples.csv",
       "sha256": "40357043e5d7edaf",
       "n": 7
     },
     "label": "skin-lesion-resnet18"
   },
-  "created_at": "2026-09-09T17:58:50.675514+00:00"
+  "created_at": "2026-09-14T13:19:09.716271+00:00"
 }
