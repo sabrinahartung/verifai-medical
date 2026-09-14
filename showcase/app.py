@@ -37,8 +37,11 @@ ART = Path(__file__).parent / "artifacts"
 # alongside, the explanations simply disappear and every number still renders.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
-    from verifai.core.glossary import explain_metric, pillar_of
+    from verifai.core.glossary import (entries_for, explain_metric,
+                                       metric_keys, pillar_of)
 except ImportError:                                           # pragma: no cover
+    entries_for = lambda keys: []                             # noqa: E731
+    metric_keys = lambda value, prefix: []                    # noqa: E731
     explain_metric = lambda key: None                         # noqa: E731
     pillar_of = lambda key: None                              # noqa: E731
 # integrity comes first on purpose: every other pillar is conditional on it.
@@ -342,8 +345,9 @@ EXPLAIN_CSS = """
           margin: 0 0 .6rem 0; font-size: .9rem; line-height: 1.5; }
 .vf-exp-head { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .35rem;
                flex-wrap: wrap; }
-.vf-exp-key { font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-              font-size: .86rem; }
+.vf-exp-key { font-weight: 700; font-size: .98rem; }
+.vf-exp-sub { font-size: .72rem; opacity: .6; margin-bottom: .4rem;
+              font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .vf-exp-pill { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
                background: var(--vf-accent); color: #fff; border-radius: 99px;
                padding: .08rem .5rem; font-weight: 600; }
@@ -369,40 +373,56 @@ def _md_bold_to_html(text: str) -> str:
     return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(text))
 
 
-def render_metric_explanations(keys: list[str]) -> int:
-    """Inline plain-language cards for `keys`. Returns how many were rendered.
+def explain_mode() -> bool:
+    """One switch for the whole session, in the sidebar.
 
-    Deliberately *not* an expander. A definition behind a click is a definition
-    most readers never see, and this dashboard is aimed at people meeting these
-    terms for the first time — the cost of a term nobody looked up is a number
-    confidently misread, which is exactly what happened with precision being
-    taken for recall.
+    Global rather than per-view because it is a property of the reader, not of
+    the page: someone learning these terms wants them everywhere, and having to
+    re-enable explanations on each view is how a helpful feature becomes an
+    irritating one.
+    """
+    return st.sidebar.toggle(
+        "Explain the metrics", value=False, key="explain_mode",
+        help="Show a plain-language card next to each metric: what it measures, "
+             "its ideal value, how to read it, and what it trades against.",
+    )
 
-    A key with no glossary entry is skipped rather than given a generic
-    placeholder: no explanation is better than a confident one about the wrong
-    quantity.
+
+def render_metric_explanations(keys: list[str], compact: bool = False) -> int:
+    """Inline explanation cards for `keys`. Returns how many were rendered.
+
+    Deliberately not an expander: a definition behind a click is one most
+    readers never open, and this dashboard is aimed at people meeting these
+    terms for the first time.
+
+    Concepts are deduplicated, so selecting sensitivity for three classes prints
+    one card naming all three rather than the same paragraph three times.
+    `compact` drops the worked reading, for places where the card sits beside a
+    chart rather than standing on its own.
     """
     st.markdown(EXPLAIN_CSS, unsafe_allow_html=True)
     shown = 0
-    for key in keys:
-        entry = explain_metric(key)
-        if not entry:
-            continue
-        pillar = pillar_of(key)
+    for entry, covered in entries_for(keys):
+        pillar = pillar_of(covered[0])
         accent = PILLAR_ACCENT.get(pillar or "", _DEFAULT_ACCENT)
         rows = [("Measures", entry.get("measures")),
-                ("Ideal value", entry.get("ideal")),
-                ("Reading it", entry.get("reading")),
-                ("Trades against", entry.get("tension"))]
+                ("Ideal value", entry.get("ideal"))]
+        if not compact:
+            rows.append(("Reading it", entry.get("reading")))
+        rows.append(("Trades against", entry.get("tension")))
         body = "".join(
             f'<p><b class="vf-lbl">{label}</b>{_md_bold_to_html(text)}</p>'
             for label, text in rows if text
         )
         badge = f'<span class="vf-exp-pill">{pillar}</span>' if pillar else ""
+        # The raw keys are developer strings; the term is what a reader knows it
+        # by. Keys stay visible but subordinate, so a row in the table can still
+        # be matched to its card.
+        sub = "  ·  ".join(f"<code>{_md_bold_to_html(k)}</code>" for k in covered)
         st.markdown(
             f'<div class="vf-exp" style="--vf-accent:{accent}">'
-            f'<div class="vf-exp-head"><span class="vf-exp-key">{key}</span>{badge}</div>'
-            f'{body}</div>',
+            f'<div class="vf-exp-head"><span class="vf-exp-key">{entry["term"]}</span>{badge}</div>'
+            f'<div class="vf-exp-sub">{sub}</div>{body}</div>',
             unsafe_allow_html=True,
         )
         shown += 1
@@ -504,6 +524,7 @@ def gallery(cards: list[dict]):
 
 def comparison(snaps: list[dict], cards: list[dict] | None = None):
     lineage = st.session_state.get("compare_lineage")
+    explaining = explain_mode()
     st.title("Comparing runs" + (f" — {lineage}" if lineage else ""))
     st.caption("Every recorded evaluation, grouped by the exact set of images it was scored on.")
 
@@ -603,17 +624,6 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         if not chosen:
             st.divider(); continue
 
-        # Definitions in front of the table rather than behind a click. Off by
-        # default so a reader who knows the terms is not made to scroll past
-        # them, but one switch away for everyone else.
-        if st.toggle("Show metric explanations", value=False, key=f"exp_{gi}",
-                     help="Plain-language definitions: what each metric measures, "
-                          "its ideal value, and how to read the number you get."):
-            st.caption("Each card explains one selected metric in general terms — "
-                       "the same definitions apply to any model on any dataset.")
-            if not render_metric_explanations(chosen):
-                st.caption("No explanations available for the selected metrics.")
-
         dirs = {k: direction_for(k, usable) for k in chosen}
         labels = [r.get("label") or r["scenario"] for r in usable]
 
@@ -641,7 +651,14 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             d = dirs[k]
             arrow = {"higher": "↑ better", "lower": "↓ better"}.get(d, "—")
             leader = best_run(k, usable, d)
+            # The key alone is a developer string: reading
+            # `..._ppv_test_prevalence` as "how many did it catch" is the exact
+            # misreading this table invites. When explanations are on, lead with
+            # the name the concept is actually known by.
             row = {"metric": k, "good": arrow}
+            if explaining:
+                entry = explain_metric(k)
+                row = {"term": entry["term"] if entry else "—", **row}
             for r in usable:
                 lab = r.get("label") or r["scenario"]
                 v = r["metrics"].get(k)
@@ -670,8 +687,15 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 xaxis_title=f"{xk} ({dirs.get(xk, '')} is better)",
                 yaxis_title=f"{yk} ({dirs.get(yk, '')} is better)", showlegend=False)
             st.plotly_chart(fig, width="stretch")
+            # Right under the two axes being traded off, which is the moment a
+            # reader most needs to know what they mean — and the exact place the
+            # difference between precision and recall decides how the plot reads.
+            if explaining:
+                render_metric_explanations([xk, yk])
 
         metric = st.selectbox("Bar chart", chosen, key=f"sb_{gi}")
+        if explaining:
+            render_metric_explanations([metric])
         leader = best_run(metric, usable, dirs.get(metric))
         fig = go.Figure(go.Bar(
             x=labels, y=[r["metrics"].get(metric) for r in usable],
@@ -692,6 +716,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
 
 def dashboard(card: dict):
     base = card["_dir"]
+    explaining = explain_mode()
     report = json.loads((base / "report.json").read_text(encoding="utf-8"))
 
     if st.button("← Back to overview"):
@@ -743,6 +768,13 @@ def dashboard(card: dict):
             icon, label, _ = VERDICT.get(f["verdict"], VERDICT["info"])
             st.markdown(f"##### {icon} `{f['metric']}` · {label}")
             ex = render_explain(f)
+            # The finding's own `explain` says what this chart shows; these cards
+            # define the quantities it is drawn from. Keys are derived the same
+            # way the comparison view's are, so both views explain a metric with
+            # the same words.
+            if explaining:
+                render_metric_explanations(metric_keys(f.get("value"), f["pillar"]),
+                                           compact=True)
             details = f.get("details") or {}
             chart = details.get("chart")
             if chart:

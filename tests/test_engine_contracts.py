@@ -824,7 +824,13 @@ def test_every_glossary_entry_teaches_the_same_four_things():
         for field in ("measures", "ideal", "reading"):
             assert entry.get(field), f"{pattern} is missing '{field}'"
             assert len(entry[field]) > 40, f"{pattern}.{field} is too terse to help"
-        assert set(entry) <= {"measures", "ideal", "reading", "tension"}, \
+        # `term` is what the reader sees as the card's heading. Without it the
+        # card falls back to a raw key like
+        # `performance.per_class.melanoma.ppv_test_prevalence`, which is a
+        # developer string, not a name anyone knows the concept by.
+        assert entry.get("term"), f"{pattern} is missing a human-readable 'term'"
+        assert "." not in entry["term"], f"{pattern}.term looks like a key, not a name"
+        assert set(entry) <= {"term", "measures", "ideal", "reading", "tension"}, \
             f"{pattern} has unexpected fields"
 
 
@@ -874,3 +880,42 @@ def test_the_app_degrades_instead_of_crashing_without_the_engine():
     import app
     assert callable(app.explain_metric) and callable(app.pillar_of)
     assert app.render_metric_explanations(["performance.not_a_real_metric"]) == 0
+
+
+def test_one_concept_is_explained_once_however_many_columns_use_it():
+    """Sensitivity for three classes is one idea, not three paragraphs.
+
+    Without this the cards become the wall of repeated text that made the first
+    version of this feature unusable.
+    """
+    from verifai.core.glossary import entries_for
+    got = entries_for(["performance.per_class.melanoma.sensitivity",
+                       "performance.per_class.melanocytic_Nevi.sensitivity",
+                       "performance.accuracy"])
+    assert len(got) == 2, "the two sensitivities must collapse into one card"
+    entry, covered = got[0]
+    assert entry["term"] == "Sensitivity (recall)"
+    assert len(covered) == 2, "the card must name every column it covers"
+    # Unknown keys are dropped, never padded out with a placeholder.
+    assert entries_for(["performance.not_a_real_metric"]) == []
+
+
+def test_the_two_views_explain_a_metric_with_the_same_words():
+    """`metric_keys` mirrors the export layer's flattening, so it can drift.
+
+    The report view derives its keys with glossary.metric_keys while the
+    comparison view reads keys produced by artifacts._flatten. If those two ever
+    disagree, one view silently explains a metric the other cannot, which is
+    precisely the kind of divergence this project keeps single-sourcing to avoid.
+    """
+    from verifai.core.glossary import metric_keys
+    from verifai.export.artifacts import _flatten
+
+    report = json.loads(
+        (REPO / "showcase" / "artifacts" / "skin_cancer_isic" / "report.json")
+        .read_text(encoding="utf-8"))
+    for finding in report["findings"]:
+        expected: dict[str, float] = {}
+        _flatten(finding["value"], finding["pillar"], expected)
+        assert sorted(metric_keys(finding["value"], finding["pillar"])) == sorted(expected), \
+            f"flattening disagrees for {finding['metric']}"

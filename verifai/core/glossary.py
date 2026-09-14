@@ -41,6 +41,7 @@ import fnmatch
 GLOSSARY: list[tuple[str, dict[str, str]]] = [
     # ---------- performance -------------------------------------------------
     ("performance.per_class.*.sensitivity", {
+        "term": "Sensitivity (recall)",
         "measures": "Of all the cases that truly belong to a class, the share the "
                     "model actually found. Also called recall or the true-positive "
                     "rate. This is the metric that answers \"how much does it miss?\"",
@@ -54,6 +55,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "flags more things that turn out to be nothing.",
     }),
     ("performance.per_class.*.ppv_test_prevalence", {
+        "term": "Precision (PPV)",
         "measures": "Of everything the model *labelled* as a class, the share that "
                     "really was. Also called precision or positive predictive value. "
                     "It answers \"when it says yes, can I believe it?\"",
@@ -66,6 +68,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "misjudge a classifier.",
     }),
     ("performance.per_class.*.specificity", {
+        "term": "Specificity",
         "measures": "Of all the cases that do *not* belong to a class, the share the "
                     "model correctly left alone. The true-negative rate.",
         "ideal": "1.0 — nothing irrelevant is ever flagged.",
@@ -75,6 +78,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "the class sizes.",
     }),
     ("performance.per_class.*.support", {
+        "term": "Class size (support)",
         "measures": "How many test cases of this class exist. Not a score — the "
                     "sample size every other number for this class rests on.",
         "ideal": "There is no good or bad value; more is simply more certain.",
@@ -84,6 +88,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "believing any per-class comparison.",
     }),
     ("performance.per_class_recall.*", {
+        "term": "Per-class recall",
         "measures": "The same quantity as per-class sensitivity: of all the real cases "
                     "of a class, the share the model found.",
         "ideal": "1.0 for every class — no class is systematically missed.",
@@ -92,6 +97,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "rare ones, which a single overall accuracy figure hides completely.",
     }),
     ("performance.support.*", {
+        "term": "Class size (support)",
         "measures": "How many test cases each class contributes.",
         "ideal": "No ideal value — this is context, not performance.",
         "reading": "Imbalance here explains most surprises elsewhere. If one class is "
@@ -99,6 +105,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "already scores two thirds accuracy while being useless.",
     }),
     ("performance.accuracy", {
+        "term": "Accuracy (top-1)",
         "measures": "The share of all predictions that were correct, counted over "
                     "every case equally.",
         "ideal": "1.0 — every case classified correctly, across all classes.",
@@ -109,6 +116,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
         "tension": "Balanced accuracy, which weights every class equally instead.",
     }),
     ("performance.balanced_accuracy", {
+        "term": "Balanced accuracy",
         "measures": "The average of the per-class sensitivities — each class counts "
                     "the same regardless of how many cases it has.",
         "ideal": "1.0. Chance level is 1 divided by the number of classes (0.14 for "
@@ -119,6 +127,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "another degrades leaves the average unchanged.",
     }),
     ("performance.top3_accuracy", {
+        "term": "Top-3 accuracy",
         "measures": "How often the correct answer is among the model's three highest-"
                     "ranked guesses, rather than only its first.",
         "ideal": "1.0 — the right answer is always in the shortlist.",
@@ -129,6 +138,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "is not there, and only better inputs, features or models help.",
     }),
     ("performance.correct", {
+        "term": "Correct predictions",
         "measures": "The plain count of correct predictions, before any rate is "
                     "computed from it.",
         "ideal": "Equal to the number of cases evaluated — nothing got wrong.",
@@ -137,6 +147,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "cases than over 7,000.",
     }),
     ("performance.n", {
+        "term": "Sample size",
         "measures": "How many cases the performance numbers were computed over.",
         "ideal": "No ideal value; larger means narrower confidence intervals.",
         "reading": "This sets the resolution of every comparison. Below roughly 30 "
@@ -147,6 +158,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 
     # ---------- fairness ----------------------------------------------------
     ("fairness.accuracy_gap", {
+        "term": "Subgroup accuracy gap",
         "measures": "The distance between the best-served and worst-served subgroup, "
                     "in accuracy. A single number for \"does this work equally well "
                     "for everyone?\"",
@@ -157,6 +169,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "subgroups an apparent gap is often just noise.",
     }),
     ("fairness.gap", {
+        "term": "Subgroup gap",
         "measures": "The spread between the strongest and weakest subgroup result.",
         "ideal": "0.0 — every subgroup sees the same result, none disadvantaged.",
         "reading": "Read it together with the subgroup sizes. A large gap resting on a "
@@ -164,6 +177,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "finding about the model.",
     }),
     ("fairness.subgroup_accuracy.*", {
+        "term": "Subgroup accuracy",
         "measures": "How well the model performs within one subgroup, measured "
                     "separately rather than blended into the overall average.",
         "ideal": "The same value for every subgroup — equality matters more here than "
@@ -175,6 +189,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "and worse everywhere else.",
     }),
     ("fairness.coverage.*", {
+        "term": "Subgroup coverage",
         "measures": "How many cases fall into one subgroup — the representation of "
                     "that group in the evaluation data.",
         "ideal": "Enough in every group to support a claim, ideally matching the "
@@ -184,6 +199,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "evidence here is not evidence of fairness.",
     }),
     ("fairness.n", {
+        "term": "Sample size (fairness)",
         "measures": "Total cases across all subgroups in the fairness analysis.",
         "ideal": "No ideal value; it bounds how finely the data can be split.",
         "reading": "Dividing a small evaluation set into subgroups makes each one "
@@ -193,6 +209,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 
     # ---------- robustness --------------------------------------------------
     ("robustness.prediction_stability.*", {
+        "term": "Prediction stability (per corruption)",
         "measures": "How often the prediction stays the same after one specific, "
                     "harmless distortion — noise, blur, a brightness shift, "
                     "recompression. The label should not depend on such things.",
@@ -202,6 +219,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "model is sensitive to, which is more actionable than one average.",
     }),
     ("robustness.mean_stability", {
+        "term": "Mean prediction stability",
         "measures": "Prediction stability averaged over all the distortions tested. A "
                     "summary of how easily the model can be knocked off its answer.",
         "ideal": "1.0 — completely insensitive to changes that carry no meaning.",
@@ -210,6 +228,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "a perfect 1.0. Read it strictly alongside accuracy.",
     }),
     ("robustness.clean", {
+        "term": "Clean accuracy",
         "measures": "Accuracy on the untouched images — the reference point the "
                     "corrupted versions are compared against.",
         "ideal": "As high as possible; it is the ceiling the corrupted scores fall from.",
@@ -217,6 +236,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "drop when distortion is applied.",
     }),
     ("robustness.mean_corrupted", {
+        "term": "Accuracy under corruption",
         "measures": "Average accuracy once the distortions are applied.",
         "ideal": "Equal to the clean accuracy — meaning distortion cost nothing.",
         "reading": "The distance between this and the clean score is the real result. "
@@ -224,6 +244,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "clean data but not in ordinary real-world variation.",
     }),
     ("robustness.n", {
+        "term": "Sample size (robustness)",
         "measures": "How many cases the robustness check was run over.",
         "ideal": "No ideal value; larger means more reliable stability rates.",
         "reading": "Stability is a proportion like any other, so small samples give it "
@@ -233,6 +254,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 
     # ---------- privacy -----------------------------------------------------
     ("privacy.mia_auc", {
+        "term": "Membership-inference AUC",
         "measures": "Whether an attacker could tell that a particular case was in the "
                     "training data, judged from the model's confidence alone. Models "
                     "tend to be more certain about what they memorised.",
@@ -246,6 +268,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "the point estimate.",
     }),
     ("privacy.mean_confidence_members", {
+        "term": "Confidence on training data",
         "measures": "How confident the model is, on average, about cases it was "
                     "trained on.",
         "ideal": "No ideal in isolation — it matters only next to the non-member value.",
@@ -253,6 +276,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "the non-member confidence.",
     }),
     ("privacy.mean_confidence_non_members", {
+        "term": "Confidence on unseen data",
         "measures": "How confident the model is, on average, about cases it has never "
                     "seen.",
         "ideal": "As close as possible to the members' confidence.",
@@ -261,12 +285,14 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "confidence on both sides is the healthy result.",
     }),
     ("privacy.n_members", {
+        "term": "Members tested",
         "measures": "How many training cases the privacy attack was evaluated on.",
         "ideal": "No ideal value; enough to make the AUC's interval meaningful.",
         "reading": "Too few on either side and the attack's AUC is too uncertain to "
                    "clear or condemn the model.",
     }),
     ("privacy.n_non_members", {
+        "term": "Non-members tested",
         "measures": "How many unseen cases the privacy attack was evaluated on.",
         "ideal": "No ideal value; ideally comparable to the member count.",
         "reading": "Both sides should be drawn the same way apart from membership "
@@ -276,6 +302,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 
     # ---------- integrity ---------------------------------------------------
     ("integrity.contamination", {
+        "term": "Contamination rate",
         "measures": "The share of the test set that the model already saw while "
                     "training. The precondition every other number depends on.",
         "ideal": "0.0 — strictly nothing shared between training and test.",
@@ -285,12 +312,14 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "numbers do not describe how the model handles new cases.",
     }),
     ("integrity.shared_ids", {
+        "term": "Shared items",
         "measures": "How many individual test items also appear in the training data.",
         "ideal": "0 — not one item appears on both the training and test side.",
         "reading": "Even a few shared items inflate scores. This is the most direct "
                    "form of leakage and also the easiest to check.",
     }),
     ("integrity.shared_groups", {
+        "term": "Shared groups",
         "measures": "How many *groups* span both sides — several records of the same "
                     "underlying subject, patient or object.",
         "ideal": "0 — no subject appears in both training and test.",
@@ -300,18 +329,21 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "never on individual rows.",
     }),
     ("integrity.n_test", {
+        "term": "Test items checked",
         "measures": "How many cases were checked for leakage on the test side.",
         "ideal": "Should equal the evaluation set size — everything gets checked.",
         "reading": "If this is lower than the number of cases scored, part of the test "
                    "set went unverified.",
     }),
     ("integrity.n_train", {
+        "term": "Training items compared",
         "measures": "How many training cases the test set was compared against.",
         "ideal": "The complete training set, so nothing escapes the comparison.",
         "reading": "A leakage check is only as strong as the training manifest it "
                    "compares to. Unlisted training data cannot be detected.",
     }),
     ("integrity.affected_rows", {
+        "term": "Affected test cases",
         "measures": "How many test cases are implicated by the overlap found.",
         "ideal": "0 — no test case is compromised by what the model already saw.",
         "reading": "Translates the contamination rate into a count. Usually the "
@@ -321,6 +353,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 
     # ---------- explainability ----------------------------------------------
     ("explainability.mean_deletion_faithfulness", {
+        "term": "Explanation faithfulness (deletion)",
         "measures": "Whether the region the explanation highlights is really what the "
                     "decision rested on, tested by deleting that region and watching "
                     "the confidence fall.",
@@ -332,6 +365,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "heatmap is exactly how that goes unnoticed.",
     }),
     ("explainability.faithfulness", {
+        "term": "Explanation faithfulness",
         "measures": "How well the explanation matches what the model actually did.",
         "ideal": "Higher is better — the explanation and the decision agree.",
         "reading": "Faithfulness is about the explanation, not about the model being "
@@ -339,6 +373,7 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "faithful, and considerably more useful than a flattering one.",
     }),
     ("explainability.n_overlays", {
+        "term": "Examples shown",
         "measures": "How many examples were rendered with an explanation overlay.",
         "ideal": "No ideal value; enough to be representative rather than cherry-picked.",
         "reading": "A handful of overlays illustrates, it does not establish. Ask how "
@@ -360,6 +395,54 @@ def explain_metric(key: str) -> dict[str, str] | None:
         if key == pattern or fnmatch.fnmatch(key, pattern):
             return entry
     return None
+
+
+def entries_for(keys: list[str]) -> list[tuple[dict[str, str], list[str]]]:
+    """Deduplicated explanations for `keys`, in first-seen order.
+
+    Several keys routinely share one concept — melanoma sensitivity and nevus
+    sensitivity are the same idea measured on different classes — so a naive
+    loop prints the identical paragraph several times and buries the reader in
+    a wall of repeats. Each concept is returned once, together with every key it
+    covers, so the caller can say which columns it applies to.
+
+    Keys with no entry are dropped rather than given a placeholder: see
+    `explain_metric`.
+    """
+    out: list[tuple[dict[str, str], list[str]]] = []
+    index: dict[int, int] = {}
+    for key in keys:
+        entry = explain_metric(key)
+        if entry is None:
+            continue
+        at = index.get(id(entry))
+        if at is None:
+            index[id(entry)] = len(out)
+            out.append((entry, [key]))
+        else:
+            out[at][1].append(key)
+    return out
+
+
+def metric_keys(value, prefix: str, depth: int = 0) -> list[str]:
+    """Flattened keys a finding's `value` contributes, as `<pillar>.<path>`.
+
+    Mirrors `verifai.export.artifacts._flatten`, which produces the keys the
+    comparison view sees. Duplicated here on purpose: the showcase imports this
+    module to explain a single report's findings, and should not have to pull in
+    the export layer to do it. A contract test asserts the two agree, so the
+    duplication cannot drift silently.
+    """
+    if isinstance(value, bool):            # bool is an int; not a metric
+        return []
+    if isinstance(value, (int, float)):
+        return [prefix]
+    if isinstance(value, dict) and depth < 6:
+        found: list[str] = []
+        for k, v in value.items():
+            found += metric_keys(v, f"{prefix}.{k}" if prefix else str(k), depth + 1)
+        return found
+    return []
 
 
 def pillar_of(key: str) -> str | None:
