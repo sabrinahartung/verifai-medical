@@ -66,14 +66,17 @@ PILLAR_QUESTION = {
 # robust or fair enough depends on where the model is used and what being wrong
 # costs. `invalid` is the one hard signal, and it judges the *measurement*, not
 # the model: a contaminated split does not measure generalisation at all.
+# Icons must be real emoji, not geometric symbols: `st.info(icon=...)` validates
+# them and raises on anything else, so a tidy-looking ◐ or ∅ takes the whole
+# finding down at render time. Asserted in tests.
 VERDICT = {
     "measured":     ("📊", "Measured",        "Computed, and the sample supports reporting "
                                               "it. Whether the value is good enough is a "
                                               "judgement this report does not make."),
-    "insufficient": ("◐", "Not enough data",  "Computed, but too few cases to support any "
+    "insufficient": ("⏳", "Not enough data",  "Computed, but too few cases to support any "
                                               "claim — the interval is too wide to "
                                               "distinguish this from chance."),
-    "unavailable":  ("∅", "Not computable",   "Could not be computed. The result line says "
+    "unavailable":  ("➖", "Not computable",   "Could not be computed. The result line says "
                                               "what was missing; no number is invented."),
     "invalid":      ("⛔", "Not usable",      "A precondition failed — the split was "
                                               "contaminated, so these numbers measure "
@@ -91,13 +94,27 @@ _LEGACY_VERDICT = {"pass": "measured", "warn": "measured", "fail": "measured",
                    "info": "insufficient"}
 _LEGACY_INTEGRITY = {"pass": "measured", "warn": "invalid", "fail": "invalid",
                      "info": "unavailable"}
+# Grad-CAM emitted `info` unconditionally, whatever the sample size — for that
+# metric it meant "no verdict is defined here", never "not enough evidence".
+# Mapping it like the rest reported "Not enough data" next to overlays that had
+# been rendered and a faithfulness score that had been computed.
+_LEGACY_EXPLAINABILITY = {**_LEGACY_VERDICT, "info": "measured"}
+
+_LEGACY_BY_PILLAR = {"integrity": _LEGACY_INTEGRITY,
+                     "explainability": _LEGACY_EXPLAINABILITY}
 
 
 def normalise_verdict(value: str | None, pillar: str | None = None) -> str:
-    """Today's status for a finding, mapping the retired pass/warn/fail words."""
+    """Today's status for a finding, mapping the retired pass/warn/fail words.
+
+    Pillar-aware, because the retired `info` was overloaded: for most metrics it
+    gated a claim on the evidence, for integrity it meant the split could not be
+    checked, and for explainability it was simply the only value that metric ever
+    emitted. One table cannot say all three.
+    """
     if value in VERDICT:
         return value
-    table = _LEGACY_INTEGRITY if pillar == "integrity" else _LEGACY_VERDICT
+    table = _LEGACY_BY_PILLAR.get(pillar or "", _LEGACY_VERDICT)
     return table.get(value or "", "unavailable")
 
 st.set_page_config(page_title="VERIFAI Showcase — Responsible AI", layout="wide")

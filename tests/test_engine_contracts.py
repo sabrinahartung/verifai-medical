@@ -991,9 +991,34 @@ def test_the_app_maps_retired_words_so_old_artifacts_still_read():
     assert app.normalise_verdict("fail", "integrity") == "invalid", \
         "a contaminated split is a fact, not a threshold — it must survive the mapping"
     assert app.normalise_verdict("info", "integrity") == "unavailable"
+    # Grad-CAM emitted `info` unconditionally, so for explainability it never
+    # meant "not enough evidence" — reading it that way reported missing data
+    # next to overlays that had actually been rendered.
+    assert app.normalise_verdict("info", "explainability") == "measured"
+    assert app.normalise_verdict("info", "performance") == "insufficient"
     # Today's words pass through untouched.
     for v in ("measured", "insufficient", "unavailable", "invalid"):
         assert app.normalise_verdict(v, "performance") == v
     # Every status the app can produce must be renderable.
     for v in app.VERDICT:
         assert len(app.VERDICT[v]) == 3 and app.VERDICT[v][1]
+
+
+def test_every_status_icon_is_an_emoji_streamlit_will_accept():
+    """`st.info(icon=...)` validates its icon and raises on anything else.
+
+    A geometric symbol like ◐ or ∅ looks right in a source file and takes the
+    whole finding down when rendered, which is how the first version of this
+    vocabulary shipped broken.
+    """
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+    from streamlit.string_util import validate_icon_or_emoji as validate
+    for status, (icon, _, _) in app.VERDICT.items():
+        validate(icon)          # raises StreamlitAPIException if unusable
+
+    # The guard has to be able to fail, or it guards nothing.
+    from streamlit.errors import StreamlitAPIException
+    with pytest.raises(StreamlitAPIException):
+        validate("\u25d0")     # ◐ — a geometric symbol, not an emoji
