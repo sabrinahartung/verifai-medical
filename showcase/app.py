@@ -303,12 +303,19 @@ def render_chart(spec: dict, base: Path):
 
 # ---------- explanatory text that ships with the finding ----------
 def render_explain(finding: dict):
-    """Render details["explain"] = {what, how, limits} — all keys optional."""
+    """Render details["explain"] = {what, how, limits} — all keys optional.
+
+    `what` is set in italics and the result carries the finding's own verdict
+    icon rather than a generic info glyph, so the two read as different things:
+    one is standing description of the metric, the other is what this run
+    actually produced.
+    """
     ex = (finding.get("details") or {}).get("explain") or {}
     if ex.get("what"):
-        st.write(ex["what"])
+        st.markdown(f"_{ex['what']}_")
     if finding.get("summary"):
-        st.info(f"**Result:** {finding['summary']}")
+        icon, _, _ = VERDICT.get(finding.get("verdict"), VERDICT["info"])
+        st.info(f"**Result:** {finding['summary']}", icon=icon)
     return ex
 
 
@@ -341,7 +348,8 @@ PILLAR_COLOR = {
 _DEFAULT_COLOR = "gray"
 
 
-def explanation_markdown(entry: dict, covered: list[str], color: str) -> str:
+def explanation_markdown(entry: dict, covered: list[str], color: str,
+                         compact: bool = False) -> str:
     """One explanation as Streamlit markdown.
 
     Pure so it can be tested without a Streamlit runtime. The glossary's own
@@ -350,30 +358,33 @@ def explanation_markdown(entry: dict, covered: list[str], color: str) -> str:
     """
     keys = "  ".join(f"`{k}`" for k in covered)
     lines = [f"**:{color}[{entry['term']}]**  {keys}", ""]
-    for label, text in (("Measures", entry.get("measures")),
-                        ("Ideal value", entry.get("ideal")),
-                        ("Reading it", entry.get("reading")),
-                        ("Trades against", entry.get("tension"))):
+    rows = [("Measures", entry.get("measures")),
+            ("Ideal value", entry.get("ideal"))]
+    if not compact:
+        rows.append(("Reading it", entry.get("reading")))
+    rows.append(("Trades against", entry.get("tension")))
+    for label, text in rows:
         if text:
             lines.append(f"**{label}** — {text}  ")
     return "\n".join(lines)
 
 
-def render_metric_explanations(keys: list[str]) -> int:
+def render_metric_explanations(keys: list[str], compact: bool = False) -> int:
     """Bordered, colour-coded cards for `keys`. Returns how many were rendered.
-
-    Deliberately not an expander: a definition behind a click is one most
-    readers never open, and this dashboard is aimed at people meeting these
-    terms for the first time.
 
     Concepts are deduplicated first, so sensitivity selected for three classes
     is one card naming all three columns, not the same paragraph three times.
+
+    `compact` drops the worked "Reading it" line. In a single report the
+    finding's own `explain.how` already says how to read the number in front of
+    you, so repeating a general worked example there is length without
+    information. The comparison view has no finding to lean on and keeps it.
     """
     shown = 0
     for entry, covered in entries_for(keys):
         color = PILLAR_COLOR.get(pillar_of(covered[0]) or "", _DEFAULT_COLOR)
         with st.container(border=True):
-            st.markdown(explanation_markdown(entry, covered, color))
+            st.markdown(explanation_markdown(entry, covered, color, compact=compact))
         shown += 1
     return shown
 
@@ -712,11 +723,6 @@ def dashboard(card: dict):
     if card.get("sample"):
         st.warning("This view shows SAMPLE data — a placeholder until the real engine run produces the artifacts.")
 
-    explaining = st.toggle(
-        "Explain these metrics", value=False, key="exp_report",
-        help="Adds a colour-coded explanation under each metric: what it measures, "
-             "its ideal value, how to read it, what it trades against.")
-
     n = (report.get("meta") or {}).get("sample_size")
     if n:
         st.caption(f"Everything below was computed on {n} image(s). Small samples are marked as "
@@ -755,12 +761,17 @@ def dashboard(card: dict):
             icon, label, _ = VERDICT.get(f["verdict"], VERDICT["info"])
             st.markdown(f"##### {icon} `{f['metric']}` · {label}")
             ex = render_explain(f)
-            # The finding's own `explain` says what this chart shows; these cards
-            # define the quantities it is drawn from. Keys are derived the same
-            # way the comparison view's are, so both views explain a metric with
-            # the same words.
-            if explaining:
-                render_metric_explanations(metric_keys(f.get("value"), f["pillar"]))
+            # One accordion per finding rather than one switch for the page, so
+            # the reader opens definitions only where they actually want them —
+            # and closed, it costs a single line instead of pushing the chart
+            # down. The finding's own `explain` says what this chart shows;
+            # these cards define the quantities it is drawn from. Keys are
+            # derived the same way the comparison view's are, so both views
+            # explain a metric with the same words.
+            cards = metric_keys(f.get("value"), f["pillar"])
+            if entries_for(cards):
+                with st.expander("Metric explanations"):
+                    render_metric_explanations(cards, compact=True)
             details = f.get("details") or {}
             chart = details.get("chart")
             if chart:
