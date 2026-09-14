@@ -84,7 +84,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     n = len(labeled)
     if not n:
         return Finding(pillar="performance", metric="top1_accuracy", domain="image",
-                       value={"accuracy": None, "n": 0}, verdict="info",
+                       value={"accuracy": None, "n": 0}, verdict="unavailable",
                        summary="No labeled examples.", details={"explain": _EXPLAIN})
 
     acc = correct / n
@@ -105,9 +105,13 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             v["ppv_at_stated_prevalence"] = ppv_at_prevalence(
                 v["sensitivity"], v["specificity"], float(p))
 
-    verdict = "info"
-    if n >= VERDICT_MIN_N:                 # only claim a verdict once n means something
-        verdict = "pass" if acc >= 0.75 else ("warn" if acc >= 0.6 else "fail")
+    # No quality threshold. An accuracy bar would have to be justified, and on
+    # imbalanced data it rewards exactly the wrong behaviour: under-calling the
+    # rare class raises overall accuracy, so the configuration catching 159 of
+    # 163 melanomas scored worse than the one missing 82 of them. The number and
+    # its interval are reported; whether that is good enough is the reader's
+    # call, and depends on what the model is for.
+    verdict = "measured" if n >= VERDICT_MIN_N else "insufficient"
 
     # name the weakest class in the summary — the headline hides it by construction
     scored = [(c, v) for c, v in per_class.items()

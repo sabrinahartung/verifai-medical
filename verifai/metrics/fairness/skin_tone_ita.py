@@ -52,9 +52,11 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     populated = [c for c in coverage if c > 0]
     enough_per_bin = len(populated) >= 2 and min(populated) >= 10
 
-    # coverage skew: is any real skin tone essentially absent?
+    # Coverage skew is stated in the summary rather than judged. A thin bin is a
+    # fact about the data; whether it disqualifies the model is not something
+    # this metric can know.
     dark_share = per_bin_total.get(bins_order[-1], 0) / n if n else 0
-    verdict = "warn" if dark_share < 0.15 else "info"
+    verdict = "measured" if enough_per_bin else "insufficient"
 
     summary = (f"Skin-tone coverage (ITA-estimated) over n={n}: "
                + ", ".join(f"{b.split(' ')[0]} {per_bin_total.get(b,0)}" for b in bins_order)
@@ -109,10 +111,10 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         separated = bool(ci[best] and ci[worst] and ci[worst][1] < ci[best][0])
         value["gap_is_separated"] = separated
 
-        if not separated:
-            verdict = "warn"
-        else:
-            verdict = "fail" if gap > 0.15 else ("warn" if gap > 0.08 else "pass")
+        # Whether the intervals separate is a statement about evidence, not a
+        # value judgement, so it is the one thing worth encoding here. How large
+        # a gap is *acceptable* is a policy question with no answer in the data.
+        verdict = "measured" if separated else "insufficient"
 
         details["chart2"] = {
             "kind": "bar", "title": "Accuracy by skin type (ITA), with 95% intervals",

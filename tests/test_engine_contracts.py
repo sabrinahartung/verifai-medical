@@ -113,9 +113,9 @@ def test_adapter_is_not_tied_to_seven_skin_classes():
     assert clf.cam_layer is net.layer4[-1]
 
 
-# --- honesty gates: a verdict must not outrun the evidence -------------------
-def test_single_skin_tone_bin_never_claims_a_fairness_pass():
-    """One populated ITA bin means one group — a gap of 0 there is not a pass.
+# --- honesty gates: a status must not outrun the evidence --------------------
+def test_single_skin_tone_bin_is_reported_as_insufficient_evidence():
+    """One populated ITA bin means one group — a gap of 0 there says nothing.
 
     Regression: HAM10000 skews so heavily towards light skin that a full run can
     put nearly every image in one bin. The old gate accepted that and emitted a
@@ -140,7 +140,8 @@ def test_single_skin_tone_bin_never_claims_a_fairness_pass():
     finding = f.run(_M(), _DS(), {})
     populated = [c for c in finding.value["coverage"].values() if c > 0]
     assert len(populated) == 1, "test setup should produce exactly one populated bin"
-    assert finding.verdict != "pass", "a single skin-tone bin must never read as a fairness pass"
+    assert finding.verdict == "insufficient", \
+        "one populated bin cannot support a subgroup claim, and must say so"
     assert "accuracy_gap" not in finding.value, "no gap should be claimed from one group"
 
 
@@ -346,8 +347,8 @@ def test_fairness_gap_is_not_claimed_when_group_intervals_overlap():
     finding = f.run(_M(), _DS(), {})
     if "accuracy_gap" in finding.value:              # only if both bins were populated
         assert finding.value["gap_is_separated"] is False
-        assert finding.verdict != "fail", \
-            "an unseparated gap must not be reported as a failure"
+        assert finding.verdict == "insufficient", \
+            "overlapping intervals mean the gap is not established, and must read that way"
 
 
 # --- the decision rule: argmax is a choice, not a law -----------------------
@@ -933,3 +934,66 @@ def test_the_two_views_explain_a_metric_with_the_same_words():
         _flatten(finding["value"], finding["pillar"], expected)
         assert sorted(metric_keys(finding["value"], finding["pillar"])) == sorted(expected), \
             f"flattening disagrees for {finding['metric']}"
+
+
+# --- the status vocabulary is epistemic, never evaluative --------------------
+def test_no_metric_can_score_a_model_against_an_invented_threshold():
+    """The vocabulary has no pass and no fail, and that is the point.
+
+    Measured on the real runs, the old accuracy threshold ranked the
+    configurations almost exactly against the clinical goal: it marked the one
+    catching 159 of 163 melanomas a WARNING and the one missing 82 of them a
+    PASS, because under-calling a rare class raises overall accuracy. A reader
+    trusting the badges would have picked the worst detector in the set.
+    """
+    from verifai.core.findings import Verdict
+    import typing
+    allowed = set(typing.get_args(Verdict))
+    assert allowed == {"measured", "insufficient", "unavailable", "invalid"}
+    assert not allowed & {"pass", "warn", "fail"}, "no evaluative word may return"
+
+    import re
+    for path in (REPO / "verifai" / "metrics").rglob("*.py"):
+        src = path.read_text(encoding="utf-8")
+        for word in ('"pass"', '"warn"', '"fail"'):
+            assert not re.search(rf"verdict\s*=\s*{re.escape(word)}", src), \
+                f"{path.name} still assigns an evaluative verdict"
+
+
+def test_any_overlap_at_all_invalidates_the_split():
+    """Not a percentage bar — the old 1% cut was as arbitrary as the rest.
+
+    A split sharing one lesion is already not measuring generalisation; how far
+    it is from measuring it is exactly what nobody can quantify.
+    """
+    pytest.importorskip("numpy")
+    from verifai.metrics.integrity import split_leakage as sl
+    import inspect
+    src = inspect.getsource(sl)
+    assert "pct >= 1" not in src, "the arbitrary 1% threshold must be gone"
+    assert '"invalid"' in src, "any contamination must mark the measurement unusable"
+
+
+def test_the_app_maps_retired_words_so_old_artifacts_still_read():
+    """Artifacts written before the change carry pass/warn/fail.
+
+    They must render in today's language — and integrity is mapped apart, because
+    its old `fail` recorded a contaminated split, which is a fact worth keeping,
+    while elsewhere the same word was only a threshold nobody could justify.
+    """
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+
+    assert app.normalise_verdict("pass", "performance") == "measured"
+    assert app.normalise_verdict("fail", "performance") == "measured", \
+        "a retired quality threshold must not keep condemning a model"
+    assert app.normalise_verdict("fail", "integrity") == "invalid", \
+        "a contaminated split is a fact, not a threshold — it must survive the mapping"
+    assert app.normalise_verdict("info", "integrity") == "unavailable"
+    # Today's words pass through untouched.
+    for v in ("measured", "insufficient", "unavailable", "invalid"):
+        assert app.normalise_verdict(v, "performance") == v
+    # Every status the app can produce must be renderable.
+    for v in app.VERDICT:
+        assert len(app.VERDICT[v]) == 3 and app.VERDICT[v][1]

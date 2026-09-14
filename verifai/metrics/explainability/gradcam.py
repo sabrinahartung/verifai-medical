@@ -124,7 +124,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         metric="gradcam_faithfulness",
         domain="image",
         value={"n_overlays": len(rel_plots), "mean_deletion_faithfulness": mean_faith},
-        verdict="info",
+        verdict="measured",
         summary=(f"Grad-CAM overlays for {len(rel_plots)} examples; mean deletion "
                  f"faithfulness {mean_faith} (probability drop when the highlighted "
                  f"region is masked out)." if mean_faith is not None

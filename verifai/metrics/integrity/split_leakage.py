@@ -49,7 +49,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         return Finding(
             pillar="integrity", metric="split_leakage", domain=scenario.get("domain", "image"),
             value={"status": "not_checkable", "reason": missing},
-            verdict="info",
+            verdict="unavailable",
             summary=(f"Split integrity could not be verified: {missing}. Every number in "
                      f"this report therefore rests on an unverified assumption — that the "
                      f"model never saw this data."),
@@ -66,7 +66,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         return Finding(
             pillar="integrity", metric="split_leakage", domain=scenario.get("domain", "image"),
             value=dict(a, status="not_checkable"),
-            verdict="info",
+            verdict="unavailable",
             summary=("Split integrity could not be verified: the manifests carry no shared "
                      "identifier (image_id / lesion_id) to compare on. This is not a clean "
                      "bill of health — it means the question was never answered, so every "
@@ -79,11 +79,15 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
 
     pct = a["contamination"] * 100
     if a["clean"]:
-        verdict, summary = "pass", (
+        verdict, summary = "measured", (
             f"Clean split: none of the {a['n_test']:,} test images shares a lesion or an "
             f"image with the {a['n_train']:,} the model trained on.")
     else:
-        verdict = "fail" if pct >= 1 else "warn"
+        # Any overlap at all, not a percentage bar. The old 1% cut was as
+        # arbitrary as the quality thresholds it sat beside, and the distinction
+        # it drew was meaningless: a split that shares one lesion is already not
+        # measuring generalisation, it is measuring memory to an unknown degree.
+        verdict = "invalid"
         summary = (
             f"{a['affected_rows']:,} of {a['n_test']:,} test images ({pct:.1f}%) were seen "
             f"in training: {a['shared_ids']:,} identical images and {a['shared_groups']:,} "

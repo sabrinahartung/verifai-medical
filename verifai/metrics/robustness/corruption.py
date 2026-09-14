@@ -46,9 +46,11 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     stability_ci = {c: wilson(stable[c], n) for c in names} if n else {}
     mean_stability = round(float(np.mean(list(stability.values()))), 3) if stability else None
 
-    verdict = "info"
-    if n >= 20 and mean_stability is not None:
-        verdict = "pass" if mean_stability >= 0.85 else ("warn" if mean_stability >= 0.7 else "fail")
+    # No stability threshold. What counts as robust enough depends on the
+    # deployment, and this metric cannot see it — a model that is confidently and
+    # consistently wrong scores a perfect 1.0 here, so a "pass" would have been
+    # actively misleading. The share of predictions that flip is the finding.
+    verdict = "insufficient" if (n < 20 or mean_stability is None) else "measured"
 
     note = "" if n >= 20 else f" Small sample (n={n}) — illustrative only."
     return Finding(

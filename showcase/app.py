@@ -58,15 +58,47 @@ PILLAR_QUESTION = {
     "privacy":        "Could the model leak the data it was trained on?",
 }
 
-# icon, short label, what the verdict actually means
+# icon, short label, what the status actually means.
+#
+# Epistemic, never evaluative: these say what is known about a number, not
+# whether it is good. There is no pass and no fail, because "good enough" is a
+# threshold somebody would have to justify and nothing here can — what counts as
+# robust or fair enough depends on where the model is used and what being wrong
+# costs. `invalid` is the one hard signal, and it judges the *measurement*, not
+# the model: a contaminated split does not measure generalisation at all.
 VERDICT = {
-    "pass": ("✅", "Pass",       "Meets the threshold set for this metric."),
-    "warn": ("⚠️", "Warning",    "Below the comfortable range — worth a closer look."),
-    "fail": ("❌", "Fail",       "Clearly below the threshold set for this metric."),
-    "info": ("ℹ️", "No verdict", "Measured, but the sample is too small (or required data "
-                                "is missing) to claim a pass or fail."),
+    "measured":     ("📊", "Measured",        "Computed, and the sample supports reporting "
+                                              "it. Whether the value is good enough is a "
+                                              "judgement this report does not make."),
+    "insufficient": ("◐", "Not enough data",  "Computed, but too few cases to support any "
+                                              "claim — the interval is too wide to "
+                                              "distinguish this from chance."),
+    "unavailable":  ("∅", "Not computable",   "Could not be computed. The result line says "
+                                              "what was missing; no number is invented."),
+    "invalid":      ("⛔", "Not usable",      "A precondition failed — the split was "
+                                              "contaminated, so these numbers measure "
+                                              "memory rather than generalisation."),
 }
-VERDICT_ORDER = {"pass": 0, "info": 1, "warn": 2, "fail": 3}
+VERDICT_ORDER = {"measured": 0, "insufficient": 1, "unavailable": 2, "invalid": 3}
+
+# Artifacts written before the vocabulary changed still carry pass/warn/fail.
+# Mapped on read so old reports render in today's language rather than breaking,
+# and so a stale badge cannot go on claiming a verdict this project withdrew.
+# Integrity is mapped separately because its old `fail`/`warn` meant a
+# contaminated split — a fact worth keeping — while elsewhere they were only a
+# threshold nobody could justify.
+_LEGACY_VERDICT = {"pass": "measured", "warn": "measured", "fail": "measured",
+                   "info": "insufficient"}
+_LEGACY_INTEGRITY = {"pass": "measured", "warn": "invalid", "fail": "invalid",
+                     "info": "unavailable"}
+
+
+def normalise_verdict(value: str | None, pillar: str | None = None) -> str:
+    """Today's status for a finding, mapping the retired pass/warn/fail words."""
+    if value in VERDICT:
+        return value
+    table = _LEGACY_INTEGRITY if pillar == "integrity" else _LEGACY_VERDICT
+    return table.get(value or "", "unavailable")
 
 st.set_page_config(page_title="VERIFAI Showcase — Responsible AI", layout="wide")
 
@@ -194,9 +226,10 @@ def _blocked_reason(snap: dict) -> str | None:
     """Why this run must not be plotted alongside the others."""
     if (snap.get("eval_set") or {}).get("sha256") is None:
         return "no evaluation manifest recorded, so there is nothing to match against"
-    if snap.get("integrity") == "fail":
+    integrity = normalise_verdict(snap.get("integrity"), "integrity")
+    if integrity == "invalid":
         return "its split was contaminated — the numbers are inflated by an unknown amount"
-    if snap.get("integrity") != "pass":
+    if integrity != "measured":
         return "split integrity was never verified, so the numbers rest on an unchecked assumption"
     return None
 
@@ -314,7 +347,8 @@ def render_explain(finding: dict):
     if ex.get("what"):
         st.markdown(f"_{ex['what']}_")
     if finding.get("summary"):
-        icon, _, _ = VERDICT.get(finding.get("verdict"), VERDICT["info"])
+        icon, _, _ = VERDICT[normalise_verdict(finding.get("verdict"),
+                                              finding.get("pillar"))]
         st.info(f"**Result:** {finding['summary']}", icon=icon)
     return ex
 
@@ -471,7 +505,7 @@ def gallery(cards: list[dict]):
             + "\n\nThe results were computed once by the engine in this repo and stored as "
               "files, so this page is just a reader — nothing is recomputed when you click. "
               "Every metric states what it measures and, just as importantly, when the sample "
-              "is too small to justify a verdict."
+              "is too small to support a claim."
         )
 
     snaps = load_snapshots()
@@ -726,7 +760,8 @@ def dashboard(card: dict):
     n = (report.get("meta") or {}).get("sample_size")
     if n:
         st.caption(f"Everything below was computed on {n} image(s). Small samples are marked as "
-                   f"such and deliberately do not get a pass/fail verdict.")
+                   f"such. Nothing here is scored against a threshold: the numbers and their "
+                   f"intervals are reported, and what counts as good enough is your call.")
 
     by_pillar: dict[str, list] = {p: [] for p in PILLARS}
     for f in report["findings"]:
@@ -740,13 +775,14 @@ def dashboard(card: dict):
         if not items:
             c.metric(p.capitalize(), "–", help="Not evaluated in this run.")
             continue
-        worst = max((f["verdict"] for f in items), key=lambda v: VERDICT_ORDER.get(v, 1))
+        worst = max((normalise_verdict(f["verdict"], f.get("pillar")) for f in items),
+                    key=lambda v: VERDICT_ORDER.get(v, 1))
         icon, label, meaning = VERDICT[worst]
         c.metric(p.capitalize(), icon, help=f"{PILLAR_QUESTION[p]}\n\n**{label}** — {meaning}")
         c.caption(label)
 
     with st.expander("What do the icons mean?"):
-        for v in ("pass", "warn", "fail", "info"):
+        for v in ("measured", "insufficient", "unavailable", "invalid"):
             icon, label, meaning = VERDICT[v]
             st.markdown(f"{icon} **{label}** — {meaning}")
 
@@ -758,7 +794,7 @@ def dashboard(card: dict):
         st.header(p.capitalize())
         st.caption(PILLAR_QUESTION[p])
         for f in items:
-            icon, label, _ = VERDICT.get(f["verdict"], VERDICT["info"])
+            icon, label, _ = VERDICT[normalise_verdict(f["verdict"], f.get("pillar"))]
             st.markdown(f"##### {icon} `{f['metric']}` · {label}")
             ex = render_explain(f)
             # One accordion per finding rather than one switch for the page, so

@@ -78,7 +78,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         return Finding(
             pillar="privacy", metric="membership_inference_auc", domain="image",
             value={"mia_auc": None, "status": "requires_members"},
-            verdict="info",
+            verdict="unavailable",
             summary=("Membership inference needs training vs. holdout images. This scenario "
                      "declares no members set — so no number is invented here. Point "
                      "privacy.members at the training manifest to enable it."),
@@ -104,7 +104,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             pillar="privacy", metric="membership_inference_auc", domain="image",
             value={"mia_auc": None, "status": "too_few_samples",
                    "n_members": len(member_conf), "n_non_members": len(non_conf)},
-            verdict="info",
+            verdict="unavailable",
             summary=(f"Too few images to run the attack meaningfully "
                      f"({len(member_conf)} members, {len(non_conf)} non-members; 50 needed "
                      f"on each side). No AUC is claimed."),
@@ -113,9 +113,13 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
 
     auc = round(_rank_auc(member_conf, non_conf), 4)
     ci = auc_ci(auc, len(member_conf), len(non_conf))
-    # A verdict on the interval, not the point estimate: an AUC of 0.59 whose
-    # interval reaches 0.68 has not been shown to be low-risk.
-    verdict = "pass" if (ci and ci[1] < 0.60) else ("warn" if auc < 0.75 else "fail")
+    # No risk threshold — 0.60 would have to be justified and cannot be. What is
+    # factual is whether the interval clears chance: if it lies entirely above
+    # 0.5, membership is demonstrably distinguishable; if it straddles 0.5, no
+    # leakage has been shown. That statement goes in the summary, where it can be
+    # read, rather than into a badge that compresses it to a colour.
+    leaks = bool(ci and ci[0] > 0.5)
+    verdict = "measured"
     mean_m = round(sum(member_conf) / len(member_conf), 4)
     mean_n = round(sum(non_conf) / len(non_conf), 4)
 
@@ -125,7 +129,10 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
                "n_members": len(member_conf), "n_non_members": len(non_conf),
                "mean_confidence_members": mean_m, "mean_confidence_non_members": mean_n},
         verdict=verdict,
-        summary=(f"Membership-inference AUC {auc}"
+        summary=((f"Membership is distinguishable: the interval lies entirely above "
+                  f"0.5 (chance). " if leaks else
+                  f"No leakage shown: the interval includes 0.5 (chance). ")
+                 + f"Membership-inference AUC {auc}"
                  f"{f' [{ci[0]:.2f}-{ci[1]:.2f}]' if ci else ''} "
                  f"from {len(member_conf)} training and "
                  f"{len(non_conf)} held-out images (0.5 = an attacker cannot tell them "

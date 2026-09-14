@@ -55,15 +55,25 @@ classDiagram
 : `integrity` · `performance` · `fairness` · `robustness` · `explainability` · `privacy`
 
 `Verdict`
-: `pass` · `warn` · `fail` · `info`
+: `measured` · `insufficient` · `unavailable` · `invalid`
 
 `Domain`
 : `image` · `text` · `tabular` · `llm`
 
-!!! tip "`info` is not a weak `pass`"
-    `info` means **no verdict was claimed** — the sample was too small, or the required data
-    was missing. The dashboard renders it as "No verdict" rather than a neutral tick, because
-    a reader must not mistake "we did not check" for "we checked and it was fine".
+!!! tip "There is no `pass`, and that is deliberate"
+    The vocabulary says what is *known* about a number, never whether it is good. A pass
+    would need a threshold, and a threshold would need justifying: what counts as robust or
+    fair enough depends on where the model runs and what being wrong costs, which is the
+    reader's decision and not a constant in a metric module.
+
+    Measured on the real runs, the accuracy threshold this replaced did worse than nothing.
+    It marked the configuration catching 159 of 163 melanomas a **warning** and the one
+    missing 82 of them a **pass**, because under-calling a rare class raises overall
+    accuracy. A reader trusting the badges would have picked the worst detector in the set.
+
+    `invalid` is the single hard signal, and it judges the *measurement* rather than the
+    model: a contaminated split does not measure generalisation at all, so nothing computed
+    on it means what it appears to.
 
 `Report.meta` records `seed`, `sample_size` (what was actually evaluated, not what the YAML
 declared) and `device` — the last because results are bit-identical *per device*, not across

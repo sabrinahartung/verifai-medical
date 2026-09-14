@@ -162,9 +162,18 @@ and image chart specs are relative to the artifact folder).
 
 The default sample is n=7. Metrics must not manufacture confidence from it:
 
-- Keep `verdict="info"` until the sample is big enough to justify a claim (see the `n >= 30`
-  gate in `performance/classification.py`, the `min(populated) >= 10` per-bin gate in
-  `fairness/skin_tone_ita.py`).
+- The `verdict` vocabulary is **epistemic, never evaluative**: `measured` · `insufficient` ·
+  `unavailable` · `invalid`. There is no pass and no fail. A quality threshold would have to be
+  justified, and nothing here can justify one — what counts as robust or fair enough depends on
+  where the model runs and what being wrong costs. Measured on the real runs, the accuracy
+  threshold this replaced marked the configuration catching 159 of 163 melanomas a *warning* and
+  the one missing 82 of them a *pass*, because under-calling a rare class raises accuracy.
+- Use `insufficient` until the sample supports a claim (see the `n >= 30` gate in
+  `performance/classification.py`, the `min(populated) >= 10` per-bin gate in
+  `fairness/skin_tone_ita.py`), `unavailable` when the metric cannot be computed at all, and
+  `invalid` only for a broken precondition — today just a contaminated split, which makes the
+  *measurement* unusable rather than the model bad. `showcase/app.py::normalise_verdict` maps the
+  retired pass/warn/fail words so artifacts written before the change still render.
 - State `n` in the `summary` and say plainly when it is only a plausibility check.
 - A metric that cannot be computed reports *why* and returns `None`, never an invented number —
   see `privacy/mia.py`, which requires a train/holdout split that the example set does not have.

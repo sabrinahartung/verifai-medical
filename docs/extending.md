@@ -74,10 +74,12 @@ def run(model, dataset, ctx) -> Finding:
     n = len(dataset)
     score = ...                       # your measurement
 
-    # Do not claim a verdict the sample cannot support.
-    verdict = "info"
+    # Say what is known, never whether it is good. There is no pass and no
+    # fail: a quality threshold would have to be justified, and a metric module
+    # is the wrong place to decide what "good enough" means.
+    verdict = "insufficient"
     if n >= 30:
-        verdict = "pass" if score >= 0.8 else "warn"
+        verdict = "measured"
 
     return Finding(
         pillar="performance", metric="my_metric", domain="image",
@@ -124,7 +126,7 @@ These are not style preferences — they are what the project is for.
     `privacy/mia.py` does when no members set is declared. It does not return a
     placeholder, and it does not quietly skip.
 
-!!! warning "Gate the verdict on the evidence"
+!!! warning "Gate the status on the evidence"
     Stay at `info` until the sample supports a claim. Existing gates: `n>=30` for accuracy,
     `n>=20` for robustness, two populated bins of `>=10` for a fairness gap, 50 per side for
     membership inference. State `n` in the summary.

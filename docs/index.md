@@ -93,7 +93,7 @@ claim this project exists to catch.
 
 === "Honesty is enforced, not intended"
 
-    Metrics withhold a verdict until the sample justifies one (`n>=30` for accuracy, `n>=20`
+    Metrics report `insufficient` until the sample supports a claim (`n>=30` for accuracy, `n>=20`
     for robustness, two populated bins of `>=10` for a fairness gap). A metric that cannot be
     computed says so instead of returning a number. The runner refuses to evaluate a
     contaminated split at all.
