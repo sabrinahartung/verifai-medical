@@ -378,21 +378,31 @@ def render_metric_explanations(keys: list[str]) -> int:
     return shown
 
 
-def render_metric_legend(keys: list[str]) -> int:
+def render_metric_legend(keys: list[str], columns: int = 2) -> int:
     """Explanations for `keys` as a legend, grouped by pillar.
 
     Grouped rather than listed flat because the comparison table mixes pillars,
     and a reader scanning a row is asking "what is this?" — the pillar is half
     that answer.
+
+    Laid out in columns because a full-width card runs to roughly 200 characters
+    a line, and prose stops being comfortably readable somewhere around 90. Two
+    columns also halve how far the table scrolls away while the legend is open.
     """
     shown = 0
     for pillar in PILLARS:
         here = [k for k in keys if pillar_of(k) == pillar]
-        if not entries_for(here):
+        grouped = entries_for(here)
+        if not grouped:
             continue
         color = PILLAR_COLOR.get(pillar, _DEFAULT_COLOR)
         st.markdown(f"**:{color}[{pillar.upper()}]** · {PILLAR_QUESTION[pillar]}")
-        shown += render_metric_explanations(here)
+        cols = st.columns(columns)
+        for i, (entry, covered) in enumerate(grouped):
+            with cols[i % columns]:
+                with st.container(border=True):
+                    st.markdown(explanation_markdown(entry, covered, color))
+            shown += 1
     return shown
 
 
