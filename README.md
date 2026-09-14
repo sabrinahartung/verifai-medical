@@ -123,10 +123,10 @@ That is a deliberate design decision, not obfuscation:
 - [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible
 - [x] Reproducible example sample (7 real HAM10000 images + manifest)
 - [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one
-- [ ] Larger subset on a free GPU (solid fairness/privacy numbers)
+- [x] Larger subset on a free GPU (solid fairness/privacy numbers)
 - [ ] add Text scenario
 - [ ] add LLM scenario
-- [ ] Deploy to Streamlit Community Cloud + short video
+- [x] Deploy to Streamlit Community Cloud + short video
 
 ## Data / license
 
