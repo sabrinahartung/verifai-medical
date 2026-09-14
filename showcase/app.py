@@ -69,11 +69,23 @@ PILLAR_QUESTION = {
 # Icons must be real emoji, not geometric symbols: `st.info(icon=...)` validates
 # them and raises on anything else, so a tidy-looking ◐ or ∅ takes the whole
 # finding down at render time. Asserted in tests.
+#
+# `insufficient` is deliberately ❔ and not ⚠️. A warning sign was the icon for the
+# retired `warn`, and bringing it back would restore the visual language of
+# grading even though the word behind it changed — worse, it would blame the
+# model for a limit of the evaluation. On the 7-image run four of six pillars are
+# `insufficient`; in warning triangles that reads as four problems with the
+# model, when the model has no findings at all and the sample is simply too
+# small. A question mark says the one true thing: we cannot say. It is also not
+# ⏳, which suggests a measurement still running rather than one already finished
+# and inconclusive, and not ❔, whose outline glyph renders as pale grey and is
+# nearly invisible on the light background. 🔍 reads as "looked at, and cannot
+# say" once the label beside it says so.
 VERDICT = {
     "measured":     ("📊", "Measured",        "Computed, and the sample supports reporting "
                                               "it. Whether the value is good enough is a "
                                               "judgement this report does not make."),
-    "insufficient": ("⏳", "Not enough data",  "Computed, but too few cases to support any "
+    "insufficient": ("🔍", "Not enough data",  "Computed, but too few cases to support any "
                                               "claim — the interval is too wide to "
                                               "distinguish this from chance."),
     "unavailable":  ("➖", "Not computable",   "Could not be computed. The result line says "
