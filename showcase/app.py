@@ -324,108 +324,75 @@ def render_caveats(ex: dict):
 
 # ---------- metric explanations ----------
 
-# One accent per pillar, so a mixed comparison table stays readable at a glance.
-# Chosen to hold up on both a light and a dark background, which is why the card
-# tints the accent at low alpha instead of painting a solid fill: a fixed light
-# fill would turn to mud under Streamlit's dark theme.
-PILLAR_ACCENT = {
-    "integrity": "#D64545",       # first, and gates everything below it
-    "performance": "#5B3FD6",
-    "fairness": "#C77700",
-    "robustness": "#0E7C86",
-    "explainability": "#2B6CB0",
-    "privacy": "#2E9E5B",
+# Streamlit's own colour names, one per pillar. Native markdown colours are used
+# rather than CSS: `st.markdown` is sanitised with `FORBID_TAGS: ['style']`, so an
+# injected <style> block is stripped and a card built on CSS classes renders as
+# unstyled text — which is exactly how the first two attempts at this ended up
+# invisible. Anything drawn with `:colour[...]` and `st.container(border=True)`
+# cannot be sanitised away.
+PILLAR_COLOR = {
+    "integrity": "red",           # first, and gates everything below it
+    "performance": "violet",
+    "fairness": "orange",
+    "robustness": "blue",
+    "explainability": "gray",
+    "privacy": "green",
 }
-_DEFAULT_ACCENT = "#6B7280"
-
-EXPLAIN_CSS = """
-<style>
-.vf-exp { border-left: 4px solid var(--vf-accent); background: color-mix(in srgb,
-          var(--vf-accent) 8%, transparent); border-radius: 6px; padding: .7rem .9rem;
-          margin: 0 0 .6rem 0; font-size: .9rem; line-height: 1.5; }
-.vf-exp-head { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .35rem;
-               flex-wrap: wrap; }
-.vf-exp-key { font-weight: 700; font-size: .98rem; }
-.vf-exp-sub { font-size: .72rem; opacity: .6; margin-bottom: .4rem;
-              font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.vf-exp-pill { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
-               background: var(--vf-accent); color: #fff; border-radius: 99px;
-               padding: .08rem .5rem; font-weight: 600; }
-.vf-exp p { margin: .18rem 0; }
-.vf-exp b.vf-lbl { display: inline-block; min-width: 7.2rem; opacity: .75;
-                   font-weight: 600; }
-@supports not (background: color-mix(in srgb, red 8%, transparent)) {
-  .vf-exp { background: rgba(127, 127, 127, .1); }
-}
-</style>
-"""
+_DEFAULT_COLOR = "gray"
 
 
-def _md_bold_to_html(text: str) -> str:
-    """Escape HTML, then honour the glossary's **bold** markers.
+def explanation_markdown(entry: dict, covered: list[str], color: str) -> str:
+    """One explanation as Streamlit markdown.
 
-    The cards are raw HTML, so markdown is not interpreted for us. Escaping
-    first and converting after means the glossary stays plain readable text in
-    the engine while still emphasising the parts that matter.
+    Pure so it can be tested without a Streamlit runtime. The glossary's own
+    `**bold**` markers are left alone: `st.markdown` renders them natively, so
+    no escaping or HTML conversion is needed anywhere in this path.
     """
-    import html
-    import re
-    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(text))
+    keys = "  ".join(f"`{k}`" for k in covered)
+    lines = [f"**:{color}[{entry['term']}]**  {keys}", ""]
+    for label, text in (("Measures", entry.get("measures")),
+                        ("Ideal value", entry.get("ideal")),
+                        ("Reading it", entry.get("reading")),
+                        ("Trades against", entry.get("tension"))):
+        if text:
+            lines.append(f"**{label}** — {text}  ")
+    return "\n".join(lines)
 
 
-def explain_mode() -> bool:
-    """One switch for the whole session, in the sidebar.
-
-    Global rather than per-view because it is a property of the reader, not of
-    the page: someone learning these terms wants them everywhere, and having to
-    re-enable explanations on each view is how a helpful feature becomes an
-    irritating one.
-    """
-    return st.sidebar.toggle(
-        "Explain the metrics", value=False, key="explain_mode",
-        help="Show a plain-language card next to each metric: what it measures, "
-             "its ideal value, how to read it, and what it trades against.",
-    )
-
-
-def render_metric_explanations(keys: list[str], compact: bool = False) -> int:
-    """Inline explanation cards for `keys`. Returns how many were rendered.
+def render_metric_explanations(keys: list[str]) -> int:
+    """Bordered, colour-coded cards for `keys`. Returns how many were rendered.
 
     Deliberately not an expander: a definition behind a click is one most
     readers never open, and this dashboard is aimed at people meeting these
     terms for the first time.
 
-    Concepts are deduplicated, so selecting sensitivity for three classes prints
-    one card naming all three rather than the same paragraph three times.
-    `compact` drops the worked reading, for places where the card sits beside a
-    chart rather than standing on its own.
+    Concepts are deduplicated first, so sensitivity selected for three classes
+    is one card naming all three columns, not the same paragraph three times.
     """
-    st.markdown(EXPLAIN_CSS, unsafe_allow_html=True)
     shown = 0
     for entry, covered in entries_for(keys):
-        pillar = pillar_of(covered[0])
-        accent = PILLAR_ACCENT.get(pillar or "", _DEFAULT_ACCENT)
-        rows = [("Measures", entry.get("measures")),
-                ("Ideal value", entry.get("ideal"))]
-        if not compact:
-            rows.append(("Reading it", entry.get("reading")))
-        rows.append(("Trades against", entry.get("tension")))
-        body = "".join(
-            f'<p><b class="vf-lbl">{label}</b>{_md_bold_to_html(text)}</p>'
-            for label, text in rows if text
-        )
-        badge = f'<span class="vf-exp-pill">{pillar}</span>' if pillar else ""
-        # The raw keys are developer strings; the term is what a reader knows it
-        # by. Keys stay visible but subordinate, so a row in the table can still
-        # be matched to its card.
-        sub = "  ·  ".join(f"<code>{_md_bold_to_html(k)}</code>" for k in covered)
-        st.markdown(
-            f'<div class="vf-exp" style="--vf-accent:{accent}">'
-            f'<div class="vf-exp-head"><span class="vf-exp-key">{entry["term"]}</span>{badge}</div>'
-            f'<div class="vf-exp-sub">{sub}</div>{body}</div>',
-            unsafe_allow_html=True,
-        )
+        color = PILLAR_COLOR.get(pillar_of(covered[0]) or "", _DEFAULT_COLOR)
+        with st.container(border=True):
+            st.markdown(explanation_markdown(entry, covered, color))
         shown += 1
+    return shown
+
+
+def render_metric_legend(keys: list[str]) -> int:
+    """Explanations for `keys` as a legend, grouped by pillar.
+
+    Grouped rather than listed flat because the comparison table mixes pillars,
+    and a reader scanning a row is asking "what is this?" — the pillar is half
+    that answer.
+    """
+    shown = 0
+    for pillar in PILLARS:
+        here = [k for k in keys if pillar_of(k) == pillar]
+        if not entries_for(here):
+            continue
+        color = PILLAR_COLOR.get(pillar, _DEFAULT_COLOR)
+        st.markdown(f"**:{color}[{pillar.upper()}]** · {PILLAR_QUESTION[pillar]}")
+        shown += render_metric_explanations(here)
     return shown
 
 
@@ -524,7 +491,6 @@ def gallery(cards: list[dict]):
 
 def comparison(snaps: list[dict], cards: list[dict] | None = None):
     lineage = st.session_state.get("compare_lineage")
-    explaining = explain_mode()
     st.title("Comparing runs" + (f" — {lineage}" if lineage else ""))
     st.caption("Every recorded evaluation, grouped by the exact set of images it was scored on.")
 
@@ -621,6 +587,13 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                                "fairness.accuracy_gap", "privacy.mia_auc") if k in keys]
         chosen = st.multiselect("Metrics to compare", keys, default=default or keys[:6],
                                 key=f"ms_{gi}")
+        # Right above the table it annotates, so the reader can see what it does
+        # without hunting for it. Off by default: someone who knows the terms
+        # should not have to scroll past their definitions.
+        explaining = st.toggle(
+            "Explain these metrics", value=False, key=f"exp_{gi}",
+            help="Adds a colour-coded legend under the table: what each metric "
+                 "measures, its ideal value, how to read it, what it trades against.")
         if not chosen:
             st.divider(); continue
 
@@ -669,6 +642,13 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         st.caption("**best** is only filled in where the metric declared which direction is "
                    "an improvement. An undeclared metric is shown but not ranked.")
 
+        if explaining:
+            st.markdown("###### Legend — what the rows above mean")
+            st.caption("General definitions: the same wording applies to any model on any "
+                       "dataset. Colour marks the pillar each metric belongs to.")
+            if not render_metric_legend(chosen):
+                st.caption("No explanations available for the selected metrics.")
+
         # --- the trade-off, seen directly ---
         ranked_keys = [k for k in chosen if dirs.get(k)]
         if len(ranked_keys) >= 2:
@@ -687,15 +667,8 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 xaxis_title=f"{xk} ({dirs.get(xk, '')} is better)",
                 yaxis_title=f"{yk} ({dirs.get(yk, '')} is better)", showlegend=False)
             st.plotly_chart(fig, width="stretch")
-            # Right under the two axes being traded off, which is the moment a
-            # reader most needs to know what they mean — and the exact place the
-            # difference between precision and recall decides how the plot reads.
-            if explaining:
-                render_metric_explanations([xk, yk])
 
         metric = st.selectbox("Bar chart", chosen, key=f"sb_{gi}")
-        if explaining:
-            render_metric_explanations([metric])
         leader = best_run(metric, usable, dirs.get(metric))
         fig = go.Figure(go.Bar(
             x=labels, y=[r["metrics"].get(metric) for r in usable],
@@ -716,7 +689,6 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
 
 def dashboard(card: dict):
     base = card["_dir"]
-    explaining = explain_mode()
     report = json.loads((base / "report.json").read_text(encoding="utf-8"))
 
     if st.button("← Back to overview"):
@@ -729,6 +701,11 @@ def dashboard(card: dict):
         st.markdown(f"[🤗 Model on Hugging Face]({card['hf_url']})")
     if card.get("sample"):
         st.warning("This view shows SAMPLE data — a placeholder until the real engine run produces the artifacts.")
+
+    explaining = st.toggle(
+        "Explain these metrics", value=False, key="exp_report",
+        help="Adds a colour-coded explanation under each metric: what it measures, "
+             "its ideal value, how to read it, what it trades against.")
 
     n = (report.get("meta") or {}).get("sample_size")
     if n:
@@ -773,8 +750,7 @@ def dashboard(card: dict):
             # way the comparison view's are, so both views explain a metric with
             # the same words.
             if explaining:
-                render_metric_explanations(metric_keys(f.get("value"), f["pillar"]),
-                                           compact=True)
+                render_metric_explanations(metric_keys(f.get("value"), f["pillar"]))
             details = f.get("details") or {}
             chart = details.get("chart")
             if chart:

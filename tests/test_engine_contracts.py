@@ -861,15 +861,29 @@ def test_the_glossary_stays_light_enough_for_the_showcase():
     assert not out.stdout.strip(), f"glossary pulled in heavy modules: {out.stdout}"
 
 
-def test_explanation_cards_escape_html_before_applying_bold():
-    """The cards are raw HTML, so the order of escape-then-format matters."""
+def test_explanation_cards_survive_streamlits_html_sanitiser():
+    """The cards must not be built from raw HTML or CSS.
+
+    `st.markdown` is sanitised with `FORBID_TAGS: ['style']`, so an injected
+    <style> block is removed outright and anything styled through CSS classes
+    renders as unstyled text — twice this feature shipped invisible for exactly
+    that reason. Native markdown colours and `st.container(border=True)` cannot
+    be sanitised away, so the rendering path is asserted to contain no markup.
+    """
     pytest.importorskip("streamlit")
     sys.path.insert(0, str(REPO / "showcase"))
     import app
-    assert app._md_bold_to_html("**x**") == "<strong>x</strong>"
-    assert app._md_bold_to_html("<script>") == "&lt;script&gt;"
-    # Escaping must happen first, or injected markup would survive the bolding.
-    assert "<script>" not in app._md_bold_to_html("**<script>**")
+    from verifai.core.glossary import explain_metric
+
+    md = app.explanation_markdown(explain_metric("privacy.mia_auc"),
+                                  ["privacy.mia_auc"], "green")
+    assert ":green[" in md, "colour must come from Streamlit's own markdown"
+    assert "<" not in md and "style=" not in md, "no raw HTML in the card"
+    assert "Membership-inference AUC" in md and "Measures" in md
+
+    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    assert "unsafe_allow_html" not in source, (
+        "the explanation path must not depend on HTML Streamlit may strip")
 
 
 def test_the_app_degrades_instead_of_crashing_without_the_engine():
