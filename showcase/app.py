@@ -586,9 +586,23 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
     # A lineage narrows *what is shown*; it never widens what may be compared.
     # Grouping stays keyed on the evaluation set, so two runs of one lineage scored
     # on different manifests still land in different groups.
+    hidden_comparable: dict[tuple, set[str]] = {}
     if lineage and cards:
         ids = {c["id"] for c in cards if (c.get("lineage") or c["id"]) == lineage}
-        snaps = [s for s in snaps if s.get("scenario") in ids]
+        kept = [s for s in snaps if s.get("scenario") in ids]
+        # A filtered view still prints a `best` column, and that column ranks only
+        # what is on screen. If a run scored on the *same images* is hidden, the
+        # word "best" becomes false without anything saying so — which is exactly
+        # how a reader concludes that the strongest configuration does not exist.
+        kept_keys = {comparability_key(s) for s in kept}
+        for s in snaps:
+            if s.get("scenario") in ids:
+                continue
+            key = comparability_key(s)
+            if key in kept_keys:
+                hidden_comparable.setdefault(key, set()).add(
+                    s.get("label") or s["scenario"])
+        snaps = kept
         st.caption(f"Filtered to the {len(ids)} configuration(s) in this lineage. "
                    f"Comparability is still decided by the evaluation set, not the lineage.")
 
@@ -635,6 +649,15 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         name = (ev.get("manifest") or "unknown evaluation set").split("/")[-1]
         st.subheader(f"{name}  ·  {ev.get('n') or '?'} images")
         st.caption(f"content hash `{ev.get('sha256') or 'none'}`  ·  {len(runs)} run(s)")
+
+        also = sorted(hidden_comparable.get(key, ()))
+        if also:
+            st.warning(
+                f"**{len(also)} further run(s) were scored on these same images** and are "
+                f"hidden by the lineage filter: {', '.join(f'*{a}*' for a in also)}. "
+                f"The **best** column below ranks only what is shown, so it may not name "
+                f"the strongest configuration you have. Use **Compare all runs** from the "
+                f"overview to see them together.", icon="🔎")
 
         usable = [r for r in runs if _blocked_reason(r) is None]
         blocked = [(r, _blocked_reason(r)) for r in runs if _blocked_reason(r) is not None]

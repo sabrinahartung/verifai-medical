@@ -1022,3 +1022,51 @@ def test_every_status_icon_is_an_emoji_streamlit_will_accept():
     from streamlit.errors import StreamlitAPIException
     with pytest.raises(StreamlitAPIException):
         validate("\u25d0")     # ◐ — a geometric symbol, not an emoji
+
+
+def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
+    """`best` ranks what is on screen, so hiding a comparable run makes it false.
+
+    The clean-split lineage shows five configurations and names High-sensitivity
+    (w=50) best on melanoma sensitivity at 0.945. Three further runs were scored
+    on the identical images — same manifest, same content hash — and one reaches
+    0.976. Filtered, the table asserted a superlative that the full evidence
+    contradicts, with nothing on screen saying runs were missing.
+    """
+    import json as _json
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+
+    snaps = [_json.loads(f.read_text(encoding="utf-8"))
+             for f in (REPO / "showcase" / "artifacts").glob("*/history/*.json")]
+    cards = []
+    for d in (REPO / "showcase" / "artifacts").iterdir():
+        card = d / "card.json"
+        if card.is_file():
+            cards.append({**_json.loads(card.read_text(encoding="utf-8")), "id": d.name})
+
+    lineage = "ResNet18 · clean split"
+    ids = {c["id"] for c in cards if (c.get("lineage") or c["id"]) == lineage}
+    assert ids, "fixture check: that lineage must exist in the artifacts"
+
+    kept = [s for s in snaps if s.get("scenario") in ids]
+    kept_keys = {app.comparability_key(s) for s in kept}
+    hidden = [s for s in snaps
+              if s.get("scenario") not in ids and app.comparability_key(s) in kept_keys]
+    assert hidden, (
+        "fixture check: some run outside this lineage shares its evaluation set — "
+        "that overlap is the whole reason the disclosure is needed")
+
+    key = "performance.per_class.melanoma.sensitivity"
+    best_shown = max((s["metrics"].get(key) or 0) for s in kept)
+    best_hidden = max((s["metrics"].get(key) or 0) for s in hidden)
+    assert best_hidden > best_shown, (
+        "fixture check: a hidden run must actually beat the shown ones, or this "
+        "test would pass even with the disclosure removed")
+
+    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    assert "hidden_comparable" in source, \
+        "the comparison view must track runs the lineage filter hides"
+    assert "were scored on these same images" in source, \
+        "and must say so on screen, next to the best column it undermines"
