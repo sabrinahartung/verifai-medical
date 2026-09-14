@@ -18,12 +18,29 @@ Results are PRECOMPUTED (run once by the engine) so this app stays free & always
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import streamlit as st
 import plotly.graph_objects as go
 
 ART = Path(__file__).parent / "artifacts"
+
+# Plain-language metric explanations. They live in the engine
+# (verifai/core/glossary.py) for the same reason a finding's own `explain` text
+# does: adding a metric should mean adding its wording there, never editing this
+# file. The module is pure data with no heavy imports, so requiring it does not
+# drag torch into the light showcase deployment.
+#
+# Degrading instead of crashing is deliberate: the showcase's contract is that it
+# renders precomputed artifacts. If it is ever deployed without the engine
+# alongside, the explanations simply disappear and every number still renders.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+try:
+    from verifai.core.glossary import explain_metric, pillar_of
+except ImportError:                                           # pragma: no cover
+    explain_metric = lambda key: None                         # noqa: E731
+    pillar_of = lambda key: None                              # noqa: E731
 # integrity comes first on purpose: every other pillar is conditional on it.
 PILLARS = ["integrity", "performance", "fairness", "robustness", "explainability", "privacy"]
 
@@ -302,6 +319,96 @@ def render_caveats(ex: dict):
             st.markdown(f"**What it does _not_ tell you**  \n{ex['limits']}")
 
 
+# ---------- metric explanations ----------
+
+# One accent per pillar, so a mixed comparison table stays readable at a glance.
+# Chosen to hold up on both a light and a dark background, which is why the card
+# tints the accent at low alpha instead of painting a solid fill: a fixed light
+# fill would turn to mud under Streamlit's dark theme.
+PILLAR_ACCENT = {
+    "integrity": "#D64545",       # first, and gates everything below it
+    "performance": "#5B3FD6",
+    "fairness": "#C77700",
+    "robustness": "#0E7C86",
+    "explainability": "#2B6CB0",
+    "privacy": "#2E9E5B",
+}
+_DEFAULT_ACCENT = "#6B7280"
+
+EXPLAIN_CSS = """
+<style>
+.vf-exp { border-left: 4px solid var(--vf-accent); background: color-mix(in srgb,
+          var(--vf-accent) 8%, transparent); border-radius: 6px; padding: .7rem .9rem;
+          margin: 0 0 .6rem 0; font-size: .9rem; line-height: 1.5; }
+.vf-exp-head { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .35rem;
+               flex-wrap: wrap; }
+.vf-exp-key { font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: .86rem; }
+.vf-exp-pill { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em;
+               background: var(--vf-accent); color: #fff; border-radius: 99px;
+               padding: .08rem .5rem; font-weight: 600; }
+.vf-exp p { margin: .18rem 0; }
+.vf-exp b.vf-lbl { display: inline-block; min-width: 7.2rem; opacity: .75;
+                   font-weight: 600; }
+@supports not (background: color-mix(in srgb, red 8%, transparent)) {
+  .vf-exp { background: rgba(127, 127, 127, .1); }
+}
+</style>
+"""
+
+
+def _md_bold_to_html(text: str) -> str:
+    """Escape HTML, then honour the glossary's **bold** markers.
+
+    The cards are raw HTML, so markdown is not interpreted for us. Escaping
+    first and converting after means the glossary stays plain readable text in
+    the engine while still emphasising the parts that matter.
+    """
+    import html
+    import re
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html.escape(text))
+
+
+def render_metric_explanations(keys: list[str]) -> int:
+    """Inline plain-language cards for `keys`. Returns how many were rendered.
+
+    Deliberately *not* an expander. A definition behind a click is a definition
+    most readers never see, and this dashboard is aimed at people meeting these
+    terms for the first time — the cost of a term nobody looked up is a number
+    confidently misread, which is exactly what happened with precision being
+    taken for recall.
+
+    A key with no glossary entry is skipped rather than given a generic
+    placeholder: no explanation is better than a confident one about the wrong
+    quantity.
+    """
+    st.markdown(EXPLAIN_CSS, unsafe_allow_html=True)
+    shown = 0
+    for key in keys:
+        entry = explain_metric(key)
+        if not entry:
+            continue
+        pillar = pillar_of(key)
+        accent = PILLAR_ACCENT.get(pillar or "", _DEFAULT_ACCENT)
+        rows = [("Measures", entry.get("measures")),
+                ("Ideal value", entry.get("ideal")),
+                ("Reading it", entry.get("reading")),
+                ("Trades against", entry.get("tension"))]
+        body = "".join(
+            f'<p><b class="vf-lbl">{label}</b>{_md_bold_to_html(text)}</p>'
+            for label, text in rows if text
+        )
+        badge = f'<span class="vf-exp-pill">{pillar}</span>' if pillar else ""
+        st.markdown(
+            f'<div class="vf-exp" style="--vf-accent:{accent}">'
+            f'<div class="vf-exp-head"><span class="vf-exp-key">{key}</span>{badge}</div>'
+            f'{body}</div>',
+            unsafe_allow_html=True,
+        )
+        shown += 1
+    return shown
+
+
 # ---------- views ----------
 DEFAULT_GROUP = "Models"
 
@@ -495,6 +602,17 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                                 key=f"ms_{gi}")
         if not chosen:
             st.divider(); continue
+
+        # Definitions in front of the table rather than behind a click. Off by
+        # default so a reader who knows the terms is not made to scroll past
+        # them, but one switch away for everyone else.
+        if st.toggle("Show metric explanations", value=False, key=f"exp_{gi}",
+                     help="Plain-language definitions: what each metric measures, "
+                          "its ideal value, and how to read the number you get."):
+            st.caption("Each card explains one selected metric in general terms — "
+                       "the same definitions apply to any model on any dataset.")
+            if not render_metric_explanations(chosen):
+                st.caption("No explanations available for the selected metrics.")
 
         dirs = {k: direction_for(k, usable) for k in chosen}
         labels = [r.get("label") or r["scenario"] for r in usable]

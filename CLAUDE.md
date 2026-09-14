@@ -27,7 +27,7 @@ The repo `.venv` already has both engine and showcase deps (torch, torchvision, 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (54 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (62 of them, no network or checkpoint needed):
 
 ```bash
 pip install -r requirements-dev.txt
@@ -143,6 +143,15 @@ keys: `what` (what is being measured and why it matters), `how` (how to read thi
 puts `how`/`limits` in a "How to read this chart" expander. This lives in the engine, not the app,
 so a new metric brings its own wording and still needs no app changes. Write it for a reader who
 has never seen a Responsible-AI report — plots alone do not communicate.
+
+That `explain` block covers one metric's *chart* inside one report. The **comparison view** reads
+flattened snapshot keys instead, never findings, so it cannot see it — a new metric must therefore
+also add an entry to `verifai/core/glossary.py`, keyed by an `fnmatch` pattern on the flattened key
+(`performance.per_class.*.sensitivity`). Patterns match in order, so put specific before general.
+Each entry carries `measures` / `ideal` / `reading` and optionally `tension`, written **generally**
+— about the concept, not about this dataset, so it stays true when the numbers change. A test
+asserts that every metric key present in any artifact resolves to an entry. Keep the module free of
+heavy imports: `showcase/app.py` imports it, and the showcase must not need torch.
 
 `ctx` carries `{"scenario": ..., "seed": ..., "plot_dir": ...}`. Metrics that write images must
 write into `ctx["plot_dir"]` and reference them as `"plots/<name>.png"` (paths in `Finding.plots`

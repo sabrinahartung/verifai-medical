@@ -3,6 +3,17 @@
 Every term this project uses, in plain language, with a real example from the
 [current results](results.md) — the 1,493-image held-out run.
 
+!!! tip "The same definitions are inside the dashboard"
+    The comparison view has a **Show metric explanations** switch that prints a card
+    for each selected metric — what it measures, its ideal value, how to read the
+    number, and which metric it trades against. Those cards live in
+    `verifai/core/glossary.py` and are deliberately *general*: they describe the
+    concept for any model on any dataset, so they stay true as the numbers change.
+
+    This page is the other half — the same terms, but pinned to the real numbers of
+    one concrete run. Update both when a metric is added: the engine module is what
+    the app reads, this page is what a reader browsing the docs finds.
+
 ---
 
 ## Getting the answer right

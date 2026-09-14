@@ -776,3 +776,101 @@ def test_pretrained_weight_downloads_get_a_ca_bundle():
         assert os.environ["SSL_CERT_FILE"] == "/tmp/explicit-choice.pem"
     finally:
         os.environ["SSL_CERT_FILE"] = prior
+
+
+# --- plain-language metric explanations --------------------------------------
+def test_every_metric_in_every_artifact_has_an_explanation():
+    """The contract: a metric that reaches the comparison view explains itself.
+
+    Snapshot keys are produced generically by `snapshot_metrics`, so a new metric
+    appears in the comparison table whether or not anyone wrote wording for it.
+    This is what catches that omission.
+    """
+    from verifai.core.glossary import explain_metric
+    keys = set()
+    for f in (REPO / "showcase" / "artifacts").glob("*/history/*.json"):
+        keys |= set((json.loads(f.read_text(encoding="utf-8")).get("metrics") or {}))
+    assert keys, "no snapshots found — this test would pass vacuously"
+    missing = sorted(k for k in keys if explain_metric(k) is None)
+    assert not missing, f"metric keys with no glossary entry: {missing}"
+
+
+def test_an_unknown_metric_gets_no_explanation_rather_than_a_guess():
+    """A confident explanation of the wrong quantity is worse than none."""
+    from verifai.core.glossary import explain_metric
+    assert explain_metric("performance.some_future_metric") is None
+    assert explain_metric("") is None
+
+
+def test_specific_glossary_patterns_are_matched_before_general_ones():
+    """Ordering is load-bearing, exactly as it is for metric directions.
+
+    `fnmatch` has no notion of specificity, so a broad pattern placed early would
+    silently swallow the precise entries that follow it.
+    """
+    from verifai.core.glossary import explain_metric
+    sens = explain_metric("performance.per_class.melanoma.sensitivity")
+    ppv = explain_metric("performance.per_class.melanoma.ppv_test_prevalence")
+    assert sens is not None and ppv is not None
+    assert sens != ppv, "sensitivity and PPV must not resolve to the same entry"
+    assert "recall" in sens["measures"].lower()
+    assert "precision" in ppv["measures"].lower()
+
+
+def test_every_glossary_entry_teaches_the_same_four_things():
+    """Uniform shape is the point: the reader learns where to look once."""
+    from verifai.core.glossary import GLOSSARY
+    for pattern, entry in GLOSSARY:
+        for field in ("measures", "ideal", "reading"):
+            assert entry.get(field), f"{pattern} is missing '{field}'"
+            assert len(entry[field]) > 40, f"{pattern}.{field} is too terse to help"
+        assert set(entry) <= {"measures", "ideal", "reading", "tension"}, \
+            f"{pattern} has unexpected fields"
+
+
+def test_the_metric_whose_direction_is_counterintuitive_says_so():
+    """`mia_auc` is lower-is-better while an AUC normally is not.
+
+    The comparison table already refuses to infer direction from the name; the
+    explanation has to carry the same warning in words, or a reader sees 0.54
+    next to 'AUC' and reads it as a poor score rather than a good one.
+    """
+    from verifai.core.glossary import explain_metric
+    entry = explain_metric("privacy.mia_auc")
+    assert "0.5" in entry["ideal"]
+    assert "lower is better" in entry["ideal"].lower()
+
+
+def test_the_glossary_stays_light_enough_for_the_showcase():
+    """showcase/requirements.txt has no torch — importing it must not need one."""
+    import subprocess
+    code = ("import sys; before=set(sys.modules);"
+            "import verifai.core.glossary;"
+            "heavy=[m for m in set(sys.modules)-before "
+            "if m.split('.')[0] in ('torch','torchvision','numpy','PIL','pandas')];"
+            "print(','.join(heavy))")
+    out = subprocess.run([sys.executable, "-c", code], cwd=REPO,
+                         capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    assert not out.stdout.strip(), f"glossary pulled in heavy modules: {out.stdout}"
+
+
+def test_explanation_cards_escape_html_before_applying_bold():
+    """The cards are raw HTML, so the order of escape-then-format matters."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+    assert app._md_bold_to_html("**x**") == "<strong>x</strong>"
+    assert app._md_bold_to_html("<script>") == "&lt;script&gt;"
+    # Escaping must happen first, or injected markup would survive the bolding.
+    assert "<script>" not in app._md_bold_to_html("**<script>**")
+
+
+def test_the_app_degrades_instead_of_crashing_without_the_engine():
+    """The showcase's contract is that it renders artifacts. Explanations are a
+    bonus, so losing them must not take the numbers down with them."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+    assert callable(app.explain_metric) and callable(app.pillar_of)
+    assert app.render_metric_explanations(["performance.not_a_real_metric"]) == 0
