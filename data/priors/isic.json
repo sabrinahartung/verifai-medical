@@ -1,0 +1,186 @@
+{
+  "classes": [
+    "actinic_keratoses",
+    "basal_cell_carcinoma",
+    "benign_keratosis-like_lesions",
+    "dermatofibroma",
+    "melanocytic_Nevi",
+    "melanoma",
+    "vascular_lesions"
+  ],
+  "base_rate": {
+    "actinic_keratoses": 0.0384,
+    "basal_cell_carcinoma": 0.14575,
+    "benign_keratosis-like_lesions": 0.10524,
+    "dermatofibroma": 0.00955,
+    "melanocytic_Nevi": 0.49922,
+    "melanoma": 0.19215,
+    "vascular_lesions": 0.00969
+  },
+  "n_train": 21770,
+  "min_count": 50,
+  "smoothing": 20.0,
+  "features": {
+    "age": {
+      "0-19": {
+        "n": 596,
+        "lift": {
+          "actinic_keratoses": 0.117,
+          "basal_cell_carcinoma": 0.077,
+          "benign_keratosis-like_lesions": 0.0633,
+          "dermatofibroma": 1.2218,
+          "melanocytic_Nevi": 1.8632,
+          "melanoma": 0.0916,
+          "vascular_lesions": 1.8749
+        }
+      },
+      "20-39": {
+        "n": 3418,
+        "lift": {
+          "actinic_keratoses": 0.1497,
+          "basal_cell_carcinoma": 0.2792,
+          "benign_keratosis-like_lesions": 0.2988,
+          "dermatofibroma": 0.7973,
+          "melanocytic_Nevi": 1.6343,
+          "melanoma": 0.4766,
+          "vascular_lesions": 0.7261
+        }
+      },
+      "40-59": {
+        "n": 8094,
+        "lift": {
+          "actinic_keratoses": 0.4293,
+          "basal_cell_carcinoma": 0.6451,
+          "benign_keratosis-like_lesions": 0.7075,
+          "dermatofibroma": 1.4601,
+          "melanocytic_Nevi": 1.2398,
+          "melanoma": 0.8953,
+          "vascular_lesions": 1.0452
+        }
+      },
+      "60-79": {
+        "n": 6866,
+        "lift": {
+          "actinic_keratoses": 1.8559,
+          "basal_cell_carcinoma": 1.4556,
+          "benign_keratosis-like_lesions": 1.6064,
+          "dermatofibroma": 0.7781,
+          "melanocytic_Nevi": 0.5661,
+          "melanoma": 1.2825,
+          "vascular_lesions": 1.1416
+        }
+      },
+      "80-99": {
+        "n": 2375,
+        "lift": {
+          "actinic_keratoses": 2.0633,
+          "basal_cell_carcinoma": 2.323,
+          "benign_keratosis-like_lesions": 1.5795,
+          "dermatofibroma": 0.4891,
+          "melanocytic_Nevi": 0.2241,
+          "melanoma": 1.5186,
+          "vascular_lesions": 0.7838
+        }
+      }
+    },
+    "localization": {
+      "anterior torso": {
+        "n": 6387,
+        "lift": {
+          "actinic_keratoses": 0.377,
+          "basal_cell_carcinoma": 1.1629,
+          "benign_keratosis-like_lesions": 0.6112,
+          "dermatofibroma": 0.7056,
+          "melanocytic_Nevi": 1.0633,
+          "melanoma": 1.0591,
+          "vascular_lesions": 1.0982
+        }
+      },
+      "head/neck": {
+        "n": 4092,
+        "lift": {
+          "actinic_keratoses": 3.6906,
+          "basal_cell_carcinoma": 1.8269,
+          "benign_keratosis-like_lesions": 2.0385,
+          "dermatofibroma": 0.0049,
+          "melanocytic_Nevi": 0.3381,
+          "melanoma": 1.0452,
+          "vascular_lesions": 0.8078
+        }
+      },
+      "lateral torso": {
+        "n": 54,
+        "lift": {
+          "actinic_keratoses": 0.2703,
+          "basal_cell_carcinoma": 0.2703,
+          "benign_keratosis-like_lesions": 1.0407,
+          "dermatofibroma": 0.2703,
+          "melanocytic_Nevi": 1.1906,
+          "melanoma": 1.2549,
+          "vascular_lesions": 0.2703
+        }
+      },
+      "lower extremity": {
+        "n": 4070,
+        "lift": {
+          "actinic_keratoses": 0.3933,
+          "basal_cell_carcinoma": 0.7531,
+          "benign_keratosis-like_lesions": 0.8273,
+          "dermatofibroma": 2.9733,
+          "melanocytic_Nevi": 1.1397,
+          "melanoma": 0.9274,
+          "vascular_lesions": 1.2914
+        }
+      },
+      "oral/genital": {
+        "n": 59,
+        "lift": {
+          "actinic_keratoses": 0.2532,
+          "basal_cell_carcinoma": 0.2532,
+          "benign_keratosis-like_lesions": 1.9371,
+          "dermatofibroma": 0.2532,
+          "melanocytic_Nevi": 0.8617,
+          "melanoma": 1.5049,
+          "vascular_lesions": 2.8652
+        }
+      },
+      "palms/soles": {
+        "n": 385,
+        "lift": {
+          "actinic_keratoses": 0.4352,
+          "basal_cell_carcinoma": 0.0494,
+          "benign_keratosis-like_lesions": 0.2136,
+          "dermatofibroma": 0.0494,
+          "melanocytic_Nevi": 0.8803,
+          "melanoma": 2.6323,
+          "vascular_lesions": 0.8136
+        }
+      },
+      "posterior torso": {
+        "n": 2146,
+        "lift": {
+          "actinic_keratoses": 0.0573,
+          "basal_cell_carcinoma": 0.4432,
+          "benign_keratosis-like_lesions": 0.7506,
+          "dermatofibroma": 0.1059,
+          "melanocytic_Nevi": 1.3853,
+          "melanoma": 0.7997,
+          "vascular_lesions": 0.819
+        }
+      },
+      "upper extremity": {
+        "n": 2471,
+        "lift": {
+          "actinic_keratoses": 0.7293,
+          "basal_cell_carcinoma": 0.9693,
+          "benign_keratosis-like_lesions": 0.7939,
+          "dermatofibroma": 1.8147,
+          "melanocytic_Nevi": 0.9127,
+          "melanoma": 1.389,
+          "vascular_lesions": 0.7536
+        }
+      }
+    }
+  },
+  "source_manifest": "data/manifests/isic_train.csv"
+}

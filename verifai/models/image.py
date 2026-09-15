@@ -79,6 +79,11 @@ def _resolve_module(root, path: str):
     return obj
 
 
+# Shared with scripts/build_context_prior.py — see verifai/core/context.py for
+# why there is exactly one implementation of this.
+from verifai.core.context import bucket_for as _bucket_for  # noqa: E402
+
+
 class ImageClassifier:
     """Thin wrapper around a torch module + the metadata metrics need.
 
@@ -88,7 +93,9 @@ class ImageClassifier:
 
     def __init__(self, model, classes: list[str], device=None,
                  cam_layer: str = "layer4[-1]", preprocess=None,
-                 decision_weights: dict[str, float] | None = None):
+                 decision_weights: dict[str, float] | None = None,
+                 context_prior: dict | None = None,
+                 prior_strength: float = 1.0):
         import torch
         self.device = device if device is not None else torch.device("cpu")
         self.model = model.to(self.device)
@@ -96,6 +103,8 @@ class ImageClassifier:
         self.cam_layer_path = cam_layer
         self._pre = preprocess or build_preprocess()
         self.decision_weights = dict(decision_weights or {})
+        self.context_prior = context_prior or None
+        self.prior_strength = float(prior_strength)
 
     @property
     def torch_module(self):
@@ -109,29 +118,66 @@ class ImageClassifier:
     def to_tensor(self, img):
         return self._pre(img.convert("RGB")).unsqueeze(0).to(self.device)  # [1,3,H,W]
 
-    def decide(self, probs: dict[str, float]) -> str:
+    def context_lift(self, meta: dict | None) -> dict[str, float]:
+        """Per-class multiplier from this case's non-image context.
+
+        Bayes with the model as the likelihood: multiplying by
+        `P(class|context)/P(class)` turns `P(class|image)` into
+        `P(class|image, context)`. The table comes from the *training* manifest
+        (`scripts/build_context_prior.py`), so nothing here has seen test labels.
+
+        Features are combined as if independent, which they are not — age and
+        body site correlate. Naive Bayes over two features is a mild
+        approximation and `prior_strength` is tuned on validation partly to
+        absorb it.
+
+        An absent or unknown value contributes exactly 1.0. Missing context must
+        never push a decision: 10% of training rows have no site recorded, and
+        guessing one for them would invent evidence.
+        """
+        if not self.context_prior or self.prior_strength == 0:
+            return {c: 1.0 for c in self.classes}
+        lift = {c: 1.0 for c in self.classes}
+        features = (self.context_prior.get("features") or {})
+        for feature, table in features.items():
+            bucket = _bucket_for(feature, (meta or {}).get(feature))
+            cell = table.get(bucket) if bucket else None
+            if not cell:
+                continue
+            for c in self.classes:
+                lift[c] *= float(cell["lift"].get(c, 1.0)) ** self.prior_strength
+        return lift
+
+    def _score(self, probs: dict[str, float], meta: dict | None):
+        w = self.decision_weights
+        lift = self.context_lift(meta)
+        return lambda c: probs[c] * w.get(c, 1.0) * lift.get(c, 1.0)
+
+    def decide(self, probs: dict[str, float], meta: dict | None = None) -> str:
         """Turn a probability vector into an answer.
 
         `argmax` is the default, but it is a *choice*, not a law — it maximises
         expected accuracy, which on imbalanced data means systematically
         under-calling rare classes. `decision_weights` scales each class by the
-        cost of missing it, so melanoma can clear a lower bar than nevi while the
-        model itself is untouched.
+        cost of missing it, and `context_prior` scales it by what this patient's
+        age and lesion site say before the image is even looked at. In both cases
+        the model itself is untouched; only the reading of its output changes.
+
+        `meta` is optional so every existing caller keeps working unchanged —
+        without it the context prior is simply inert.
 
         Every metric routes its decision through here, so the rule is configured
         once per scenario rather than reimplemented per metric.
         """
-        if not self.decision_weights:
+        if not self.decision_weights and not self.context_prior:
             return max(probs, key=probs.get)
-        w = self.decision_weights
-        return max(probs, key=lambda c: probs[c] * w.get(c, 1.0))
+        return max(probs, key=self._score(probs, meta))
 
-    def rank(self, probs: dict[str, float]) -> list[str]:
+    def rank(self, probs: dict[str, float], meta: dict | None = None) -> list[str]:
         """Classes best-first under the same rule — for top-k differential metrics."""
-        if not self.decision_weights:
+        if not self.decision_weights and not self.context_prior:
             return sorted(probs, key=probs.get, reverse=True)
-        w = self.decision_weights
-        return sorted(probs, key=lambda c: probs[c] * w.get(c, 1.0), reverse=True)
+        return sorted(probs, key=self._score(probs, meta), reverse=True)
 
     def predict_probs(self, img) -> dict[str, float]:
         import torch
@@ -156,7 +202,9 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
      classes: [...],            # must match the checkpoint's output order
      cam_layer: "layer4[-1]",   # Grad-CAM target
      device: "auto",            # auto | cpu | cuda | mps
-     decision_weights: {melanoma: 2.5}}   # cost-sensitive rule; default is argmax
+     decision_weights: {melanoma: 2.5},   # cost-sensitive rule; default is argmax
+     context_prior: "data/priors/isic.json",  # age/site lifts, built from TRAINING
+     prior_strength: 1.0}                 # 0 disables it; tuned on validation
     """
     import torch
     import torchvision.models as tvm
@@ -164,6 +212,22 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     classes = list(spec.get("classes") or CLASSES)
     arch = spec.get("arch", "resnet18")
     device = resolve_device(spec.get("device", "auto"))
+
+    # A path rather than an inline table: the prior is a measured artifact of one
+    # training manifest, so it belongs on disk where it can be read, diffed and
+    # pointed at, next to the manifests it was derived from.
+    prior = None
+    prior_path = spec.get("context_prior")
+    if prior_path:
+        import json as _json
+        path_obj = Path(prior_path)
+        if not path_obj.is_absolute():
+            path_obj = Path(__file__).resolve().parents[2] / path_obj
+        if not path_obj.exists():
+            raise FileNotFoundError(
+                f"context_prior {prior_path} not found — build it with "
+                f"scripts/build_context_prior.py")
+        prior = _json.loads(path_obj.read_text(encoding="utf-8"))
 
     weights_path = spec.get("weights_path")
     if weights_path and Path(weights_path).exists():
@@ -200,4 +264,6 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
         cam_layer=spec.get("cam_layer") or DEFAULT_CAM_LAYER.get(arch, "layer4[-1]"),
         preprocess=build_preprocess(size, spec.get("mean"), spec.get("std")),
         decision_weights=spec.get("decision_weights"),
+        context_prior=prior,
+        prior_strength=float(spec.get("prior_strength", 1.0)),
     )

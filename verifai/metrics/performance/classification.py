@@ -68,7 +68,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
 
     for s in labeled:
         probs = model.predict_probs(dataset.load(s))
-        ranked = model.rank(probs)          # honours the configured decision rule
+        ranked = model.rank(probs, getattr(s, "meta", None))  # honours the configured decision rule
         top = ranked[0]
         ok = (top == s.label)
         in3 = s.label in ranked[:3]

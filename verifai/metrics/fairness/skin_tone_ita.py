@@ -36,7 +36,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         entry = {"id": s.id, "ita": round(ita, 1), "bin": b, "true": s.label}
         if s.label is not None:
             probs = model.predict_probs(img)
-            top = model.decide(probs)
+            top = model.decide(probs, getattr(s, "meta", None))
             ok = (top == s.label)
             per_bin_correct[b] += int(ok)
             entry["pred"] = top

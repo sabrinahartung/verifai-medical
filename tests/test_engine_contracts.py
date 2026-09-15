@@ -135,7 +135,7 @@ def test_single_skin_tone_bin_is_reported_as_insufficient_evidence():
     class _M:
         classes = ["mel", "nv"]
         def predict_probs(self, img): return {"mel": 0.9, "nv": 0.1}
-        def decide(self, probs): return max(probs, key=probs.get)
+        def decide(self, probs, meta=None): return max(probs, key=probs.get)
 
     finding = f.run(_M(), _DS(), {})
     populated = [c for c in finding.value["coverage"].values() if c > 0]
@@ -342,7 +342,7 @@ def test_fairness_gap_is_not_claimed_when_group_intervals_overlap():
     class _M:
         classes = ["a", "b"]
         def predict_probs(self, img): return {"a": 0.9, "b": 0.1}   # always predicts "a"
-        def decide(self, probs): return max(probs, key=probs.get)
+        def decide(self, probs, meta=None): return max(probs, key=probs.get)
 
     finding = f.run(_M(), _DS(), {})
     if "accuracy_gap" in finding.value:              # only if both bins were populated
@@ -1173,3 +1173,106 @@ def test_curve_scenarios_differ_only_in_size_and_regime():
     # Every point is scored on the untouched evaluation set.
     for name, sc in loaded.items():
         assert sc["dataset.manifest"] == "data/manifests/ham10000_test.csv", name
+
+
+# --- context priors: information that is not in the pixels -------------------
+def test_missing_context_is_neutral_rather_than_guessed():
+    """A blank field must not move a decision.
+
+    Ten percent of training rows carry no body site. Inventing one for them —
+    or letting a missed lookup fall through to something other than 1.0 — would
+    manufacture evidence out of an empty cell.
+    """
+    import json as _json
+    from verifai.models.image import ImageClassifier
+
+    prior_path = REPO / "data" / "priors" / "isic.json"
+    if not prior_path.exists():
+        pytest.skip("prior not built (scripts/build_context_prior.py)")
+
+    m = ImageClassifier.__new__(ImageClassifier)
+    m.classes = ["melanoma", "melanocytic_Nevi"]
+    m.decision_weights = {}
+    m.context_prior = _json.loads(prior_path.read_text(encoding="utf-8"))
+    m.prior_strength = 1.0
+
+    for meta in ({}, None, {"age": "", "localization": ""},
+                 {"age": "not-a-number", "localization": "nowhere-in-the-table"}):
+        lift = m.context_lift(meta)
+        assert all(abs(v - 1.0) < 1e-9 for v in lift.values()), \
+            f"absent or unknown context must be exactly neutral, got {lift}"
+
+
+def test_the_prior_moves_decisions_in_the_direction_the_data_says():
+    """Old patient on an acral site up, young patient on the back down."""
+    import json as _json
+    from verifai.models.image import ImageClassifier
+
+    prior_path = REPO / "data" / "priors" / "isic.json"
+    if not prior_path.exists():
+        pytest.skip("prior not built")
+
+    m = ImageClassifier.__new__(ImageClassifier)
+    m.classes = ["melanoma", "melanocytic_Nevi"]
+    m.decision_weights = {}
+    m.context_prior = _json.loads(prior_path.read_text(encoding="utf-8"))
+    m.prior_strength = 1.0
+
+    probs = {"melanoma": 0.30, "melanocytic_Nevi": 0.45}      # argmax says nevus
+    old_acral = {"age": "85", "localization": "palms/soles"}
+    young_back = {"age": "15", "localization": "posterior torso"}
+
+    assert m.context_lift(old_acral)["melanoma"] > 2.0
+    assert m.context_lift(young_back)["melanoma"] < 0.5
+    assert m.decide(probs, old_acral) == "melanoma", "context should overturn argmax here"
+    assert m.decide(probs, young_back) == "melanocytic_Nevi"
+    assert m.decide(probs, None) == "melanocytic_Nevi", "no context, no change"
+
+    # Strength 0 must reproduce plain argmax exactly.
+    m.prior_strength = 0.0
+    assert m.decide(probs, old_acral) == "melanocytic_Nevi"
+
+
+def test_one_bucketing_implementation_shared_by_builder_and_adapter():
+    """Two copies could drift, and a drifted bucket fails silently.
+
+    If the builder files a 63-year-old under `60-79` and the adapter looks up
+    `60-69`, every lookup misses, every lift falls back to 1.0, and the run
+    reports "context does not help" without ever having applied context. No
+    error, no warning — so the defence is that there is only one implementation.
+    """
+    from verifai.core import context
+    builder = (REPO / "scripts" / "build_context_prior.py").read_text(encoding="utf-8")
+    adapter = (REPO / "verifai" / "models" / "image.py").read_text(encoding="utf-8")
+    assert "from verifai.core.context import" in builder
+    assert "from verifai.core.context import" in adapter
+    assert "def age_bucket" not in builder, "the builder must not keep its own copy"
+    assert "def age_bucket" not in adapter, "the adapter must not keep its own copy"
+
+    assert context.bucket_for("age", "63.0") == "60-79"
+    assert context.bucket_for("age", "") is None
+    assert context.bucket_for("localization", " Palms/Soles ") == "palms/soles"
+    assert context.bucket_for("unknown_feature", "x") is None
+
+
+def test_a_prior_is_never_built_from_the_test_manifest():
+    """Deriving it from test would fit the decision rule to the answers."""
+    import subprocess
+    out = subprocess.run(
+        [sys.executable, "scripts/build_context_prior.py",
+         "--manifest", "data/manifests/ham10000_test.csv"],
+        cwd=REPO, capture_output=True, text=True)
+    assert out.returncode != 0, "building a prior from test data must fail"
+    assert "refusing" in (out.stdout + out.stderr).lower()
+
+
+def test_dx_type_is_not_available_as_a_context_feature():
+    """It is 100% populated in test and 0% in training, and it is an outcome.
+
+    `histo` records that a clinician already thought the lesion worth cutting
+    out. As a feature it would look like a spectacular result and be pure
+    leakage — and `audit_split` could not see it, because no image is shared.
+    """
+    from verifai.core.context import BUCKETERS
+    assert "dx_type" not in BUCKETERS
+    assert "sex" not in BUCKETERS, "measured lift 0.96 vs 1.03 — not worth the argument"

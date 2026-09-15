@@ -27,7 +27,7 @@ The repo `.venv` already has both engine and showcase deps (torch, torchvision, 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (73 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (78 of them, no network or checkpoint needed):
 
 ```bash
 pip install -r requirements-dev.txt
@@ -45,9 +45,12 @@ allowed). The comparison view ranks only on declared directions and leaves anyth
 unranked — it must never infer from the name, since `mia_auc` is lower-is-better while an AUC
 normally is not.
 
-Metrics must never hardcode `argmax`. Route decisions through `model.decide(probs)` and
-`model.rank(probs)`, so a scenario's `decision_weights` apply everywhere at once — four metrics
-were each reimplementing the rule before this existed. `argmax` is the default, not a law: it
+Metrics must never hardcode `argmax`. Route decisions through `model.decide(probs, meta)` and
+`model.rank(probs, meta)`, so a scenario's `decision_weights` apply everywhere at once — four
+metrics were each reimplementing the rule before this existed. `meta` is the sample's metadata
+and must be passed as `getattr(s, "meta", None)`: it feeds the optional `context_prior`, and a
+dataset that carries none has to degrade to a neutral lift rather than crash. A model adapter
+must therefore accept `decide(probs, meta=None)`. `argmax` is the default, not a law: it
 maximises expected accuracy, which on imbalanced data systematically under-calls rare classes.
 Any threshold or weight must be tuned on **validation** (`scripts/tune_decision.py`), never on
 the test manifest — that would be fitting the decision rule to the test set, and the integrity

@@ -33,12 +33,12 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     for s in dataset:
         img = dataset.load(s)
         clean = model.predict_probs(img)
-        clean_top = model.decide(clean)
+        clean_top = model.decide(clean, getattr(s, "meta", None))
         n += 1
         for c in names:
             corrupted = CORRUPTIONS[c](img, rng=rng) if c == "noise" else CORRUPTIONS[c](img)
             probs = model.predict_probs(corrupted)
-            if model.decide(probs) == clean_top:
+            if model.decide(probs, getattr(s, "meta", None)) == clean_top:
                 stable[c] += 1
             conf_after[c].append(probs[clean_top])
 
