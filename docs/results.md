@@ -394,6 +394,82 @@ and `localization` are carried on every manifest row — 98%, 98% and 90% popula
 A dermatologist uses site and age. An image-only classifier cannot. That is the next untested
 lever, it costs no new data, and unlike capacity it adds signal rather than parameters.
 
+## Experiment 6 — a learning curve, and what it says about experiment 3
+
+Every experiment so far asked "does this intervention help?". This one asks the question
+underneath them: **where does more data stop helping?** Nested, lesion-grouped,
+class-stratified subsets of `isic_train.csv`, each trained twice — fully fine-tuned and as a
+linear probe — and every point scored on the same frozen 1,493 images.
+
+| Training images | Fine-tuned top-1 | Linear probe top-1 | Gap |
+|---:|---:|---:|---:|
+| 120 | 0.643 [0.62, 0.67] | 0.493 [0.47, 0.52] | +0.150 |
+| 504 | 0.680 [0.66, 0.70] | 0.594 [0.57, 0.62] | +0.086 |
+| 2,002 | 0.747 [0.72, 0.77] | 0.626 [0.60, 0.65] | +0.121 |
+| 7,031 | 0.702 [0.68, 0.72] | 0.608 [0.58, 0.63] | +0.094 |
+| 21,770 | **0.806 [0.79, 0.83]** | 0.648 [0.62, 0.67] | +0.159 |
+
+### The curve is not flat, which resolves experiment 3
+
+Experiment 3 found that tripling the training corpus produced no established change, and
+left that as a puzzle. The curve explains it, because it separates two effects that
+experiment compared at once.
+
+**Quantity matters.** Within ISIC, going from 7,031 to 21,770 images moves top-1 from 0.702
+to 0.806 — **+10.5 points, intervals separated.** More data helps, clearly and measurably.
+
+**Distribution matters more.** At *equal* volume, 7,014 HAM10000 images reach 0.796 while
+7,031 ISIC images reach 0.702 — **+9.5 points for the in-distribution corpus, intervals
+separated.** The test set is HAM10000, and training images drawn from the same source are
+worth substantially more than the same number drawn from a mixture of archives.
+
+And those two effects very nearly cancel:
+
+| | top-1 | |
+|---|---:|---|
+| 7,014 HAM10000 images | 0.796 | in-distribution, 1x data |
+| 21,770 ISIC images | 0.806 | mixed sources, 3.1x data |
+| difference | **+0.010** | **intervals overlap** |
+
+Experiment 3 was comparing an in-distribution corpus against three times as much
+out-of-distribution data. The quantity gain was real and the distribution penalty was real,
+and they happened to be nearly the same size. "No established change" was the correct
+reading of that comparison, and the wrong conclusion to draw about data in general.
+
+### Top-3 is not constant either — it is a plateau
+
+Top-3 accuracy sat at 0.975-0.977 across all eight earlier configurations, which read as
+"nothing ever changed what the model knows". The curve shows why: every one of those
+configurations trained on 7,000 images or more.
+
+| Training images | 120 | 504 | 2,002 | 7,031 | 21,770 |
+|---|---:|---:|---:|---:|---:|
+| Top-3 (fine-tuned) | 0.778 | 0.884 | 0.950 | 0.945 | **0.977** |
+
+What the model knows depends very much on how much it has seen. The plateau is real, it
+simply begins somewhere around two to seven thousand images — below that the model genuinely
+knows less, above it the returns are in where it commits rather than what it can recognise.
+
+### Linear probing loses at every size
+
+The textbook expectation is a crossover: with few labels the probe should win, because it
+fits 3,591 parameters instead of 11,180,103 and cannot overfit them as badly. **That
+crossover does not appear anywhere in this range** — fine-tuning leads at 120 images just as
+it does at 21,770.
+
+The most plausible reading is the size of the domain gap. ImageNet features describe dogs
+and vehicles; dermoscopy is close-range, centred, and textural, so frozen features start
+from a poor basis and even 120 images of adaptation buy more than they cost in overfitting.
+It is a reminder that "probe first when data is scarce" is a heuristic about *related*
+domains, not a law.
+
+!!! warning "One run per point"
+    Each point is a single training run at one seed, so a difference of a few points between
+    neighbouring sizes should not be read as real. The dip at 7,031 against 2,002 is the
+    obvious candidate: 0.702 against 0.747, with intervals that touch rather than separate. A
+    curve intended to support claims about its own shape needs several seeds per point; this
+    one supports the large effects above and not the small wiggles.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

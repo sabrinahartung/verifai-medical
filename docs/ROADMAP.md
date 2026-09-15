@@ -71,7 +71,7 @@ Not every pillar is blocked by leakage, which is worth knowing:
 
 **Acceptance: met.** Re-running `scenarios/skin_cancer.yaml` with no scenario edits
 produced findings identical to the pre-refactor baseline (top-1 100%, faithfulness
-0.669, stability 75%). 69 contract tests in `tests/` cover the seams; run them with
+0.669, stability 75%). 73 contract tests in `tests/` cover the seams; run them with
 `.venv/bin/python -m pytest tests/ -q`.
 
 Measured while doing this: MPS is **slower** than CPU here (5.5s vs 3.2s at n=7),
@@ -467,22 +467,26 @@ Both are standard practice worth having done once, and both attack the finding
 that has survived everything else: top-3 accuracy sits at 0.975-0.977 across all
 eight configurations, so nothing tried so far has changed what the model *knows*.
 
-- [ ] **Linear probing vs full fine-tuning.** Freeze the backbone, train only the
-      classification head, same corpus and same frozen test set — one variable,
-      nothing else. It tests the standing hypothesis head-on: if frozen ImageNet
-      features land close to a fully fine-tuned model, backbone adaptation was
-      contributing little, which is exactly what a flat top-3 implies. Cheap,
-      too, since there is no backward pass through the backbone. Implementation
-      is a `training.freeze_backbone: true` flag in `train_model.py`, set
-      `requires_grad = False` before replacing `net.fc`
-- [ ] **A learning curve.** Train on 100 / 500 / 2,000 / 7,014 / 21,770 images
-      drawn from `isic_train.csv` with a fixed seed, evaluate every one on the
-      same frozen test set. This answers a question none of the experiments so
-      far can: **where does it saturate?** If the curve is already flat by a few
-      thousand images, that retrospectively explains experiment 3 — tripling the
-      corpus bought no accuracy because the corpus was never the binding
-      constraint. Subsample by lesion, not by row, or the smaller sets leak
-      against themselves
+- [x] **Linear probing vs full fine-tuning — done, and it loses everywhere.**
+      Frozen ImageNet features reach 0.648 top-1 against fine-tuning's 0.806 at
+      the full corpus, and the textbook crossover at small n never appears: the
+      probe trails at 120 images just as it does at 21,770. The domain gap from
+      ImageNet to dermoscopy is large enough that adapting the backbone is worth
+      more than the overfitting it risks. `training.freeze_backbone: true`
+- [x] **Learning curve — done, and it resolves experiment 3.** Quantity matters
+      (+10.5 points from 7,031 to 21,770 ISIC images, separated) and distribution
+      matters more (+9.5 points for 7,014 HAM10000 images over 7,031 ISIC ones at
+      equal volume, separated). Experiment 3 compared an in-distribution corpus
+      against 3x as much out-of-distribution data, and the two effects nearly
+      cancelled — which is why it read as "no change". Top-3 is not constant
+      either: 0.778 at 120 images rising to 0.977, so the flat top-3 across the
+      earlier eight configurations was a plateau they all sat on, not a property
+      of the model. See
+      [Experiment 6](results.md#experiment-6-a-learning-curve-and-what-it-says-about-experiment-3)
+- [ ] **Repeat the curve with several seeds per point.** Each point is currently
+      one run, which supports the large effects above but not the small wiggles —
+      the dip at 7,031 against 2,002 has touching intervals and may be seed noise
+
 
 Neither needs another dataset, and Derm7pt is specifically *not* a candidate for
 either: once it is the external test set, training on it in any form destroys the

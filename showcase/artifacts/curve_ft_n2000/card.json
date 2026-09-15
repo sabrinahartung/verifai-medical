@@ -1,0 +1,11 @@
+{
+  "id": "curve_ft_n2000",
+  "name": "ResNet18 fine-tuned, n=2,000",
+  "emoji": "📈",
+  "domain": "image",
+  "dataset": "ham10000-clean-test",
+  "description": "Trained on 2,000 images drawn from isic_train.csv by lesion, fine-tuned, and evaluated on the same 1,493 images as every other run. One point on a curve whose question is where more data stops helping.",
+  "sample": false,
+  "group": "Learning curve — how much data is enough?",
+  "lineage": "ResNet18 · fine-tuned"
+}
