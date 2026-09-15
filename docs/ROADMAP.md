@@ -461,6 +461,38 @@ information in the inputs, not about the models.
       differences under ~5 points, so several of these negative results are
       "not demonstrated" rather than "demonstrated absent"
 
+### Two experiments that need no new data
+
+Both are standard practice worth having done once, and both attack the finding
+that has survived everything else: top-3 accuracy sits at 0.975-0.977 across all
+eight configurations, so nothing tried so far has changed what the model *knows*.
+
+- [ ] **Linear probing vs full fine-tuning.** Freeze the backbone, train only the
+      classification head, same corpus and same frozen test set — one variable,
+      nothing else. It tests the standing hypothesis head-on: if frozen ImageNet
+      features land close to a fully fine-tuned model, backbone adaptation was
+      contributing little, which is exactly what a flat top-3 implies. Cheap,
+      too, since there is no backward pass through the backbone. Implementation
+      is a `training.freeze_backbone: true` flag in `train_model.py`, set
+      `requires_grad = False` before replacing `net.fc`
+- [ ] **A learning curve.** Train on 100 / 500 / 2,000 / 7,014 / 21,770 images
+      drawn from `isic_train.csv` with a fixed seed, evaluate every one on the
+      same frozen test set. This answers a question none of the experiments so
+      far can: **where does it saturate?** If the curve is already flat by a few
+      thousand images, that retrospectively explains experiment 3 — tripling the
+      corpus bought no accuracy because the corpus was never the binding
+      constraint. Subsample by lesion, not by row, or the smaller sets leak
+      against themselves
+
+Neither needs another dataset, and Derm7pt is specifically *not* a candidate for
+either: once it is the external test set, training on it in any form destroys the
+only independent measurement available.
+
+Its 7-point concept annotations are tempting for a Concept Bottleneck Model,
+which would sit close to the explainability pillar. That needs the concepts at
+training time, so it is a separate project with its own data, not a variation
+on this one.
+
 **Image directories are per-corpus, not merged.** ISIC images go to
 `data/raw/isic2019/`, self-contained, including re-materialized copies of the
 6,885 HAM10000 images that `isic_train.csv` shares — about 108 MB of duplication.
