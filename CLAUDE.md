@@ -64,6 +64,12 @@ reports a proportion without an interval is incomplete: with 13 images, a recall
 be taken on the interval rather than the point estimate, do so — privacy passes on the upper
 bound, and a fairness gap is only claimed when the groups' intervals separate.
 
+`docs/references.md` is the numbered bibliography. A new dataset or a metric taken from the
+literature gets an entry there and is cited as `[n]` where it is used — datasets especially,
+because several carry licence terms that constrain what the showcase may publish (Derm7pt's
+images may not be redistributed at all, so no derived image from it may be rendered). Mark an
+entry *Verified* only when it was taken from the authors' own page, not from memory.
+
 `docs/glossary.md` defines every term the project uses in plain language, with a worked
 example from the real run. When you add a metric or coin a term, add it there too — the
 dashboard is aimed at readers who have never seen a Responsible-AI report, and the

@@ -52,6 +52,7 @@ nav:
       - The six pillars: pillars.md
       - Split integrity: integrity.md
       - Current results: results.md
+  - References: references.md
   - Working on it:
       - Extending: extending.md
       - Development: development.md
