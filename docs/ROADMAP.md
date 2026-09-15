@@ -617,6 +617,61 @@ what is displayed; it never widens what may be compared.
 - `fairness/skin_tone_ita.py` recomputes the clean prediction that
   `performance/classification.py` already made — 7 forward passes per image, 2 redundant
 - `details["per_example"]` is written for every image, so `report.json` grows linearly
-- `ImageSample` carries only `id/path/label`, so the `sex`, `age`, `localization` and
-  `lesion_id` columns that HAM10000 provides have nowhere to live — real demographic
-  subgroups would beat the ITA pixel proxy
+- ~~`ImageSample` carries only `id/path/label`~~ — **closed.** Every extra manifest
+  column lands on `ImageSample.meta` (`image_id`, `lesion_id`, `dx_type`, `age`, `sex`,
+  `localization`), so real demographic subgroups are available today and would beat the
+  ITA pixel proxy. Nothing currently reads them except the integrity check
+
+
+---
+
+## Where this goes next: domains, and what each step demonstrates
+
+The README calls this framework domain-agnostic. That is currently a *claim* — all nine
+scenarios are skin lesions. Measured against the code, here is how true it actually is:
+
+| Module | Image-bound? |
+|---|---|
+| `export/artifacts.py` | not at all — zero image references |
+| `core/findings.py` | only the `Domain` literal, which already lists `image` / `text` / `tabular` / `llm` |
+| `core/run.py`, `core/integrity.py` | comments, plus an `id_key` that is already configurable |
+| `metrics/performance`, `robustness`, `privacy`, `integrity` | essentially domain-free |
+| `metrics/explainability/gradcam.py` | **genuinely image-bound** |
+| `metrics/fairness/skin_tone_ita.py` | **genuinely image-bound** (ITA is computed from pixels) |
+
+### A second imaging domain is nearly free
+
+Chest X-ray is still image classification: same `ImageClassifier`, same manifest format,
+same metrics, and Grad-CAM is standard in that literature. The work is a scenario plus one
+metric swap — `fairness.skin_tone` is meaningless on radiographs, so subgroup fairness
+would run on `sex`/`age`, which the loader already carries.
+
+**That is the cheapest way to turn the central architectural claim into a demonstration.**
+A tenth skin-lesion model adds nothing a reader cannot already see; one radiograph scenario
+proves the thing the README asserts.
+
+### Text is a real project, not a variation
+
+New loader, new model adapter, and the metrics need rethinking rather than porting:
+Grad-CAM becomes attention or SHAP, and "add noise" becomes typos and paraphrase. The
+core — findings, runner, exporter, comparison view — would not have to change, which is
+itself the interesting result.
+
+### More metrics per pillar
+
+The snapshot format makes this cheap: register the metric, re-run the scenarios, and the
+comparison view picks it up with no change to `app.py`. Worth doing not for the count but
+because every added metric makes the project's own argument concrete — that one number per
+pillar hides more than it shows, which is exactly what accuracy did to melanoma sensitivity.
+
+### Techniques this repo can currently show
+
+Done and evidenced by artifacts: leak-free grouped splitting, a guard that refuses to
+evaluate a contaminated split, cost-sensitive decision rules tuned on validation, focal
+loss, class weighting, balanced oversampling, transfer learning across two architectures,
+corpus scaling to 21,770 images, Wilson / Hanley-McNeil intervals, membership-inference
+attack, Grad-CAM with a deletion-faithfulness check, and — rarest of the list — three
+negative results reported as negative.
+
+Open, and each demonstrating a technique not yet covered: linear probing, a learning curve,
+metadata as model input, an external test set, and a second domain.
