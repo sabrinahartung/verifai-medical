@@ -203,6 +203,21 @@ def main(scenario_path: str) -> None:
     # --- model ---------------------------------------------------------------
     net = getattr(tvm, arch)(weights="DEFAULT" if tcfg.get("pretrained", True) else None)
     net.fc = torch.nn.Linear(net.fc.in_features, len(classes))
+
+    # Linear probing: keep the pretrained representation exactly as it is and fit
+    # only the classifier on top of it. That is 3,591 of ResNet18's 11,180,103
+    # parameters — 0.03% — which is why it still works when there are a few
+    # hundred training images and full fine-tuning would simply memorise them.
+    #
+    # It also answers a question fine-tuning cannot: if frozen features land close
+    # to a fine-tuned model, the pretrained representation already contained what
+    # the task needs, and adapting the backbone was not where the gain came from.
+    frozen = bool(tcfg.get("freeze_backbone", False))
+    if frozen:
+        for param in net.parameters():
+            param.requires_grad = False
+        for param in net.fc.parameters():
+            param.requires_grad = True
     net = net.to(device)
 
     # class weights: this data is 67% nevi, so plain CE would learn to say "nevi"
@@ -224,7 +239,16 @@ def main(scenario_path: str) -> None:
         sys.exit(f"unknown training.loss {loss_name!r} (expected 'ce' or 'focal')")
     print(f"  loss={loss_name}" + (f" gamma={gamma}" if loss_name == "focal" else "")
           + f"  class_weights={use_w}  sampling={sampling}")
-    opt = torch.optim.Adam(net.parameters(), lr=lr)
+    # Only what actually trains. Handing frozen tensors to the optimizer would
+    # not change them, but it hides whether the freeze took effect — and the
+    # printed count below is the cheapest way to see that it did.
+    trainable = [p for p in net.parameters() if p.requires_grad]
+    total_params = sum(p.numel() for p in net.parameters())
+    train_params = sum(p.numel() for p in trainable)
+    print(f"  backbone={'frozen (linear probe)' if frozen else 'fine-tuned'}  "
+          f"trainable {train_params:,}/{total_params:,} "
+          f"({100 * train_params / total_params:.3f}%)")
+    opt = torch.optim.Adam(trainable, lr=lr)
 
     out_dir = Path(tcfg.get("out_dir", "artifacts_training"))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -257,6 +281,10 @@ def main(scenario_path: str) -> None:
         "image_size": size, "class_weights": use_w,
         "loss": loss_name, "focal_gamma": gamma if loss_name == "focal" else None,
         "sampling": sampling,
+        # Which regime produced this checkpoint, and the count that proves it.
+        # Without these two the artifact cannot say whether a run was a probe.
+        "freeze_backbone": frozen,
+        "trainable_params": train_params, "total_params": total_params,
         "best_val_balanced_accuracy": round(best, 4), "history": history,
         "manifests": {s: f"{man_dir}/{prefix}_{s}.csv" for s in ("train", "val", "test")},
         "train_images": len(train_ds), "val_images": len(val_ds),

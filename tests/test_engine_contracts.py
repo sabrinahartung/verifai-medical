@@ -1070,3 +1070,106 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
         "the comparison view must track runs the lineage filter hides"
     assert "were scored on these same images" in source, \
         "and must say so on screen, next to the best column it undermines"
+
+
+# --- linear probing and the learning curve -----------------------------------
+def test_freezing_the_backbone_leaves_only_the_head_trainable():
+    """A probe that silently trains everything is a fine-tune with extra steps."""
+    torch = pytest.importorskip("torch")
+    import torchvision.models as tvm
+
+    net = tvm.resnet18(weights=None)
+    net.fc = torch.nn.Linear(net.fc.in_features, 7)
+    for p in net.parameters():
+        p.requires_grad = False
+    for p in net.fc.parameters():
+        p.requires_grad = True
+
+    trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    total = sum(p.numel() for p in net.parameters())
+    assert trainable == sum(p.numel() for p in net.fc.parameters())
+    assert trainable / total < 0.001, "a probe must train a vanishing share of the model"
+
+
+def test_learning_curve_subsets_nest_and_keep_their_class_shape():
+    """Each point must differ from the one below it only by *added* data.
+
+    Drawing every size independently would confound "more data" with "different
+    data", and a dip in the curve could mean either. Stratification matters just
+    as much: an unstratified 100-image subset of this corpus is mostly nevi, and
+    the curve would then measure class balance rather than size.
+    """
+    import csv as _csv
+    man = REPO / "data" / "manifests"
+    sizes = [100, 500, 2000, 7014]
+    paths = [man / f"isic_n{n}_train.csv" for n in sizes]
+    if not all(p.exists() for p in paths):
+        pytest.skip("subsets not built yet (scripts/build_subsets.py)")
+
+    lesions, mel_share = [], []
+    for p in paths:
+        rows = list(_csv.DictReader(p.open(encoding="utf-8")))
+        lesions.append({r["lesion_id"] for r in rows})
+        mel_share.append(sum(r["label"] == "melanoma" for r in rows) / len(rows))
+
+    for small, large, n_s, n_l in zip(lesions, lesions[1:], sizes, sizes[1:]):
+        assert small <= large, f"n={n_s} must nest inside n={n_l}"
+
+    full = list(_csv.DictReader((man / "isic_train.csv").open(encoding="utf-8")))
+    full_share = sum(r["label"] == "melanoma" for r in full) / len(full)
+    for n, share in zip(sizes, mel_share):
+        assert abs(share - full_share) < 0.06, \
+            f"n={n} melanoma share {share:.3f} drifts from the corpus {full_share:.3f}"
+
+
+def test_every_curve_point_is_scored_against_the_same_validation_set():
+    """Validation must not move with the training set.
+
+    `train_model.py` reads `<prefix>_val.csv`, so each subset prefix needs its
+    own copy — and it has to be a byte copy. Resampling it per size would score
+    each point against a different bar, and the curve would measure two things
+    at once while looking like it measured one.
+    """
+    import hashlib
+    man = REPO / "data" / "manifests"
+    base = man / "isic_val.csv"
+    if not base.exists():
+        pytest.skip("isic manifests not built yet")
+    want = hashlib.sha256(base.read_bytes()).hexdigest()
+    for n in (100, 500, 2000, 7014):
+        p = man / f"isic_n{n}_val.csv"
+        if not p.exists():
+            pytest.skip("subsets not built yet (scripts/build_subsets.py)")
+        assert hashlib.sha256(p.read_bytes()).hexdigest() == want, \
+            f"isic_n{n}_val.csv differs from isic_val.csv"
+
+
+def test_curve_scenarios_differ_only_in_size_and_regime():
+    """Generated, so that "everything else is held fixed" is code, not a comment."""
+    yaml = pytest.importorskip("yaml")
+    scen = REPO / "scenarios"
+    points = sorted(scen.glob("curve_*.yaml"))
+    if not points:
+        pytest.skip("curve scenarios not generated yet")
+
+    def flat(d, prefix=""):
+        out = {}
+        for k, v in d.items():
+            out.update(flat(v, f"{prefix}{k}.")) if isinstance(v, dict) \
+                else out.update({f"{prefix}{k}": v})
+        return out
+
+    loaded = {p.name: flat(yaml.safe_load(p.read_text(encoding="utf-8"))) for p in points}
+    allowed = {"training.manifest_prefix", "training.freeze_backbone", "training.lr",
+               "name", "model.id", "model.weights_path"}
+    names = sorted(loaded)
+    ref = loaded[names[0]]
+    for other in names[1:]:
+        differing = {k for k in set(ref) | set(loaded[other])
+                     if ref.get(k) != loaded[other].get(k)}
+        stray = {k for k in differing if not (k in allowed or k.startswith("card."))}
+        assert not stray, f"{names[0]} vs {other} differ in {stray}, which voids the curve"
+
+    # Every point is scored on the untouched evaluation set.
+    for name, sc in loaded.items():
+        assert sc["dataset.manifest"] == "data/manifests/ham10000_test.csv", name
