@@ -72,12 +72,12 @@ exact failure mode the project claims to prevent.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on every push to **`master`** (this repo's default branch —
+`.github/workflows/ci.yml` runs on every push to **`main`** (this repo's default branch —
 a workflow keyed to `main` would silently never fire):
 
 ```mermaid
 flowchart LR
-    P["push to master"] --> T["tests<br/><i>CPU torch + 38 contract tests</i>"]
+    P["push to main"] --> T["tests<br/><i>CPU torch + 69 contract tests</i>"]
     T -->|pass| D["mkdocs build --strict"]
     T -->|fail| X["✋ nothing published"]
     D --> G["GitHub Pages"]

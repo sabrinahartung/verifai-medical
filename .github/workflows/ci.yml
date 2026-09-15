@@ -2,9 +2,9 @@ name: tests & docs
 
 on:
   push:
-    branches: [master]        # this repo's default branch is master, not main
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -38,7 +38,7 @@ jobs:
 
   docs:
     needs: test               # never publish docs describing code that fails
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
