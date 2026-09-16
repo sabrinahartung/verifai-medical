@@ -9,18 +9,74 @@
       "metric": "split_leakage",
       "domain": "image",
       "value": {
-        "status": "not_checkable",
-        "reason": "no training manifests are declared"
+        "n_test": 1003,
+        "n_train": 8522,
+        "group_key": "lesion_id",
+        "id_key": "image_id",
+        "shared_groups": 0,
+        "shared_ids": 0,
+        "affected_rows": 0,
+        "contamination": 0.0,
+        "verifiable": true,
+        "clean": true,
+        "example_shared_groups": [],
+        "example_shared_ids": []
       },
-      "verdict": "unavailable",
-      "summary": "Split integrity could not be verified: no training manifests are declared. Every number in this report therefore rests on an unverified assumption — that the model never saw this data.",
+      "verdict": "measured",
+      "summary": "Clean split: none of the 1,003 test images shares a lesion or an image with the 8,522 the model trained on.",
       "details": {
+        "better": {
+          "contamination": "lower",
+          "shared_groups": "lower",
+          "shared_ids": "lower"
+        },
         "explain": {
           "what": "A test set only means something if the model has never seen it. This compares the evaluation set against everything the model trained on — not just image by image, but by lesion, because the same lesion is often photographed several times and a second photo of a memorised lesion is not a fair question.",
           "how": "The marker sits on the share of test images that are contaminated. At 0 the split is clean and every other number in this report can be read at face value. Anything above 0 means part of the score is recall rather than generalisation, and the accuracy above is inflated by roughly that share.",
           "limits": "This checks identifiers, not pixels. Two different photographs of genuinely different lesions that happen to look alike are not caught, and neither is duplication that carries no shared lesion_id. A clean result here means no *declared* overlap, which is a floor on trustworthiness, not a ceiling."
         },
-        "note": "Declare integrity.train_manifests (or a training: block) to enable."
+        "train_manifests": [
+          "data/manifests/ham10000_train.csv",
+          "data/manifests/ham10000_val.csv"
+        ],
+        "test_manifest": "/Users/sabrina/Development/verifai-medical/data/manifests/derm7pt_test.csv",
+        "chart": {
+          "kind": "scale",
+          "title": "Share of the test set seen during training",
+          "value": 0.0,
+          "min": 0,
+          "max": 100,
+          "ticks": [
+            0,
+            1,
+            10,
+            100
+          ],
+          "tick_labels": [
+            "0%",
+            "1%",
+            "10%",
+            "100%"
+          ],
+          "bands": [
+            {
+              "to": 1,
+              "label": "clean",
+              "color": "#CDE8D5"
+            },
+            {
+              "to": 10,
+              "label": "contaminated",
+              "color": "#FAECC8"
+            },
+            {
+              "to": 100,
+              "label": "invalid",
+              "color": "#F5D3CE"
+            }
+          ],
+          "value_label": "0% means every other number in this report can be read at face value. Above 0, part of the score is memorisation."
+        }
       },
       "plots": []
     },
@@ -16662,5 +16718,5 @@
     },
     "label": "external-derm7pt-clean"
   },
-  "created_at": "2026-09-16T06:18:38.556735+00:00"
+  "created_at": "2026-09-16T06:52:56.672470+00:00"
 }

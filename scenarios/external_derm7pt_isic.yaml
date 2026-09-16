@@ -24,7 +24,14 @@
 card:
   group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · ISIC 2019 · external
-  name: Skin-Lesion ResNet18 (ISIC 2019) — external
+  card:
+  group: External validation — Derm7pt (unseen clinic)
+  lineage: ResNet18 · external validation (Derm7pt)
+  card:
+  group: External validation — Derm7pt (unseen clinic)
+  lineage: ResNet18 · external validation (Derm7pt)
+  card: null
+  name: ISIC 2019 corpus — as deployed
   emoji: 🌍
   description: 'The ISIC-trained model on Derm7pt, unchanged. The honest number: what
     happens if you deploy it as it is on a population it has never seen.'
@@ -36,8 +43,11 @@ dataset:
   source: Derm7pt (Kawahara et al. 2019) — external
 domain: image
 integrity:
-  enforce: false
+  enforce: true
   group_key: lesion_id
+  train_manifests:
+  - data/manifests/isic_train.csv
+  - data/manifests/isic_val.csv
 metrics:
 - integrity.split_leakage
 - performance.classification

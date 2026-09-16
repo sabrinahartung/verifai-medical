@@ -24,7 +24,14 @@
 card:
   group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · ISIC 2019 · melanoma x30 · external
-  name: Skin-Lesion ResNet18 (ISIC 2019, high sensitivity) — external
+  card:
+  group: External validation — Derm7pt (unseen clinic)
+  lineage: ResNet18 · external validation (Derm7pt)
+  card:
+  group: External validation — Derm7pt (unseen clinic)
+  lineage: ResNet18 · external validation (Derm7pt)
+  card: null
+  name: ISIC 2019 · melanoma ×30 (rule tuned on HAM10000)
   emoji: 🌍
   description: The best internal melanoma detector, with a weight tuned on HAM10000
     validation. Whether that weight still holds on another population is its own question.
@@ -36,8 +43,11 @@ dataset:
   source: Derm7pt (Kawahara et al. 2019) — external
 domain: image
 integrity:
-  enforce: false
+  enforce: true
   group_key: lesion_id
+  train_manifests:
+  - data/manifests/isic_train.csv
+  - data/manifests/isic_val.csv
 metrics:
 - integrity.split_leakage
 - performance.classification
