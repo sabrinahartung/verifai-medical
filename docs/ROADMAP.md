@@ -457,9 +457,26 @@ information in the inputs, not about the models.
       Note it also raises a fairness question worth stating up front: conditioning
       on sex or age makes the model's subgroup behaviour a design choice rather
       than an artefact
-- [ ] An external test set remains the other half. 163 melanomas cannot resolve
-      differences under ~5 points, so several of these negative results are
-      "not demonstrated" rather than "demonstrated absent"
+- [x] **External test set — done, and it inverts the internal ranking.** Derm7pt
+      [4], 1,003 cases and 252 melanoma, no retraining. Read on Youden's J,
+      because sensitivity alone says the models survived and they did not: a
+      model can raise sensitivity by calling melanoma more often, which is what
+      the shift caused. The single-archive model collapses (ΔJ −0.244) while the
+      mixed-corpus one holds (−0.047), confirming the prediction the learning
+      curve left open. The linear probe — weakest internally — is the only
+      configuration that does not degrade at all (+0.009). And the decision
+      weight tuned on HAM10000 validation does not transfer: 0.964 external
+      sensitivity looks untouched while specificity falls to 0.230, so J drops
+      0.633 → 0.195, barely above answering "melanoma" every time. See
+      [Experiment 7](results.md#experiment-7-the-first-numbers-not-measured-on-ham10000)
+- [ ] **Re-tune the decision rule on external validation data.** Experiment 7
+      showed the HAM10000-tuned weight is not portable. A weight tuned on a held-
+      out part of Derm7pt would say how much of the collapse is the rule rather
+      than the model — but it costs the clean one-shot external measurement, so
+      split the external set first and decide explicitly which half pays for it
+- [ ] A second external set, to say anything general. One archive supports "more
+      robust against *this* archive", not a law
+
 
 ### Two experiments that need no new data
 

@@ -1,0 +1,11 @@
+{
+  "id": "external_derm7pt_probe",
+  "name": "Skin-Lesion ResNet18 (linear probe) — external",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "Frozen ImageNet features with only a trained head. Least adapted to any one archive — so it may degrade least, even though it is weakest internally.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ResNet18 · linear probe · external"
+}

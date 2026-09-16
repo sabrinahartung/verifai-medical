@@ -470,6 +470,85 @@ domains, not a law.
     curve intended to support claims about its own shape needs several seeds per point; this
     one supports the large effects above and not the small wiggles.
 
+## Experiment 7 — the first numbers not measured on HAM10000
+
+Every result so far lived on one test set. Derm7pt [4] is a different clinic, a different
+camera and a different population, and no model here has ever trained on it: 1,003 usable
+cases, **252 melanoma**, evaluated with the same checkpoints and no retraining.
+
+### Read specificity, or the result inverts
+
+Melanoma sensitivity alone says the models mostly survived — two of four even improved. They
+did not. A model can raise sensitivity by doing nothing more than calling melanoma more
+often, and that is exactly what the domain shift caused. Youden's J (sensitivity +
+specificity − 1) does not fall for it; J = 0 is guessing.
+
+| Configuration | Sens int → ext | Spec int → ext | **J int → ext** | **ΔJ** |
+|---|---|---|---:|---:|
+| **linear probe** | 0.478 → 0.798 | 0.879 → 0.569 | 0.357 → 0.366 | **+0.009** |
+| **ISIC (mixed corpus)** | 0.620 → 0.722 | 0.925 → 0.775 | 0.544 → 0.497 | **−0.047** |
+| clean (HAM10000 only) | 0.638 → 0.460 | 0.920 → 0.854 | 0.558 → 0.314 | **−0.244** |
+| ISIC · melanoma ×30 | 0.976 → 0.964 | 0.657 → 0.230 | 0.633 → 0.195 | **−0.438** |
+
+### A mixed training corpus buys robustness to an archive it never saw
+
+This was the falsifiable prediction left over from the learning curve, which showed
+in-distribution images were worth roughly twice as much per image. The flip side holds:
+
+- **Trained on one archive** (HAM10000): J collapses by **0.244**.
+- **Trained on several** (ISIC 2019 = HAM10000 + BCN20000 + MSK): J moves by **0.047**.
+
+The mixed corpus barely outperformed the single-archive one *internally* — +1.0 point of
+top-1, intervals overlapping, which experiment 3 reported as no established change. On a new
+population it is the difference between holding and collapsing. Diversity in training data
+bought nothing measurable where it was tested and a great deal where it was not, which is
+precisely the kind of benefit an internal test set cannot price.
+
+### The least adapted model is the most portable
+
+The linear probe is the weakest configuration in the project internally — J = 0.357 against
+0.544 for the fine-tuned model — and it is the **only one that does not degrade at all**.
+Frozen ImageNet features never specialised to HAM10000, so there is nothing HAM-specific to
+unlearn. The internal ranking inverts under domain shift, and a project that measured only
+internally would have discarded the most transferable model it had.
+
+### A decision rule tuned on one population does not transfer
+
+`melanoma ×30` was tuned on HAM10000 validation and reaches 0.976 sensitivity internally. It
+reports **0.964 externally** — which reads as untouched, and is the single most misleading
+number in this table. Its specificity is **0.230**: it calls melanoma on more than three
+quarters of the lesions that are not melanoma. J falls from 0.633 to 0.195, barely above the
+0.0 of answering "melanoma" every time.
+
+The rule is not portable, and sensitivity alone cannot show that. Any threshold must be
+re-tuned on validation data from the population it will run on.
+
+### Two things that turned out not to matter
+
+**The missing class.** Derm7pt contains no actinic keratoses, and the models could waste
+predictions on a class that cannot be right. Running the same model with the class switched
+off in the decision rule (`decision_weights: {actinic_keratoses: 0}`) changed top-1 by
+**+0.004** and melanoma sensitivity by **0.000**. A legitimate worry, measured and dismissed.
+
+**Raw PPV, which pointed the wrong way.** Precision appeared to *improve* externally for
+every model (ISIC 0.502 → 0.518). It did not: melanoma prevalence is 25.1% in Derm7pt against
+10.9% in the internal set, 2.3× higher, and PPV rises with prevalence on its own. Recomputed
+at the internal prevalence it collapses — 0.502 → **0.282** for ISIC, 0.259 → **0.133** for
+×30. Comparing raw PPV across populations with different base rates is not a comparison.
+
+!!! warning "What this does and does not establish"
+    One external dataset is one data point. "The mixed corpus is more robust" is supported
+    against *this* archive, not as a general claim.
+
+    The overlap check reports zero shared identifiers, but Derm7pt and ISIC use disjoint
+    naming schemes, so that is structural rather than measured. It rules out the same file
+    appearing twice. It cannot rule out the same physical lesion photographed in both
+    archives, and no identifier comparison can.
+
+    Balanced accuracy is averaged over six classes externally and seven internally. The
+    finding states this; the two figures are not comparable. Melanoma sensitivity,
+    specificity and J do not depend on which other classes exist.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

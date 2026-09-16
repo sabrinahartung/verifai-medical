@@ -1,0 +1,11 @@
+{
+  "id": "external_derm7pt_isic_highsens",
+  "name": "Skin-Lesion ResNet18 (ISIC 2019, high sensitivity) — external",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "The best internal melanoma detector, with a weight tuned on HAM10000 validation. Whether that weight still holds on another population is its own question.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ResNet18 · ISIC 2019 · melanoma x30 · external"
+}

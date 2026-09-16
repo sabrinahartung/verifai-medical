@@ -1,0 +1,63 @@
+# EXTERNAL evaluation on Derm7pt [4] — a different clinic, camera and population.
+#
+# The first number in this project that is not measured on HAM10000. Everything
+# before it answered "does this configuration beat that one on these images";
+# this answers whether any of it works somewhere else.
+#
+# No retraining. Same checkpoint, different evaluation manifest — so this lands in
+# its OWN comparability group (different content hash), which is correct: internal
+# and external numbers must not sit in one table.
+#
+# Read the melanoma metrics. Sensitivity and PPV do not depend on which other
+# classes exist, so they compare directly with the internal runs. Balanced accuracy
+# does not: Derm7pt contains no actinic keratoses, so it averages six classes
+# instead of seven, and the finding says so.
+#
+# `explainability.gradcam` is absent on purpose, not by oversight. Derm7pt's licence
+# forbids redistributing the images, and an overlay is a derived work — so none is
+# rendered rather than rendered and hidden. Privacy is absent too: the membership
+# attack needs a members set drawn from what this model trained on, and that is a
+# different question from the one this scenario asks.
+#
+#   1. python scripts/build_derm7pt_manifest.py
+#   2. python scripts/run_scenario.py scenarios/external_derm7pt_isic.yaml
+card:
+  group: External validation — Derm7pt (unseen clinic)
+  lineage: ResNet18 · ISIC 2019 · external
+  name: Skin-Lesion ResNet18 (ISIC 2019) — external
+  emoji: 🌍
+  description: 'The ISIC-trained model on Derm7pt, unchanged. The honest number: what
+    happens if you deploy it as it is on a population it has never seen.'
+dataset:
+  id: derm7pt-external
+  images_dir: data/raw/derm7pt_release_v0/images
+  loader: verifai.datasets.loaders:load_image_manifest
+  manifest: data/manifests/derm7pt_test.csv
+  source: Derm7pt (Kawahara et al. 2019) — external
+domain: image
+integrity:
+  enforce: false
+  group_key: lesion_id
+metrics:
+- integrity.split_leakage
+- performance.classification
+- robustness.corruption
+- fairness.skin_tone
+model:
+  arch: resnet18
+  cam_layer: layer4[-1]
+  classes:
+  - actinic_keratoses
+  - basal_cell_carcinoma
+  - benign_keratosis-like_lesions
+  - dermatofibroma
+  - melanocytic_Nevi
+  - melanoma
+  - vascular_lesions
+  device: auto
+  id: external-derm7pt-isic
+  loader: verifai.models.image:load
+  weights_path: artifacts_training/skin_cancer_isic.pt
+name: external_derm7pt_isic
+sample_size: null
+seed: 42

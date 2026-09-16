@@ -1,0 +1,1004 @@
+filename,image_id,lesion_id,label,dx_type,age,sex,localization
+A1l/Aal002.jpg,Aal002,derm7pt_case_762,melanoma,,,male,posterior torso
+A1l/Aal002bis.jpg,Aal002bis,derm7pt_case_763,melanoma,,,male,upper extremity
+A1l/Aal004.jpg,Aal004,derm7pt_case_258,melanocytic_Nevi,,,male,posterior torso
+A1l/Aal006.jpg,Aal006,derm7pt_case_278,melanocytic_Nevi,,,male,posterior torso
+A1l/Aal008.jpg,Aal008,derm7pt_case_282,melanocytic_Nevi,,,male,anterior torso
+A1l/Aal010.jpg,Aal010,derm7pt_case_228,melanocytic_Nevi,,,male,posterior torso
+A1l/Aal012.jpg,Aal012,derm7pt_case_229,melanocytic_Nevi,,,male,anterior torso
+A1l/Aal014.jpg,Aal014,derm7pt_case_534,dermatofibroma,,,female,lower extremity
+A1l/Aal018.jpg,Aal018,derm7pt_case_535,dermatofibroma,,,female,upper extremity
+A1l/Aal020.jpg,Aal020,derm7pt_case_536,dermatofibroma,,,male,lower extremity
+A1l/Aal024.jpg,Aal024,derm7pt_case_540,dermatofibroma,,,male,upper extremity
+A1l/Aal028.jpg,Aal028,derm7pt_case_543,dermatofibroma,,,male,upper extremity
+A1l/Aal030.jpg,Aal030,derm7pt_case_544,dermatofibroma,,,female,upper extremity
+A1l/Aal038.jpg,Aal038,derm7pt_case_545,dermatofibroma,,,female,upper extremity
+A1l/Aal044.jpg,Aal044,derm7pt_case_196,melanocytic_Nevi,,,female,palms/soles
+A1l/Aal046.jpg,Aal046,derm7pt_case_197,melanocytic_Nevi,,,female,palms/soles
+A1l/Aal048.jpg,Aal048,derm7pt_case_198,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal052.jpg,Aal052,derm7pt_case_199,melanocytic_Nevi,,,female,palms/soles
+A1l/Aal056.jpg,Aal056,derm7pt_case_200,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal062.jpg,Aal062,derm7pt_case_201,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal064.jpg,Aal064,derm7pt_case_202,melanocytic_Nevi,,,female,palms/soles
+A1l/Aal066.jpg,Aal066,derm7pt_case_203,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal068.jpg,Aal068,derm7pt_case_52,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal078.jpg,Aal078,derm7pt_case_204,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal086.jpg,Aal086,derm7pt_case_205,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal088.jpg,Aal088,derm7pt_case_206,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal090.jpg,Aal090,derm7pt_case_207,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal094.jpg,Aal094,derm7pt_case_208,melanocytic_Nevi,,,male,palms/soles
+A1l/Aal096.jpg,Aal096,derm7pt_case_209,melanocytic_Nevi,,,female,palms/soles
+A1l/Aal099bis.jpg,Aal099bis,derm7pt_case_210,melanocytic_Nevi,,,male,palms/soles
+A2l/Abl101.jpg,Abl101,derm7pt_case_176,melanocytic_Nevi,,,female,palms/soles
+A2l/Abl108.jpg,Abl108,derm7pt_case_177,melanocytic_Nevi,,,male,palms/soles
+A2l/Abl112.jpg,Abl112,derm7pt_case_178,melanocytic_Nevi,,,female,palms/soles
+A2l/Abl116.jpg,Abl116,derm7pt_case_179,melanocytic_Nevi,,,female,palms/soles
+A2l/Abl118.jpg,Abl118,derm7pt_case_180,melanocytic_Nevi,,,female,palms/soles
+A2l/Abl121.jpg,Abl121,derm7pt_case_181,melanocytic_Nevi,,,male,palms/soles
+A2l/Abl123.jpg,Abl123,derm7pt_case_182,melanocytic_Nevi,,,male,palms/soles
+A2l/Abl127.jpg,Abl127,derm7pt_case_183,melanocytic_Nevi,,,male,lower extremity
+A2l/Abl129.jpg,Abl129,derm7pt_case_184,melanocytic_Nevi,,,female,palms/soles
+A2l/Abl135.jpg,Abl135,derm7pt_case_212,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl137.jpg,Abl137,derm7pt_case_213,melanocytic_Nevi,,,female,anterior torso
+A2l/Abl139.jpg,Abl139,derm7pt_case_214,melanocytic_Nevi,,,female,posterior torso
+A2l/Abl141.jpg,Abl141,derm7pt_case_215,melanocytic_Nevi,,,female,anterior torso
+A2l/Abl143.jpg,Abl143,derm7pt_case_230,melanocytic_Nevi,,,male,anterior torso
+A2l/Abl145.jpg,Abl145,derm7pt_case_231,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl147.jpg,Abl147,derm7pt_case_235,melanocytic_Nevi,,,male,lower extremity
+A2l/Abl151.jpg,Abl151,derm7pt_case_232,melanocytic_Nevi,,,female,
+A2l/Abl153.jpg,Abl153,derm7pt_case_233,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl155.jpg,Abl155,derm7pt_case_234,melanocytic_Nevi,,,female,anterior torso
+A2l/Abl157.jpg,Abl157,derm7pt_case_236,melanocytic_Nevi,,,female,anterior torso
+A2l/Abl161.jpg,Abl161,derm7pt_case_237,melanocytic_Nevi,,,female,lower extremity
+A2l/Abl163.jpg,Abl163,derm7pt_case_238,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl165.jpg,Abl165,derm7pt_case_239,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl167.jpg,Abl167,derm7pt_case_240,melanocytic_Nevi,,,female,posterior torso
+A2l/Abl168.jpg,Abl168,derm7pt_case_241,melanocytic_Nevi,,,female,anterior torso
+A2l/Abl171.jpg,Abl171,derm7pt_case_242,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl175.jpg,Abl175,derm7pt_case_243,melanocytic_Nevi,,,female,
+A2l/Abl177.jpg,Abl177,derm7pt_case_244,melanocytic_Nevi,,,female,
+A2l/Abl179.jpg,Abl179,derm7pt_case_245,melanocytic_Nevi,,,female,lower extremity
+A2l/Abl183.jpg,Abl183,derm7pt_case_493,melanocytic_Nevi,,,male,lower extremity
+A2l/Abl185.jpg,Abl185,derm7pt_case_246,melanocytic_Nevi,,,female,upper extremity
+A2l/Abl189.jpg,Abl189,derm7pt_case_516,melanocytic_Nevi,,,female,posterior torso
+A2l/Abl191.jpg,Abl191,derm7pt_case_216,melanocytic_Nevi,,,female,posterior torso
+A2l/Abl193.jpg,Abl193,derm7pt_case_490,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl195.jpg,Abl195,derm7pt_case_247,melanocytic_Nevi,,,male,posterior torso
+A2l/Abl197.jpg,Abl197,derm7pt_case_537,dermatofibroma,,,female,lower extremity
+A3l/Acl201.jpg,Acl201,derm7pt_case_185,melanocytic_Nevi,,,male,palms/soles
+A3l/Acl203.jpg,Acl203,derm7pt_case_517,melanocytic_Nevi,,,female,anterior torso
+A3l/Acl205.jpg,Acl205,derm7pt_case_958,benign_keratosis-like_lesions,,,female,posterior torso
+A3l/Acl207.jpg,Acl207,derm7pt_case_902,melanocytic_Nevi,,,male,lower extremity
+A3l/Acl209.jpg,Acl209,derm7pt_case_538,dermatofibroma,,,female,upper extremity
+A3l/Acl211.jpg,Acl211,derm7pt_case_539,dermatofibroma,,,male,lower extremity
+A3l/Acl215.jpg,Acl215,derm7pt_case_248,melanocytic_Nevi,,,male,posterior torso
+A3l/Acl217.jpg,Acl217,derm7pt_case_249,melanocytic_Nevi,,,male,anterior torso
+A3l/Acl219.jpg,Acl219,derm7pt_case_217,melanocytic_Nevi,,,male,posterior torso
+A3l/Acl221.jpg,Acl221,derm7pt_case_250,melanocytic_Nevi,,,male,lower extremity
+A3l/Acl223.jpg,Acl223,derm7pt_case_218,melanocytic_Nevi,,,female,
+A3l/Acl225.jpg,Acl225,derm7pt_case_903,melanocytic_Nevi,,,female,upper extremity
+A3l/Acl227.jpg,Acl227,derm7pt_case_952,benign_keratosis-like_lesions,,,male,posterior torso
+A3l/Acl229.jpg,Acl229,derm7pt_case_953,benign_keratosis-like_lesions,,,male,upper extremity
+A3l/Acl231.jpg,Acl231,derm7pt_case_541,dermatofibroma,,,female,lower extremity
+A3l/Acl233.jpg,Acl233,derm7pt_case_542,dermatofibroma,,,female,
+A3l/Acl235.jpg,Acl235,derm7pt_case_251,melanocytic_Nevi,,,female,posterior torso
+A3l/Acl237.jpg,Acl237,derm7pt_case_999,vascular_lesions,,,female,lower extremity
+A3l/Acl239.jpg,Acl239,derm7pt_case_252,melanocytic_Nevi,,,male,upper extremity
+A3l/Acl241.jpg,Acl241,derm7pt_case_253,melanocytic_Nevi,,,male,anterior torso
+A3l/Acl243.jpg,Acl243,derm7pt_case_186,melanocytic_Nevi,,,female,palms/soles
+A3l/Acl245.jpg,Acl245,derm7pt_case_187,melanocytic_Nevi,,,male,palms/soles
+A3l/Acl247.jpg,Acl247,derm7pt_case_188,melanocytic_Nevi,,,female,palms/soles
+A3l/Acl249.jpg,Acl249,derm7pt_case_189,melanocytic_Nevi,,,male,palms/soles
+A3l/Acl251.jpg,Acl251,derm7pt_case_190,melanocytic_Nevi,,,male,palms/soles
+A3l/Acl253.jpg,Acl253,derm7pt_case_191,melanocytic_Nevi,,,female,palms/soles
+A3l/Acl259.jpg,Acl259,derm7pt_case_254,melanocytic_Nevi,,,female,anterior torso
+A3l/Acl261.jpg,Acl261,derm7pt_case_954,benign_keratosis-like_lesions,,,female,anterior torso
+A3l/Acl263.jpg,Acl263,derm7pt_case_518,melanocytic_Nevi,,,female,anterior torso
+A3l/Acl264.jpg,Acl264,derm7pt_case_192,melanocytic_Nevi,,,male,palms/soles
+A3l/Acl271.jpg,Acl271,derm7pt_case_255,melanocytic_Nevi,,,male,
+A3l/Acl279.jpg,Acl279,derm7pt_case_256,melanocytic_Nevi,,,male,posterior torso
+A3l/Acl281.jpg,Acl281,derm7pt_case_219,melanocytic_Nevi,,,female,lower extremity
+A3l/Acl283.jpg,Acl283,derm7pt_case_220,melanocytic_Nevi,,,male,anterior torso
+A3l/Acl285.jpg,Acl285,derm7pt_case_476,melanocytic_Nevi,,,male,posterior torso
+A3l/Acl287.jpg,Acl287,derm7pt_case_221,melanocytic_Nevi,,,female,posterior torso
+A3l/Acl295.jpg,Acl295,derm7pt_case_904,melanocytic_Nevi,,,male,posterior torso
+A3l/Acl299.jpg,Acl299,derm7pt_case_257,melanocytic_Nevi,,,male,lower extremity
+Adl/Adl301.jpg,Adl301,derm7pt_case_611,melanoma,,,male,posterior torso
+Adl/Adl305.jpg,Adl305,derm7pt_case_688,melanoma,,,female,lower extremity
+Adl/Adl311.jpg,Adl311,derm7pt_case_259,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl313.jpg,Adl313,derm7pt_case_689,melanoma,,,male,posterior torso
+Adl/Adl319.jpg,Adl319,derm7pt_case_222,melanocytic_Nevi,,,male,anterior torso
+Adl/Adl321.jpg,Adl321,derm7pt_case_260,melanocytic_Nevi,,,male,lower extremity
+Adl/Adl325.jpg,Adl325,derm7pt_case_53,melanocytic_Nevi,,,male,upper extremity
+Adl/Adl329.jpg,Adl329,derm7pt_case_261,melanocytic_Nevi,,,male,lower extremity
+Adl/Adl331.jpg,Adl331,derm7pt_case_519,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl333.jpg,Adl333,derm7pt_case_193,melanocytic_Nevi,,,male,palms/soles
+Adl/Adl335.jpg,Adl335,derm7pt_case_262,melanocytic_Nevi,,,female,upper extremity
+Adl/Adl337bis.jpg,Adl337bis,derm7pt_case_520,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl340.jpg,Adl340,derm7pt_case_263,melanocytic_Nevi,,,female,posterior torso
+Adl/Adl344.jpg,Adl344,derm7pt_case_194,melanocytic_Nevi,,,female,palms/soles
+Adl/Adl346.jpg,Adl346,derm7pt_case_264,melanocytic_Nevi,,,male,anterior torso
+Adl/Adl348.jpg,Adl348,derm7pt_case_265,melanocytic_Nevi,,,male,posterior torso
+Adl/Adl350.jpg,Adl350,derm7pt_case_266,melanocytic_Nevi,,,male,posterior torso
+Adl/Adl356.jpg,Adl356,derm7pt_case_267,melanocytic_Nevi,,,male,anterior torso
+Adl/Adl358.jpg,Adl358,derm7pt_case_905,melanocytic_Nevi,,,female,lower extremity
+Adl/Adl362.jpg,Adl362,derm7pt_case_227,melanocytic_Nevi,,,male,lower extremity
+Adl/Adl366.jpg,Adl366,derm7pt_case_268,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl371.jpg,Adl371,derm7pt_case_269,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl373.jpg,Adl373,derm7pt_case_546,dermatofibroma,,,female,upper extremity
+Adl/Adl375.jpg,Adl375,derm7pt_case_195,melanocytic_Nevi,,,male,palms/soles
+Adl/Adl377.jpg,Adl377,derm7pt_case_491,melanocytic_Nevi,,,male,posterior torso
+Adl/Adl379.jpg,Adl379,derm7pt_case_24,basal_cell_carcinoma,,,female,head/neck
+Adl/Adl381.jpg,Adl381,derm7pt_case_174,melanocytic_Nevi,,,female,anterior torso
+Adl/Adl383.jpg,Adl383,derm7pt_case_555,benign_keratosis-like_lesions,,,female,anterior torso
+Adl/Adl385.jpg,Adl385,derm7pt_case_556,benign_keratosis-like_lesions,,,male,upper extremity
+Adl/Adl387.jpg,Adl387,derm7pt_case_175,melanocytic_Nevi,,,female,posterior torso
+Adl/Adl387bis.jpg,Adl387bis,derm7pt_case_557,benign_keratosis-like_lesions,,,male,anterior torso
+Adl/Adl389.jpg,Adl389,derm7pt_case_1011,melanoma,,,female,lower extremity
+Adl/Adl391.jpg,Adl391,derm7pt_case_223,melanocytic_Nevi,,,female,upper extremity
+Adl/Adl395.jpg,Adl395,derm7pt_case_906,melanocytic_Nevi,,,female,lower extremity
+Adl/Adl399.jpg,Adl399,derm7pt_case_907,melanocytic_Nevi,,,male,upper extremity
+Ael/Ael401.jpg,Ael401,derm7pt_case_908,melanocytic_Nevi,,,male,posterior torso
+Ael/Ael405.jpg,Ael405,derm7pt_case_909,melanocytic_Nevi,,,male,upper extremity
+Ael/Ael407.jpg,Ael407,derm7pt_case_910,melanocytic_Nevi,,,female,lower extremity
+Ael/Ael409.jpg,Ael409,derm7pt_case_955,benign_keratosis-like_lesions,,,male,upper extremity
+Ael/Ael413.jpg,Ael413,derm7pt_case_270,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael415.jpg,Ael415,derm7pt_case_558,benign_keratosis-like_lesions,,,female,head/neck
+Ael/Ael419.jpg,Ael419,derm7pt_case_271,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael421.jpg,Ael421,derm7pt_case_901,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael425.jpg,Ael425,derm7pt_case_272,melanocytic_Nevi,,,female,anterior torso
+Ael/Ael427.jpg,Ael427,derm7pt_case_956,benign_keratosis-like_lesions,,,female,posterior torso
+Ael/Ael431.jpg,Ael431,derm7pt_case_273,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael433.jpg,Ael433,derm7pt_case_274,melanocytic_Nevi,,,male,anterior torso
+Ael/Ael435.jpg,Ael435,derm7pt_case_224,melanocytic_Nevi,,,male,posterior torso
+Ael/Ael442.jpg,Ael442,derm7pt_case_54,melanocytic_Nevi,,,male,anterior torso
+Ael/Ael444.jpg,Ael444,derm7pt_case_55,melanocytic_Nevi,,,female,posterior torso
+Ael/Ael446.jpg,Ael446,derm7pt_case_56,melanocytic_Nevi,,,female,head/neck
+Ael/Ael448.jpg,Ael448,derm7pt_case_225,melanocytic_Nevi,,,female,head/neck
+Ael/Ael452.jpg,Ael452,derm7pt_case_275,melanocytic_Nevi,,,female,posterior torso
+Ael/Ael455.jpg,Ael455,derm7pt_case_25,basal_cell_carcinoma,,,male,head/neck
+Ael/Ael459.jpg,Ael459,derm7pt_case_1000,vascular_lesions,,,male,palms/soles
+Ael/Ael465.jpg,Ael465,derm7pt_case_911,melanocytic_Nevi,,,female,posterior torso
+Ael/Ael467.jpg,Ael467,derm7pt_case_276,melanocytic_Nevi,,,female,anterior torso
+Ael/Ael469.jpg,Ael469,derm7pt_case_26,basal_cell_carcinoma,,,female,head/neck
+Ael/Ael471.jpg,Ael471,derm7pt_case_277,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael475.jpg,Ael475,derm7pt_case_492,melanocytic_Nevi,,,male,lower extremity
+Ael/Ael477.jpg,Ael477,derm7pt_case_211,melanocytic_Nevi,,,male,posterior torso
+Ael/Ael481.jpg,Ael481,derm7pt_case_226,melanocytic_Nevi,,,female,anterior torso
+Ael/Ael484.jpg,Ael484,derm7pt_case_912,melanocytic_Nevi,,,male,anterior torso
+Ael/Ael488.jpg,Ael488,derm7pt_case_957,benign_keratosis-like_lesions,,,female,anterior torso
+Ael/Ael490.jpg,Ael490,derm7pt_case_690,melanoma,,,female,upper extremity
+Ael/Ael492.jpg,Ael492,derm7pt_case_691,melanoma,,,female,head/neck
+Ael/Ael494.jpg,Ael494,derm7pt_case_764,melanoma,,,female,anterior torso
+Ael/Ael496.jpg,Ael496,derm7pt_case_612,melanoma,,,male,posterior torso
+Ael/Ael498.jpg,Ael498,derm7pt_case_811,melanoma,,,male,posterior torso
+Ael/Ael502.jpg,Ael502,derm7pt_case_27,basal_cell_carcinoma,,,female,posterior torso
+Ael/Ael504.jpg,Ael504,derm7pt_case_692,melanoma,,,male,posterior torso
+Ael/Ael505.jpg,Ael505,derm7pt_case_28,basal_cell_carcinoma,,,male,head/neck
+Ael/Ael508.jpg,Ael508,derm7pt_case_57,melanocytic_Nevi,,,female,lower extremity
+Ael/Ael510.jpg,Ael510,derm7pt_case_58,melanocytic_Nevi,,,male,posterior torso
+Ael/Ael512.jpg,Ael512,derm7pt_case_59,melanocytic_Nevi,,,female,posterior torso
+Ael/Ael514.jpg,Ael514,derm7pt_case_812,melanoma,,,female,anterior torso
+Ael/Ael517.jpg,Ael517,derm7pt_case_279,melanocytic_Nevi,,,female,anterior torso
+Ael/Ael519bis.jpg,Ael519bis,derm7pt_case_1001,vascular_lesions,,,male,palms/soles
+Ael/Ael521.jpg,Ael521,derm7pt_case_521,melanocytic_Nevi,,,female,anterior torso
+Ael/Ael523.jpg,Ael523,derm7pt_case_280,melanocytic_Nevi,,,male,
+Ael/Ael525.jpg,Ael525,derm7pt_case_281,melanocytic_Nevi,,,female,posterior torso
+Ael/Ael527.jpg,Ael527,derm7pt_case_547,dermatofibroma,,,male,posterior torso
+FAL/FAL006.JPG,FAL006,derm7pt_case_770,melanoma,,,male,posterior torso
+FAL/FAL022.JPG,FAL022,derm7pt_case_479,melanocytic_Nevi,,,male,posterior torso
+FAL/FAL036.JPG,FAL036,derm7pt_case_311,melanocytic_Nevi,,,female,posterior torso
+FAL/FAL038.JPG,FAL038,derm7pt_case_312,melanocytic_Nevi,,,female,lower extremity
+FAL/FAL042.JPG,FAL042,derm7pt_case_313,melanocytic_Nevi,,,female,posterior torso
+FAL/FAL044.JPG,FAL044,derm7pt_case_314,melanocytic_Nevi,,,female,posterior torso
+FAL/FAL054.JPG,FAL054,derm7pt_case_316,melanocytic_Nevi,,,male,posterior torso
+FAL/FAL066.JPG,FAL066,derm7pt_case_702,melanoma,,,male,upper extremity
+FAL/FAL070.JPG,FAL070,derm7pt_case_918,melanocytic_Nevi,,,female,posterior torso
+FAL/FAL094.JPG,FAL094,derm7pt_case_771,melanoma,,,male,posterior torso
+FBL/FBL012.JPG,FBL012,derm7pt_case_325,melanocytic_Nevi,,,female,lower extremity
+FBL/FBL020.JPG,FBL020,derm7pt_case_772,melanoma,,,female,anterior torso
+FBL/FBL026.JPG,FBL026,derm7pt_case_618,melanoma,,,female,lower extremity
+FBL/FBL032.JPG,FBL032,derm7pt_case_64,melanocytic_Nevi,,,female,lower extremity
+FBL/FBL042.JPG,FBL042,derm7pt_case_921,melanocytic_Nevi,,,female,lower extremity
+FBL/FBL046.JPG,FBL046,derm7pt_case_704,melanoma,,,female,anterior torso
+FBL/FBL058.JPG,FBL058,derm7pt_case_706,melanoma,,,female,posterior torso
+FBL/FBL062.JPG,FBL062,derm7pt_case_337,melanocytic_Nevi,,,female,anterior torso
+FCL/FCL018.JPG,FCL018,derm7pt_case_355,melanocytic_Nevi,,,male,posterior torso
+FCL/FCL052.JPG,FCL052,derm7pt_case_367,melanocytic_Nevi,,,male,anterior torso
+FCL/FCL054.JPG,FCL054,derm7pt_case_815,melanoma,,,female,upper extremity
+FCL/FCL056.JPG,FCL056,derm7pt_case_773,melanoma,,,female,posterior torso
+FCL/FCL058.JPG,FCL058,derm7pt_case_623,melanoma,,,male,posterior torso
+FCL/FCL066.JPG,FCL066,derm7pt_case_368,melanocytic_Nevi,,,male,posterior torso
+FCL/FCL074.JPG,FCL074,derm7pt_case_624,melanoma,,,female,upper extremity
+FCL/FCL084.JPG,FCL084,derm7pt_case_775,melanoma,,,female,upper extremity
+FDL/FDL016.JPG,FDL016,derm7pt_case_497,melanocytic_Nevi,,,female,upper extremity
+FDL/FDL022.JPG,FDL022,derm7pt_case_498,melanocytic_Nevi,,,female,lower extremity
+FDL/FDL026.JPG,FDL026,derm7pt_case_66,melanocytic_Nevi,,,male,upper extremity
+FDL/FDL036.JPG,FDL036,derm7pt_case_627,melanoma,,,female,lower extremity
+FDL/FDL052.JPG,FDL052,derm7pt_case_817,melanoma,,,male,anterior torso
+FFL/FFL002.JPG,FFL002,derm7pt_case_393,melanocytic_Nevi,,,male,upper extremity
+FFL/FFL004.JPG,FFL004,derm7pt_case_394,melanocytic_Nevi,,,female,posterior torso
+FFL/FFL006.JPG,FFL006,derm7pt_case_395,melanocytic_Nevi,,,female,anterior torso
+FFL/FFL008.JPG,FFL008,derm7pt_case_396,melanocytic_Nevi,,,female,anterior torso
+FFL/FFL020.JPG,FFL020,derm7pt_case_714,melanoma,,,female,lower extremity
+FFL/FFL032.JPG,FFL032,derm7pt_case_400,melanocytic_Nevi,,,male,posterior torso
+FFL/FFL052.JPG,FFL052,derm7pt_case_966,benign_keratosis-like_lesions,,,male,anterior torso
+FFL/FFL068.JPG,FFL068,derm7pt_case_777,melanoma,,,female,lower extremity
+FAL/Fal012.jpg,Fal012,derm7pt_case_63,melanocytic_Nevi,,,female,posterior torso
+FAL/Fal020.jpg,Fal020,derm7pt_case_309,melanocytic_Nevi,,,female,lower extremity
+FAL/Fal024.jpg,Fal024,derm7pt_case_310,melanocytic_Nevi,,,male,anterior torso
+FAL/Fal048.jpg,Fal048,derm7pt_case_965,benign_keratosis-like_lesions,,,male,head/neck
+FAL/Fal050.jpg,Fal050,derm7pt_case_315,melanocytic_Nevi,,,male,anterior torso
+FAL/Fal064.jpg,Fal064,derm7pt_case_317,melanocytic_Nevi,,,female,anterior torso
+FAL/Fal072.jpg,Fal072,derm7pt_case_318,melanocytic_Nevi,,,female,anterior torso
+FAL/Fal078.jpg,Fal078,derm7pt_case_703,melanoma,,,female,upper extremity
+FAL/Fal090.jpg,Fal090,derm7pt_case_319,melanocytic_Nevi,,,male,anterior torso
+FAL/Fal096.jpg,Fal096,derm7pt_case_33,basal_cell_carcinoma,,,female,posterior torso
+FAL/Fal100.jpg,Fal100,derm7pt_case_320,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl002.jpg,Fbl002,derm7pt_case_321,melanocytic_Nevi,,,female,anterior torso
+FBL/Fbl004.jpg,Fbl004,derm7pt_case_322,melanocytic_Nevi,,,female,anterior torso
+FBL/Fbl006.jpg,Fbl006,derm7pt_case_323,melanocytic_Nevi,,,male,anterior torso
+FBL/Fbl010.jpg,Fbl010,derm7pt_case_324,melanocytic_Nevi,,,male,posterior torso
+FBL/Fbl018.jpg,Fbl018,derm7pt_case_919,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl022.jpg,Fbl022,derm7pt_case_328,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl024.jpg,Fbl024,derm7pt_case_329,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl028.jpg,Fbl028,derm7pt_case_619,melanoma,,,female,upper extremity
+FBL/Fbl030.jpg,Fbl030,derm7pt_case_525,melanocytic_Nevi,,,female,upper extremity
+FBL/Fbl036.jpg,Fbl036,derm7pt_case_331,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl038.jpg,Fbl038,derm7pt_case_332,melanocytic_Nevi,,,female,posterior torso
+FBL/Fbl040.jpg,Fbl040,derm7pt_case_920,melanocytic_Nevi,,,male,upper extremity
+FBL/Fbl044.jpg,Fbl044,derm7pt_case_333,melanocytic_Nevi,,,female,anterior torso
+FBL/Fbl048.jpg,Fbl048,derm7pt_case_334,melanocytic_Nevi,,,male,palms/soles
+FBL/Fbl050.jpg,Fbl050,derm7pt_case_705,melanoma,,,male,posterior torso
+FBL/Fbl054.jpg,Fbl054,derm7pt_case_335,melanocytic_Nevi,,,female,posterior torso
+FBL/Fbl056.jpg,Fbl056,derm7pt_case_336,melanocytic_Nevi,,,male,anterior torso
+FBL/Fbl064.jpg,Fbl064,derm7pt_case_338,melanocytic_Nevi,,,female,anterior torso
+FBL/Fbl068.jpg,Fbl068,derm7pt_case_339,melanocytic_Nevi,,,female,upper extremity
+FBL/Fbl072.jpg,Fbl072,derm7pt_case_340,melanocytic_Nevi,,,male,lower extremity
+FBL/Fbl074.jpg,Fbl074,derm7pt_case_341,melanocytic_Nevi,,,male,posterior torso
+FBL/Fbl076.jpg,Fbl076,derm7pt_case_342,melanocytic_Nevi,,,female,posterior torso
+FBL/Fbl080.jpg,Fbl080,derm7pt_case_343,melanocytic_Nevi,,,female,posterior torso
+FBL/Fbl082.jpg,Fbl082,derm7pt_case_708,melanoma,,,female,lower extremity
+FBL/Fbl088.jpg,Fbl088,derm7pt_case_344,melanocytic_Nevi,,,female,lower extremity
+FBL/Fbl090.jpg,Fbl090,derm7pt_case_345,melanocytic_Nevi,,,male,lower extremity
+FBL/Fbl092.jpg,Fbl092,derm7pt_case_346,melanocytic_Nevi,,,male,head/neck
+FBL/Fbl094.jpg,Fbl094,derm7pt_case_347,melanocytic_Nevi,,,female,upper extremity
+FBL/Fbl098.jpg,Fbl098,derm7pt_case_348,melanocytic_Nevi,,,female,lower extremity
+FCL/Fcl010.jpg,Fcl010,derm7pt_case_352,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl012.jpg,Fcl012,derm7pt_case_353,melanocytic_Nevi,,,female,palms/soles
+FCL/Fcl014.jpg,Fcl014,derm7pt_case_354,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl016.jpg,Fcl016,derm7pt_case_826,melanoma,,,male,palms/soles
+FCL/Fcl022.jpg,Fcl022,derm7pt_case_620,melanoma,,,female,head/neck
+FCL/Fcl024.jpg,Fcl024,derm7pt_case_357,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl026.jpg,Fcl026,derm7pt_case_709,melanoma,,,male,posterior torso
+FCL/Fcl028.jpg,Fcl028,derm7pt_case_358,melanocytic_Nevi,,,male,posterior torso
+FCL/Fcl030.jpg,Fcl030,derm7pt_case_359,melanocytic_Nevi,,,female,anterior torso
+FCL/Fcl032.jpg,Fcl032,derm7pt_case_360,melanocytic_Nevi,,,female,
+FCL/Fcl034.jpg,Fcl034,derm7pt_case_361,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl036.jpg,Fcl036,derm7pt_case_362,melanocytic_Nevi,,,male,anterior torso
+FCL/Fcl038.jpg,Fcl038,derm7pt_case_363,melanocytic_Nevi,,,male,anterior torso
+FCL/Fcl040.jpg,Fcl040,derm7pt_case_621,melanoma,,,male,posterior torso
+FCL/Fcl044.jpg,Fcl044,derm7pt_case_622,melanoma,,,male,upper extremity
+FCL/Fcl048.jpg,Fcl048,derm7pt_case_365,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl050.jpg,Fcl050,derm7pt_case_366,melanocytic_Nevi,,,male,posterior torso
+FCL/Fcl060.jpg,Fcl060,derm7pt_case_710,melanoma,,,female,upper extremity
+FCL/Fcl062.jpg,Fcl062,derm7pt_case_34,basal_cell_carcinoma,,,female,posterior torso
+FCl/Fcl068.jpg,Fcl068,derm7pt_case_816,melanoma,,,female,lower extremity
+FCL/Fcl070.jpg,Fcl070,derm7pt_case_369,melanocytic_Nevi,,,female,lower extremity
+FCL/Fcl076.jpg,Fcl076,derm7pt_case_370,melanocytic_Nevi,,,female,posterior torso
+FCL/Fcl080.jpg,Fcl080,derm7pt_case_371,melanocytic_Nevi,,,female,anterior torso
+FCL/Fcl088.jpg,Fcl088,derm7pt_case_65,melanocytic_Nevi,,,female,upper extremity
+FCL/Fcl090.jpg,Fcl090,derm7pt_case_372,melanocytic_Nevi,,,male,anterior torso
+FCL/Fcl092.jpg,Fcl092,derm7pt_case_776,melanoma,,,female,upper extremity
+FCL/Fcl094.jpg,Fcl094,derm7pt_case_373,melanocytic_Nevi,,,male,lower extremity
+FCL/Fcl096.jpg,Fcl096,derm7pt_case_374,melanocytic_Nevi,,,female,anterior torso
+FCL/Fcl098.jpg,Fcl098,derm7pt_case_375,melanocytic_Nevi,,,male,lower extremity
+FCL/Fcl100.jpg,Fcl100,derm7pt_case_712,melanoma,,,female,anterior torso
+FDL/Fdl002.jpg,Fdl002,derm7pt_case_405,melanocytic_Nevi,,,female,lower extremity
+FDL/Fdl014.jpg,Fdl014,derm7pt_case_626,melanoma,,,male,anterior torso
+FDL/Fdl020.jpg,Fdl020,derm7pt_case_406,melanocytic_Nevi,,,male,lower extremity
+FDL/Fdl028.jpg,Fdl028,derm7pt_case_408,melanocytic_Nevi,,,male,head/neck
+FDL/Fdl030.jpg,Fdl030,derm7pt_case_409,melanocytic_Nevi,,,female,head/neck
+FDL/Fdl032.jpg,Fdl032,derm7pt_case_968,benign_keratosis-like_lesions,,,male,head/neck
+FDL/Fdl054.jpg,Fdl054,derm7pt_case_410,melanocytic_Nevi,,,female,upper extremity
+FDL/Fdl056.jpg,Fdl056,derm7pt_case_718,melanoma,,,female,lower extremity
+FDL/Fdl058.jpg,Fdl058,derm7pt_case_969,benign_keratosis-like_lesions,,,male,posterior torso
+FDL/Fdl060.jpg,Fdl060,derm7pt_case_981,benign_keratosis-like_lesions,,,female,anterior torso
+FDL/Fdl062.jpg,Fdl062,derm7pt_case_480,melanocytic_Nevi,,,male,anterior torso
+FDL/Fdl070.jpg,Fdl070,derm7pt_case_35,basal_cell_carcinoma,,,male,posterior torso
+FDL/Fdl071.jpg,Fdl071,derm7pt_case_970,benign_keratosis-like_lesions,,,female,head/neck
+FDL/Fdl074.jpg,Fdl074,derm7pt_case_971,benign_keratosis-like_lesions,,,male,head/neck
+FEL/Fel002.jpg,Fel002,derm7pt_case_376,melanocytic_Nevi,,,female,posterior torso
+FEL/Fel016.jpg,Fel016,derm7pt_case_377,melanocytic_Nevi,,,male,anterior torso
+FEL/Fel018.jpg,Fel018,derm7pt_case_378,melanocytic_Nevi,,,female,lower extremity
+FEL/Fel024.jpg,Fel024,derm7pt_case_379,melanocytic_Nevi,,,male,posterior torso
+FEL/Fel030.jpg,Fel030,derm7pt_case_380,melanocytic_Nevi,,,male,anterior torso
+FEL/Fel034.jpg,Fel034,derm7pt_case_381,melanocytic_Nevi,,,female,anterior torso
+FEL/Fel038.jpg,Fel038,derm7pt_case_922,melanocytic_Nevi,,,male,lower extremity
+FEL/Fel052.jpg,Fel052,derm7pt_case_382,melanocytic_Nevi,,,male,posterior torso
+FEL/Fel064.jpg,Fel064,derm7pt_case_383,melanocytic_Nevi,,,female,anterior torso
+FEL/Fel068.jpg,Fel068,derm7pt_case_384,melanocytic_Nevi,,,female,posterior torso
+FEL/Fel070.jpg,Fel070,derm7pt_case_385,melanocytic_Nevi,,,female,anterior torso
+FEL/Fel072.jpg,Fel072,derm7pt_case_386,melanocytic_Nevi,,,male,posterior torso
+FEL/Fel074.jpg,Fel074,derm7pt_case_923,melanocytic_Nevi,,,female,lower extremity
+FEL/Fel080.jpg,Fel080,derm7pt_case_924,melanocytic_Nevi,,,male,anterior torso
+FEL/Fel082.jpg,Fel082,derm7pt_case_387,melanocytic_Nevi,,,male,upper extremity
+FEL/Fel084.jpg,Fel084,derm7pt_case_388,melanocytic_Nevi,,,female,lower extremity
+FEL/Fel086.jpg,Fel086,derm7pt_case_389,melanocytic_Nevi,,,male,lower extremity
+FEL/Fel088.jpg,Fel088,derm7pt_case_390,melanocytic_Nevi,,,male,anterior torso
+FEL/Fel092.jpg,Fel092,derm7pt_case_857,melanocytic_Nevi,,,female,anterior torso
+FEL/Fel096.jpg,Fel096,derm7pt_case_391,melanocytic_Nevi,,,female,anterior torso
+FEL/Fel098.jpg,Fel098,derm7pt_case_713,melanoma,,,female,lower extremity
+FEL/Fel100.jpg,Fel100,derm7pt_case_392,melanocytic_Nevi,,,male,posterior torso
+FFL/Ffl010.jpg,Ffl010,derm7pt_case_397,melanocytic_Nevi,,,male,anterior torso
+FFL/Ffl014.jpg,Ffl014,derm7pt_case_398,melanocytic_Nevi,,,female,anterior torso
+FFL/Ffl016.jpg,Ffl016,derm7pt_case_399,melanocytic_Nevi,,,female,anterior torso
+FFL/Ffl034.jpg,Ffl034,derm7pt_case_925,melanocytic_Nevi,,,female,head/neck
+FFL/Ffl042.jpg,Ffl042,derm7pt_case_526,melanocytic_Nevi,,,female,anterior torso
+FFL/Ffl062.jpg,Ffl062,derm7pt_case_495,melanocytic_Nevi,,,female,posterior torso
+FFL/Ffl066.jpg,Ffl066,derm7pt_case_401,melanocytic_Nevi,,,male,palms/soles
+FFL/Ffl070.jpg,Ffl070,derm7pt_case_967,benign_keratosis-like_lesions,,,male,head/neck
+FFL/Ffl078.jpg,Ffl078,derm7pt_case_402,melanocytic_Nevi,,,female,anterior torso
+FFL/Ffl080.jpg,Ffl080,derm7pt_case_625,melanoma,,,female,lower extremity
+FFL/Ffl082.jpg,Ffl082,derm7pt_case_403,melanocytic_Nevi,,,female,posterior torso
+FFL/Ffl084.jpg,Ffl084,derm7pt_case_926,melanocytic_Nevi,,,male,lower extremity
+FFL/Ffl092.jpg,Ffl092,derm7pt_case_715,melanoma,,,female,lower extremity
+FFL/Ffl094.jpg,Ffl094,derm7pt_case_716,melanoma,,,male,anterior torso
+FFL/Ffl096.jpg,Ffl096,derm7pt_case_496,melanocytic_Nevi,,,female,posterior torso
+FFL/Ffl100.jpg,Ffl100,derm7pt_case_404,melanocytic_Nevi,,,female,upper extremity
+Fgl/Fgl002.jpg,Fgl002,derm7pt_case_412,melanocytic_Nevi,,,female,anterior torso
+Fgl/Fgl005.jpg,Fgl005,derm7pt_case_429,melanocytic_Nevi,,,female,
+Fgl/Fgl006.jpg,Fgl006,derm7pt_case_787,melanoma,,,female,lower extremity
+Fgl/Fgl008.jpg,Fgl008,derm7pt_case_424,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl010.jpg,Fgl010,derm7pt_case_425,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl012.jpg,Fgl012,derm7pt_case_426,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl014.jpg,Fgl014,derm7pt_case_427,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl018.jpg,Fgl018,derm7pt_case_633,melanoma,,,male,lower extremity
+Fgl/Fgl020.jpg,Fgl020,derm7pt_case_531,melanocytic_Nevi,,,male,anterior torso
+Fgl/Fgl023.jpg,Fgl023,derm7pt_case_930,melanocytic_Nevi,,,female,anterior torso
+Fgl/Fgl029.jpg,Fgl029,derm7pt_case_634,melanoma,,,female,head/neck
+Fgl/Fgl035.jpg,Fgl035,derm7pt_case_530,melanocytic_Nevi,,,female,posterior torso
+Fgl/Fgl036.jpg,Fgl036,derm7pt_case_423,melanocytic_Nevi,,,female,posterior torso
+Fgl/Fgl037.jpg,Fgl037,derm7pt_case_931,melanocytic_Nevi,,,female,
+Fgl/Fgl042.jpg,Fgl042,derm7pt_case_431,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl044.jpg,Fgl044,derm7pt_case_820,melanoma,,,male,posterior torso
+Fgl/Fgl047.jpg,Fgl047,derm7pt_case_432,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl051.jpg,Fgl051,derm7pt_case_433,melanocytic_Nevi,,,male,anterior torso
+Fgl/Fgl053.jpg,Fgl053,derm7pt_case_40,basal_cell_carcinoma,,,female,head/neck
+Fgl/Fgl055.jpg,Fgl055,derm7pt_case_434,melanocytic_Nevi,,,female,anterior torso
+Fgl/Fgl057.jpg,Fgl057,derm7pt_case_635,melanoma,,,female,posterior torso
+Fgl/Fgl059.jpg,Fgl059,derm7pt_case_833,benign_keratosis-like_lesions,,,female,oral/genital
+Fgl/Fgl061.jpg,Fgl061,derm7pt_case_788,melanoma,,,male,upper extremity
+Fgl/Fgl063.jpg,Fgl063,derm7pt_case_69,melanocytic_Nevi,,,female,upper extremity
+Fgl/Fgl068.jpg,Fgl068,derm7pt_case_435,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl072.jpg,Fgl072,derm7pt_case_436,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl074.jpg,Fgl074,derm7pt_case_932,melanocytic_Nevi,,,female,anterior torso
+Fgl/Fgl078.jpg,Fgl078,derm7pt_case_437,melanocytic_Nevi,,,male,posterior torso
+Fgl/Fgl082.jpg,Fgl082,derm7pt_case_727,melanoma,,,female,lower extremity
+Fgl/Fgl083.jpg,Fgl083,derm7pt_case_728,melanoma,,,female,lower extremity
+Fgl/Fgl087.jpg,Fgl087,derm7pt_case_933,melanocytic_Nevi,,,female,lower extremity
+Fgl/Fgl088.jpg,Fgl088,derm7pt_case_39,basal_cell_carcinoma,,,female,upper extremity
+Fgl/Fgl090.jpg,Fgl090,derm7pt_case_70,melanocytic_Nevi,,,female,lower extremity
+Fhl/Fhl002.jpg,Fhl002,derm7pt_case_834,benign_keratosis-like_lesions,,,female,oral/genital
+Fhl/Fhl004.jpg,Fhl004,derm7pt_case_835,benign_keratosis-like_lesions,,,male,oral/genital
+Fhl/Fhl006.jpg,Fhl006,derm7pt_case_836,benign_keratosis-like_lesions,,,female,oral/genital
+Fhl/Fhl008.jpg,Fhl008,derm7pt_case_837,benign_keratosis-like_lesions,,,male,head/neck
+Fhl/Fhl010.jpg,Fhl010,derm7pt_case_838,benign_keratosis-like_lesions,,,female,head/neck
+Fhl/Fhl012.jpg,Fhl012,derm7pt_case_839,benign_keratosis-like_lesions,,,female,oral/genital
+Fhl/Fhl014.jpg,Fhl014,derm7pt_case_840,benign_keratosis-like_lesions,,,female,head/neck
+Fhl/Fhl016.jpg,Fhl016,derm7pt_case_841,benign_keratosis-like_lesions,,,male,oral/genital
+Fhl/Fhl018.jpg,Fhl018,derm7pt_case_565,benign_keratosis-like_lesions,,,female,anterior torso
+Fhl/Fhl022.jpg,Fhl022,derm7pt_case_842,benign_keratosis-like_lesions,,,female,head/neck
+Fhl/Fhl028.jpg,Fhl028,derm7pt_case_843,benign_keratosis-like_lesions,,,female,head/neck
+Fhl/Fhl030.jpg,Fhl030,derm7pt_case_438,melanocytic_Nevi,,,female,palms/soles
+Fhl/Fhl032.jpg,Fhl032,derm7pt_case_439,melanocytic_Nevi,,,female,upper extremity
+Fhl/Fhl034.jpg,Fhl034,derm7pt_case_440,melanocytic_Nevi,,,female,anterior torso
+Fhl/Fhl038.jpg,Fhl038,derm7pt_case_441,melanocytic_Nevi,,,male,lower extremity
+Fhl/Fhl040.jpg,Fhl040,derm7pt_case_442,melanocytic_Nevi,,,female,lower extremity
+Fhl/Fhl042.jpg,Fhl042,derm7pt_case_443,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl044.jpg,Fhl044,derm7pt_case_552,dermatofibroma,,,female,lower extremity
+Fhl/Fhl046.jpg,Fhl046,derm7pt_case_729,melanoma,,,male,lower extremity
+Fhl/Fhl048.jpg,Fhl048,derm7pt_case_979,benign_keratosis-like_lesions,,,male,posterior torso
+Fhl/Fhl050.jpg,Fhl050,derm7pt_case_41,basal_cell_carcinoma,,,female,head/neck
+Fhl/Fhl052.jpg,Fhl052,derm7pt_case_42,basal_cell_carcinoma,,,male,head/neck
+Fhl/Fhl058.jpg,Fhl058,derm7pt_case_1007,vascular_lesions,,,male,head/neck
+Fhl/Fhl060.jpg,Fhl060,derm7pt_case_1008,vascular_lesions,,,female,anterior torso
+Fhl/Fhl064.jpg,Fhl064,derm7pt_case_444,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl066.jpg,Fhl066,derm7pt_case_445,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl070.jpg,Fhl070,derm7pt_case_446,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl072.jpg,Fhl072,derm7pt_case_447,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl074.jpg,Fhl074,derm7pt_case_448,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl076.jpg,Fhl076,derm7pt_case_449,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl078.jpg,Fhl078,derm7pt_case_450,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl080.jpg,Fhl080,derm7pt_case_451,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl082.jpg,Fhl082,derm7pt_case_452,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl084.jpg,Fhl084,derm7pt_case_453,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl086.jpg,Fhl086,derm7pt_case_454,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl088.jpg,Fhl088,derm7pt_case_455,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl090.jpg,Fhl090,derm7pt_case_456,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl092.jpg,Fhl092,derm7pt_case_457,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl094.jpg,Fhl094,derm7pt_case_458,melanocytic_Nevi,,,male,anterior torso
+Fhl/Fhl096.jpg,Fhl096,derm7pt_case_459,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl098.jpg,Fhl098,derm7pt_case_460,melanocytic_Nevi,,,male,posterior torso
+Fhl/Fhl100.jpg,Fhl100,derm7pt_case_461,melanocytic_Nevi,,,male,posterior torso
+Fil/Fil004.jpg,Fil004,derm7pt_case_636,melanoma,,,male,anterior torso
+Fil/Fil006.jpg,Fil006,derm7pt_case_731,melanoma,,,female,lower extremity
+Fil/Fil008.jpg,Fil008,derm7pt_case_821,melanoma,,,female,lower extremity
+Fil/Fil010.jpg,Fil010,derm7pt_case_789,melanoma,,,female,lower extremity
+Fil/Fil032.jpg,Fil032,derm7pt_case_734,melanoma,,,female,lower extremity
+Fil/Fil040.jpg,Fil040,derm7pt_case_822,melanoma,,,female,upper extremity
+Fil/Fil052.jpg,Fil052,derm7pt_case_638,melanoma,,,male,posterior torso
+Fil/Fil062.jpg,Fil062,derm7pt_case_463,melanocytic_Nevi,,,female,posterior torso
+Fil/Fil064.jpg,Fil064,derm7pt_case_566,benign_keratosis-like_lesions,,,male,anterior torso
+Fil/Fil070.jpg,Fil070,derm7pt_case_639,melanoma,,,female,anterior torso
+Fil/Fil080.jpg,Fil080,derm7pt_case_980,benign_keratosis-like_lesions,,,female,anterior torso
+Fil/Fil082.jpg,Fil082,derm7pt_case_1009,vascular_lesions,,,male,head/neck
+Fil/Fil088.jpg,Fil088,derm7pt_case_466,melanocytic_Nevi,,,female,lower extremity
+Fil/Fil094.jpg,Fil094,derm7pt_case_467,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll019.jpg,Fll019,derm7pt_case_326,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll021.jpg,Fll021,derm7pt_case_327,melanocytic_Nevi,,,female,lower extremity
+Fll/Fll023.jpg,Fll023,derm7pt_case_330,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll027.jpg,Fll027,derm7pt_case_707,melanoma,,,female,lower extremity
+Fll/Fll035.jpg,Fll035,derm7pt_case_349,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll037.jpg,Fll037,derm7pt_case_350,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll039.jpg,Fll039,derm7pt_case_351,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll041.jpg,Fll041,derm7pt_case_356,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll043.jpg,Fll043,derm7pt_case_364,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll045.jpg,Fll045,derm7pt_case_711,melanoma,,,male,posterior torso
+Fll/Fll047.jpg,Fll047,derm7pt_case_774,melanoma,,,male,lower extremity
+Fll/Fll065.jpg,Fll065,derm7pt_case_407,melanocytic_Nevi,,,female,posterior torso
+Fll/Fll069.jpg,Fll069,derm7pt_case_778,melanoma,,,female,lower extremity
+Fll/Fll071.jpg,Fll071,derm7pt_case_717,melanoma,,,male,lower extremity
+Fll/Fll077.jpg,Fll077,derm7pt_case_927,melanocytic_Nevi,,,female,posterior torso
+Fll/Fll083.jpg,Fll083,derm7pt_case_411,melanocytic_Nevi,,,female,anterior torso
+Fll/Fll085.jpg,Fll085,derm7pt_case_632,melanoma,,,female,
+Fll/Fll087.jpg,Fll087,derm7pt_case_428,melanocytic_Nevi,,,female,upper extremity
+Fll/Fll089.jpg,Fll089,derm7pt_case_532,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll091.jpg,Fll091,derm7pt_case_430,melanocytic_Nevi,,,male,posterior torso
+Fll/Fll097.jpg,Fll097,derm7pt_case_726,melanoma,,,male,posterior torso
+Fll/Fll104.jpg,Fll104,derm7pt_case_978,benign_keratosis-like_lesions,,,male,posterior torso
+Fll/Fll108.jpg,Fll108,derm7pt_case_730,melanoma,,,male,posterior torso
+Fll/Fll116.jpg,Fll116,derm7pt_case_732,melanoma,,,male,lower extremity
+Fll/Fll118.jpg,Fll118,derm7pt_case_733,melanoma,,,female,posterior torso
+Fll/Fll122.jpg,Fll122,derm7pt_case_637,melanoma,,,female,
+Fll/Fll126.jpg,Fll126,derm7pt_case_790,melanoma,,,female,lower extremity
+Fll/Fll128.jpg,Fll128,derm7pt_case_791,melanoma,,,female,lower extremity
+Fll/Fll130.jpg,Fll130,derm7pt_case_792,melanoma,,,female,anterior torso
+Fll/Fll132.jpg,Fll132,derm7pt_case_735,melanoma,,,female,anterior torso
+Fll/Fll136.jpg,Fll136,derm7pt_case_793,melanoma,,,male,posterior torso
+Fll/Fll142.jpg,Fll142,derm7pt_case_462,melanocytic_Nevi,,,female,posterior torso
+Fml/Fml010.jpg,Fml010,derm7pt_case_464,melanocytic_Nevi,,,female,posterior torso
+Fml/Fml020.jpg,Fml020,derm7pt_case_465,melanocytic_Nevi,,,female,anterior torso
+Fml/Fml026.jpg,Fml026,derm7pt_case_567,benign_keratosis-like_lesions,,,male,upper extremity
+Gal/Gal006.jpg,Gal006,derm7pt_case_305,melanocytic_Nevi,,,female,posterior torso
+Gal/Gal008.jpg,Gal008,derm7pt_case_832,benign_keratosis-like_lesions,,,female,head/neck
+Gal/Gal010.jpg,Gal010,derm7pt_case_298,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal016.jpg,Gal016,derm7pt_case_299,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal025.jpg,Gal025,derm7pt_case_300,melanocytic_Nevi,,,female,posterior torso
+Gal/Gal033.jpg,Gal033,derm7pt_case_524,melanocytic_Nevi,,,male,anterior torso
+Gal/Gal039.jpg,Gal039,derm7pt_case_616,melanoma,,,female,upper extremity
+Gal/Gal043.jpg,Gal043,derm7pt_case_304,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal045.jpg,Gal045,derm7pt_case_301,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal047.jpg,Gal047,derm7pt_case_302,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal049.jpg,Gal049,derm7pt_case_303,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal058.jpg,Gal058,derm7pt_case_306,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal062.jpg,Gal062,derm7pt_case_494,melanocytic_Nevi,,,male,upper extremity
+Gal/Gal098.jpg,Gal098,derm7pt_case_32,basal_cell_carcinoma,,,male,posterior torso
+Gal/Gal108.jpg,Gal108,derm7pt_case_697,melanoma,,,male,lower extremity
+Gal/Gal113.jpg,Gal113,derm7pt_case_698,melanoma,,,male,lower extremity
+Gal/Gal130.jpg,Gal130,derm7pt_case_962,benign_keratosis-like_lesions,,,male,posterior torso
+Gal/Gal134.jpg,Gal134,derm7pt_case_964,benign_keratosis-like_lesions,,,female,posterior torso
+Gal/Gal146.jpg,Gal146,derm7pt_case_699,melanoma,,,female,upper extremity
+Gal/Gal152.jpg,Gal152,derm7pt_case_308,melanocytic_Nevi,,,female,anterior torso
+Gal/Gal169.jpg,Gal169,derm7pt_case_561,benign_keratosis-like_lesions,,,male,head/neck
+Gal/Gal171.jpg,Gal171,derm7pt_case_562,benign_keratosis-like_lesions,,,female,head/neck
+Gal/Gal173.jpg,Gal173,derm7pt_case_963,benign_keratosis-like_lesions,,,male,anterior torso
+Gal/Gal185.jpg,Gal185,derm7pt_case_617,melanoma,,,female,head/neck
+Gal/Gal191.jpg,Gal191,derm7pt_case_915,melanocytic_Nevi,,,female,lower extremity
+Gal/Gal209.jpg,Gal209,derm7pt_case_769,melanoma,,,male,anterior torso
+Gal/Gal211.jpg,Gal211,derm7pt_case_701,melanoma,,,female,anterior torso
+Gal/Gal216.jpg,Gal216,derm7pt_case_477,melanocytic_Nevi,,,female,upper extremity
+Gal/Gal218.jpg,Gal218,derm7pt_case_478,melanocytic_Nevi,,,female,upper extremity
+Gal/Gal220.jpg,Gal220,derm7pt_case_767,melanoma,,,female,upper extremity
+Gal/Gal222.jpg,Gal222,derm7pt_case_916,melanocytic_Nevi,,,female,lower extremity
+Gal/Gal226.jpg,Gal226,derm7pt_case_548,dermatofibroma,,,female,upper extremity
+Gal/Gal230.jpg,Gal230,derm7pt_case_307,melanocytic_Nevi,,,female,
+Gal/Gal232.jpg,Gal232,derm7pt_case_297,melanocytic_Nevi,,,male,posterior torso
+Gal/Gal238.jpg,Gal238,derm7pt_case_917,melanocytic_Nevi,,,male,upper extremity
+Gal/Gal240.jpg,Gal240,derm7pt_case_615,melanoma,,,male,posterior torso
+Gal/Gal257.jpg,Gal257,derm7pt_case_700,melanoma,,,female,anterior torso
+Gal/Gal262.jpg,Gal262,derm7pt_case_768,melanoma,,,male,posterior torso
+Gbl/Gbl009.jpg,Gbl009,derm7pt_case_719,melanoma,,,male,posterior torso
+Gbl/Gbl014.jpg,Gbl014,derm7pt_case_779,melanoma,,,female,lower extremity
+Gcl/Gcl003.jpg,Gcl003,derm7pt_case_628,melanoma,,,female,posterior torso
+Gcl/Gcl039.jpg,Gcl039,derm7pt_case_818,melanoma,,,female,lower extremity
+Gcl/Gcl052.jpg,Gcl052,derm7pt_case_819,melanoma,,,male,anterior torso
+Gcl/Gcl058.jpg,Gcl058,derm7pt_case_780,melanoma,,,male,posterior torso
+Gcl/Gcl073.jpg,Gcl073,derm7pt_case_413,melanocytic_Nevi,,,female,anterior torso
+Gcl/Gcl094.jpg,Gcl094,derm7pt_case_720,melanoma,,,female,head/neck
+Gdl/Gdl012.jpg,Gdl012,derm7pt_case_781,melanoma,,,female,lower extremity
+Gdl/Gdl014.jpg,Gdl014,derm7pt_case_721,melanoma,,,female,lower extremity
+Gdl/Gdl021.jpg,Gdl021,derm7pt_case_722,melanoma,,,female,anterior torso
+Gdl/Gdl023.jpg,Gdl023,derm7pt_case_782,melanoma,,,female,lower extremity
+Gdl/Gdl025.jpg,Gdl025,derm7pt_case_723,melanoma,,,male,posterior torso
+Gdl/Gdl034.jpg,Gdl034,derm7pt_case_783,melanoma,,,female,lower extremity
+Gdl/Gdl037.jpg,Gdl037,derm7pt_case_629,melanoma,,,male,lower extremity
+Gdl/Gdl089.jpg,Gdl089,derm7pt_case_784,melanoma,,,female,lower extremity
+Gdl/Gdl100.jpg,Gdl100,derm7pt_case_481,melanocytic_Nevi,,,male,posterior torso
+Ggl/Ggl002.jpg,Ggl002,derm7pt_case_499,melanocytic_Nevi,,,male,lower extremity
+Ggl/Ggl004.jpg,Ggl004,derm7pt_case_67,melanocytic_Nevi,,,female,posterior torso
+Ggl/Ggl006.jpg,Ggl006,derm7pt_case_68,melanocytic_Nevi,,,female,head/neck
+Ggl/Ggl008.jpg,Ggl008,derm7pt_case_527,melanocytic_Nevi,,,female,lower extremity
+Ggl/Ggl010.jpg,Ggl010,derm7pt_case_929,melanocytic_Nevi,,,male,lower extremity
+Ggl/Ggl012.jpg,Ggl012,derm7pt_case_1003,vascular_lesions,,,female,lower extremity
+Ggl/Ggl014.jpg,Ggl014,derm7pt_case_1004,vascular_lesions,,,female,anterior torso
+Ggl/Ggl016.jpg,Ggl016,derm7pt_case_1005,vascular_lesions,,,male,anterior torso
+Ggl/Ggl018.jpg,Ggl018,derm7pt_case_973,benign_keratosis-like_lesions,,,male,head/neck
+Ggl/Ggl020.jpg,Ggl020,derm7pt_case_974,benign_keratosis-like_lesions,,,male,anterior torso
+Ggl/Ggl022.jpg,Ggl022,derm7pt_case_972,benign_keratosis-like_lesions,,,female,anterior torso
+Ggl/Ggl024.jpg,Ggl024,derm7pt_case_414,melanocytic_Nevi,,,male,posterior torso
+Ggl/Ggl026.jpg,Ggl026,derm7pt_case_928,melanocytic_Nevi,,,male,upper extremity
+Ggl/Ggl028.jpg,Ggl028,derm7pt_case_36,basal_cell_carcinoma,,,male,posterior torso
+Ggl/Ggl030.jpg,Ggl030,derm7pt_case_37,basal_cell_carcinoma,,,male,posterior torso
+Ggl/Ggl032.jpg,Ggl032,derm7pt_case_1006,vascular_lesions,,,female,palms/soles
+Ggl/Ggl034.jpg,Ggl034,derm7pt_case_418,melanocytic_Nevi,,,male,palms/soles
+Ggl/Ggl036.jpg,Ggl036,derm7pt_case_630,melanoma,,,male,palms/soles
+Ggl/Ggl040.jpg,Ggl040,derm7pt_case_785,melanoma,,,female,head/neck
+Ggl/Ggl042.jpg,Ggl042,derm7pt_case_528,melanocytic_Nevi,,,female,head/neck
+Ggl/Ggl044.jpg,Ggl044,derm7pt_case_529,melanocytic_Nevi,,,male,anterior torso
+Ggl/Ggl046.jpg,Ggl046,derm7pt_case_975,benign_keratosis-like_lesions,,,female,anterior torso
+Ggl/Ggl048.jpg,Ggl048,derm7pt_case_549,dermatofibroma,,,female,upper extremity
+Ggl/Ggl050.jpg,Ggl050,derm7pt_case_724,melanoma,,,female,anterior torso
+Ggl/Ggl052.jpg,Ggl052,derm7pt_case_415,melanocytic_Nevi,,,male,posterior torso
+Ggl/Ggl054.jpg,Ggl054,derm7pt_case_786,melanoma,,,male,posterior torso
+Ggl/Ggl056.jpg,Ggl056,derm7pt_case_550,dermatofibroma,,,female,lower extremity
+Ggl/Ggl058.jpg,Ggl058,derm7pt_case_725,melanoma,,,male,anterior torso
+Ggl/Ggl060.jpg,Ggl060,derm7pt_case_416,melanocytic_Nevi,,,male,anterior torso
+Ggl/Ggl062.jpg,Ggl062,derm7pt_case_417,melanocytic_Nevi,,,male,anterior torso
+Ggl/Ggl066.jpg,Ggl066,derm7pt_case_976,benign_keratosis-like_lesions,,,male,upper extremity
+Ggl/Ggl068.jpg,Ggl068,derm7pt_case_631,melanoma,,,female,posterior torso
+Ggl/Ggl070.jpg,Ggl070,derm7pt_case_563,benign_keratosis-like_lesions,,,female,posterior torso
+Ggl/Ggl072.jpg,Ggl072,derm7pt_case_564,benign_keratosis-like_lesions,,,male,upper extremity
+Ggl/Ggl074.jpg,Ggl074,derm7pt_case_419,melanocytic_Nevi,,,male,lower extremity
+Ggl/Ggl076.jpg,Ggl076,derm7pt_case_420,melanocytic_Nevi,,,male,anterior torso
+Ggl/Ggl078.jpg,Ggl078,derm7pt_case_421,melanocytic_Nevi,,,male,posterior torso
+Ggl/Ggl082.jpg,Ggl082,derm7pt_case_38,basal_cell_carcinoma,,,female,anterior torso
+Ggl/Ggl084.jpg,Ggl084,derm7pt_case_551,dermatofibroma,,,male,lower extremity
+Ggl/Ggl086.jpg,Ggl086,derm7pt_case_977,benign_keratosis-like_lesions,,,male,anterior torso
+Ggl/Ggl088.jpg,Ggl088,derm7pt_case_422,melanocytic_Nevi,,,female,anterior torso
+Ggl/Ggl090.jpg,Ggl090,derm7pt_case_482,melanocytic_Nevi,,,female,upper extremity
+NBL/NBL041.JPG,NBL041,derm7pt_case_824,melanoma,,,male,anterior torso
+NBL/NBL049.JPG,NBL049,derm7pt_case_800,melanoma,,,male,oral/genital
+NDL/NDL063.JPG,NDL063,derm7pt_case_874,melanocytic_Nevi,,,female,lower extremity
+NEL/NEL055.JPG,NEL055,derm7pt_case_983,vascular_lesions,,,female,head/neck
+NFL/NFL028.JPG,NFL028,derm7pt_case_950,benign_keratosis-like_lesions,,,female,anterior torso
+NGL/NGL010.JPG,NGL010,derm7pt_case_603,melanoma,,,male,anterior torso
+NGL/NGL025.JPG,NGL025,derm7pt_case_750,melanoma,,,female,lower extremity
+NLL/NLL034.JPG,NLL034,derm7pt_case_151,melanocytic_Nevi,,,male,palms/soles
+NLL/NLL052.JPG,NLL052,derm7pt_case_508,melanocytic_Nevi,,,male,upper extremity
+NLL/NLL067.JPG,NLL067,derm7pt_case_156,melanocytic_Nevi,,,female,lower extremity
+NML/NML032.JPG,NML032,derm7pt_case_512,melanocytic_Nevi,,,female,upper extremity
+NML/NML092.jpg,NML092,derm7pt_case_898,melanocytic_Nevi,,,male,upper extremity
+NAL/Nal002.jpg,Nal002,derm7pt_case_743,melanoma,,,male,palms/soles
+NAL/Nal005.jpg,Nal005,derm7pt_case_641,melanoma,,,female,posterior torso
+NAL/Nal008.jpg,Nal008,derm7pt_case_744,melanoma,,,male,lower extremity
+NAL/Nal018.jpg,Nal018,derm7pt_case_642,melanoma,,,female,anterior torso
+NAL/Nal020.jpg,Nal020,derm7pt_case_577,melanoma,,,female,upper extremity
+NAL/Nal022.jpg,Nal022,derm7pt_case_578,melanoma,,,female,lower extremity
+NAL/Nal025.jpg,Nal025,derm7pt_case_643,melanoma,,,male,posterior torso
+NAL/Nal033.jpg,Nal033,derm7pt_case_644,melanoma,,,female,posterior torso
+NAL/Nal035.jpg,Nal035,derm7pt_case_645,melanoma,,,female,upper extremity
+NAL/Nal037.jpg,Nal037,derm7pt_case_579,melanoma,,,male,anterior torso
+NAL/Nal044.jpg,Nal044,derm7pt_case_580,melanoma,,,male,upper extremity
+NAL/Nal047.jpg,Nal047,derm7pt_case_581,melanoma,,,female,lower extremity
+NAL/Nal049.jpg,Nal049,derm7pt_case_646,melanoma,,,female,anterior torso
+NAL/Nal052.jpg,Nal052,derm7pt_case_591,melanoma,,,male,head/neck
+NAL/Nal057.jpg,Nal057,derm7pt_case_647,melanoma,,,female,lower extremity
+NAL/Nal058.jpg,Nal058,derm7pt_case_648,melanoma,,,male,head/neck
+NAL/Nal064.jpg,Nal064,derm7pt_case_649,melanoma,,,female,posterior torso
+NAL/Nal066.jpg,Nal066,derm7pt_case_582,melanoma,,,male,head/neck
+NAL/Nal070.jpg,Nal070,derm7pt_case_650,melanoma,,,female,lower extremity
+NAL/Nal073.jpg,Nal073,derm7pt_case_583,melanoma,,,male,posterior torso
+NAL/Nal075.jpg,Nal075,derm7pt_case_584,melanoma,,,female,upper extremity
+NAL/Nal077.jpg,Nal077,derm7pt_case_585,melanoma,,,male,posterior torso
+NAL/Nal080.jpg,Nal080,derm7pt_case_586,melanoma,,,male,head/neck
+NAL/Nal082.jpg,Nal082,derm7pt_case_587,melanoma,,,male,head/neck
+NAL/Nal084.jpg,Nal084,derm7pt_case_588,melanoma,,,male,anterior torso
+NAL/Nal086.jpg,Nal086,derm7pt_case_651,melanoma,,,female,lower extremity
+NAL/Nal088.jpg,Nal088,derm7pt_case_589,melanoma,,,female,head/neck
+NAL/Nal090.jpg,Nal090,derm7pt_case_590,melanoma,,,female,head/neck
+NAL/Nal091.jpg,Nal091,derm7pt_case_652,melanoma,,,female,anterior torso
+NAL/Nal097.jpg,Nal097,derm7pt_case_654,melanoma,,,male,anterior torso
+NAL/Nal099.jpg,Nal099,derm7pt_case_592,melanoma,,,male,lower extremity
+NBL/Nbl001.jpg,Nbl001,derm7pt_case_593,melanoma,,,female,posterior torso
+NBL/Nbl004.jpg,Nbl004,derm7pt_case_655,melanoma,,,male,head/neck
+NBL/Nbl006.jpg,Nbl006,derm7pt_case_656,melanoma,,,female,posterior torso
+NBL/Nbl007.jpg,Nbl007,derm7pt_case_594,melanoma,,,male,head/neck
+NBL/Nbl010.jpg,Nbl010,derm7pt_case_595,melanoma,,,male,anterior torso
+NBL/Nbl013.jpg,Nbl013,derm7pt_case_596,melanoma,,,male,anterior torso
+NBL/Nbl015.jpg,Nbl015,derm7pt_case_597,melanoma,,,female,posterior torso
+NBL/Nbl017.jpg,Nbl017,derm7pt_case_657,melanoma,,,male,anterior torso
+NBL/Nbl019.jpg,Nbl019,derm7pt_case_658,melanoma,,,female,anterior torso
+NBL/Nbl022.jpg,Nbl022,derm7pt_case_598,melanoma,,,female,posterior torso
+NBL/Nbl025.jpg,Nbl025,derm7pt_case_599,melanoma,,,female,head/neck
+NBL/Nbl028.jpg,Nbl028,derm7pt_case_659,melanoma,,,female,head/neck
+NBL/Nbl030.jpg,Nbl030,derm7pt_case_660,melanoma,,,female,posterior torso
+NBL/Nbl031.jpg,Nbl031,derm7pt_case_600,melanoma,,,male,anterior torso
+NBL/Nbl034.jpg,Nbl034,derm7pt_case_661,melanoma,,,male,posterior torso
+NBL/Nbl037.jpg,Nbl037,derm7pt_case_796,melanoma,,,female,lower extremity
+NBL/Nbl040.jpg,Nbl040,derm7pt_case_797,melanoma,,,female,posterior torso
+NBL/Nbl042.jpg,Nbl042,derm7pt_case_827,melanoma,,,male,anterior torso
+NBL/Nbl044.jpg,Nbl044,derm7pt_case_798,melanoma,,,female,lower extremity
+NBL/Nbl046.jpg,Nbl046,derm7pt_case_825,melanoma,,,female,lower extremity
+NBL/Nbl048.jpg,Nbl048,derm7pt_case_799,melanoma,,,male,lower extremity
+NBL/Nbl054.jpg,Nbl054,derm7pt_case_801,melanoma,,,female,anterior torso
+NBL/Nbl059.jpg,Nbl059,derm7pt_case_745,melanoma,,,male,anterior torso
+NBL/Nbl060.jpg,Nbl060,derm7pt_case_746,melanoma,,,male,lower extremity
+NBL/Nbl063.jpg,Nbl063,derm7pt_case_747,melanoma,,,male,posterior torso
+NBL/Nbl065.jpg,Nbl065,derm7pt_case_748,melanoma,,,male,lower extremity
+NBL/Nbl074.jpg,Nbl074,derm7pt_case_802,melanoma,,,female,lower extremity
+NBL/Nbl076.jpg,Nbl076,derm7pt_case_72,melanocytic_Nevi,,,female,lower extremity
+NBL/Nbl080.jpg,Nbl080,derm7pt_case_500,melanocytic_Nevi,,,male,head/neck
+NBL/Nbl081.jpg,Nbl081,derm7pt_case_73,melanocytic_Nevi,,,male,upper extremity
+NBL/Nbl086.jpg,Nbl086,derm7pt_case_74,melanocytic_Nevi,,,female,lower extremity
+NBL/Nbl088.jpg,Nbl088,derm7pt_case_859,melanocytic_Nevi,,,female,lower extremity
+NBL/Nbl095.jpg,Nbl095,derm7pt_case_75,melanocytic_Nevi,,,female,palms/soles
+NBL/Nbl098.jpg,Nbl098,derm7pt_case_76,melanocytic_Nevi,,,female,posterior torso
+NBL/Nbl100.jpg,Nbl100,derm7pt_case_860,melanocytic_Nevi,,,male,lower extremity
+NCL/Ncl004.jpg,Ncl004,derm7pt_case_77,melanocytic_Nevi,,,male,posterior torso
+NCL/Ncl006.jpg,Ncl006,derm7pt_case_78,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl008.jpg,Ncl008,derm7pt_case_79,melanocytic_Nevi,,,male,posterior torso
+NCL/Ncl010.jpg,Ncl010,derm7pt_case_80,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl012.jpg,Ncl012,derm7pt_case_81,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl014.jpg,Ncl014,derm7pt_case_82,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl020.jpg,Ncl020,derm7pt_case_861,melanocytic_Nevi,,,female,lower extremity
+NCL/Ncl022.jpg,Ncl022,derm7pt_case_83,melanocytic_Nevi,,,female,upper extremity
+NCL/Ncl027.jpg,Ncl027,derm7pt_case_483,melanocytic_Nevi,,,female,lower extremity
+NCL/Ncl030.jpg,Ncl030,derm7pt_case_84,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl032.jpg,Ncl032,derm7pt_case_862,melanocytic_Nevi,,,male,lower extremity
+NCL/Ncl035.jpg,Ncl035,derm7pt_case_85,melanocytic_Nevi,,,female,upper extremity
+NCL/Ncl044.jpg,Ncl044,derm7pt_case_86,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl048.jpg,Ncl048,derm7pt_case_87,melanocytic_Nevi,,,female,anterior torso
+NCL/Ncl050.jpg,Ncl050,derm7pt_case_88,melanocytic_Nevi,,,female,upper extremity
+NCL/Ncl051.jpg,Ncl051,derm7pt_case_89,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl053.jpg,Ncl053,derm7pt_case_90,melanocytic_Nevi,,,male,posterior torso
+NCL/Ncl056.jpg,Ncl056,derm7pt_case_91,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl063.jpg,Ncl063,derm7pt_case_92,melanocytic_Nevi,,,male,posterior torso
+NCL/Ncl064.jpg,Ncl064,derm7pt_case_93,melanocytic_Nevi,,,female,posterior torso
+NCL/Ncl069.jpg,Ncl069,derm7pt_case_94,melanocytic_Nevi,,,male,lower extremity
+NCL/Ncl071.jpg,Ncl071,derm7pt_case_484,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl076.jpg,Ncl076,derm7pt_case_95,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl078.jpg,Ncl078,derm7pt_case_863,melanocytic_Nevi,,,male,lower extremity
+NCL/Ncl079.jpg,Ncl079,derm7pt_case_96,melanocytic_Nevi,,,male,posterior torso
+NCL/Ncl083.jpg,Ncl083,derm7pt_case_97,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl085.jpg,Ncl085,derm7pt_case_98,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl093.jpg,Ncl093,derm7pt_case_864,melanocytic_Nevi,,,female,lower extremity
+NCL/Ncl095.jpg,Ncl095,derm7pt_case_865,melanocytic_Nevi,,,male,anterior torso
+NCL/Ncl100.jpg,Ncl100,derm7pt_case_485,melanocytic_Nevi,,,male,posterior torso
+NDL/Ndl005.jpg,Ndl005,derm7pt_case_71,melanocytic_Nevi,,,female,posterior torso
+NDL/Ndl009.jpg,Ndl009,derm7pt_case_99,melanocytic_Nevi,,,female,upper extremity
+NDL/Ndl012.jpg,Ndl012,derm7pt_case_100,melanocytic_Nevi,,,male,palms/soles
+NDL/Ndl018.jpg,Ndl018,derm7pt_case_102,melanocytic_Nevi,,,female,anterior torso
+NDL/Ndl021.jpg,Ndl021,derm7pt_case_103,melanocytic_Nevi,,,male,posterior torso
+NDL/Ndl022.jpg,Ndl022,derm7pt_case_104,melanocytic_Nevi,,,male,posterior torso
+NDL/Ndl025.jpg,Ndl025,derm7pt_case_105,melanocytic_Nevi,,,male,posterior torso
+NDL/Ndl027.jpg,Ndl027,derm7pt_case_106,melanocytic_Nevi,,,male,posterior torso
+NDL/Ndl028.jpg,Ndl028,derm7pt_case_107,melanocytic_Nevi,,,female,posterior torso
+NDL/Ndl031.jpg,Ndl031,derm7pt_case_108,melanocytic_Nevi,,,female,anterior torso
+NDL/Ndl033.jpg,Ndl033,derm7pt_case_109,melanocytic_Nevi,,,female,anterior torso
+NDL/Ndl035.jpg,Ndl035,derm7pt_case_110,melanocytic_Nevi,,,female,anterior torso
+NDL/Ndl037.jpg,Ndl037,derm7pt_case_111,melanocytic_Nevi,,,male,anterior torso
+NDL/Ndl039.jpg,Ndl039,derm7pt_case_112,melanocytic_Nevi,,,male,anterior torso
+NDL/Ndl040.jpg,Ndl040,derm7pt_case_113,melanocytic_Nevi,,,female,lower extremity
+NDL/Ndl046.jpg,Ndl046,derm7pt_case_866,melanocytic_Nevi,,,male,head/neck
+NDL/Ndl050.jpg,Ndl050,derm7pt_case_867,melanocytic_Nevi,,,female,
+NDL/Ndl052.jpg,Ndl052,derm7pt_case_868,melanocytic_Nevi,,,female,upper extremity
+NDL/Ndl054.jpg,Ndl054,derm7pt_case_869,melanocytic_Nevi,,,female,anterior torso
+NDL/Ndl056.jpg,Ndl056,derm7pt_case_870,melanocytic_Nevi,,,female,lower extremity
+NDL/Ndl058.jpg,Ndl058,derm7pt_case_871,melanocytic_Nevi,,,male,lower extremity
+NDL/Ndl060.jpg,Ndl060,derm7pt_case_872,melanocytic_Nevi,,,female,
+NDL/Ndl061.jpg,Ndl061,derm7pt_case_873,melanocytic_Nevi,,,male,head/neck
+NDL/Ndl068.jpg,Ndl068,derm7pt_case_875,melanocytic_Nevi,,,female,lower extremity
+NDL/Ndl069.jpg,Ndl069,derm7pt_case_876,melanocytic_Nevi,,,male,anterior torso
+NDL/Ndl071.jpg,Ndl071,derm7pt_case_877,melanocytic_Nevi,,,male,lower extremity
+NDL/Ndl074.jpg,Ndl074,derm7pt_case_878,melanocytic_Nevi,,,female,lower extremity
+NDL/Ndl075.jpg,Ndl075,derm7pt_case_858,melanocytic_Nevi,,,male,upper extremity
+NDL/Ndl079.jpg,Ndl079,derm7pt_case_879,melanocytic_Nevi,,,female,upper extremity
+NDL/Ndl081.jpg,Ndl081,derm7pt_case_880,melanocytic_Nevi,,,male,
+NDL/Ndl083.jpg,Ndl083,derm7pt_case_881,melanocytic_Nevi,,,female,lower extremity
+NDL/Ndl089.jpg,Ndl089,derm7pt_case_553,benign_keratosis-like_lesions,,,female,posterior torso
+NDL/Ndl091.jpg,Ndl091,derm7pt_case_828,benign_keratosis-like_lesions,,,female,oral/genital
+NDL/Ndl094.jpg,Ndl094,derm7pt_case_829,benign_keratosis-like_lesions,,,male,head/neck
+NDL/Ndl100.jpg,Ndl100,derm7pt_case_554,benign_keratosis-like_lesions,,,female,posterior torso
+NEL/Nel005.jpg,Nel005,derm7pt_case_501,melanocytic_Nevi,,,female,posterior torso
+NEL/Nel008.jpg,Nel008,derm7pt_case_486,melanocytic_Nevi,,,female,anterior torso
+NEL/Nel010.jpg,Nel010,derm7pt_case_487,melanocytic_Nevi,,,female,anterior torso
+NEL/Nel012.jpg,Nel012,derm7pt_case_470,melanocytic_Nevi,,,male,anterior torso
+NEL/Nel021.jpg,Nel021,derm7pt_case_937,benign_keratosis-like_lesions,,,male,posterior torso
+NEL/Nel023.jpg,Nel023,derm7pt_case_938,benign_keratosis-like_lesions,,,male,anterior torso
+NEL/Nel026.jpg,Nel026,derm7pt_case_1,basal_cell_carcinoma,,,female,anterior torso
+NEL/Nel028.jpg,Nel028,derm7pt_case_2,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel033.jpg,Nel033,derm7pt_case_3,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel035.jpg,Nel035,derm7pt_case_4,basal_cell_carcinoma,,,male,lower extremity
+NEL/Nel037.jpg,Nel037,derm7pt_case_5,basal_cell_carcinoma,,,female,upper extremity
+NEL/Nel039.jpg,Nel039,derm7pt_case_6,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel041.jpg,Nel041,derm7pt_case_7,basal_cell_carcinoma,,,male,posterior torso
+NEL/Nel044.jpg,Nel044,derm7pt_case_982,vascular_lesions,,,female,lower extremity
+NEL/Nel056.jpg,Nel056,derm7pt_case_984,vascular_lesions,,,female,head/neck
+NEL/Nel059.jpg,Nel059,derm7pt_case_985,vascular_lesions,,,male,palms/soles
+NEL/Nel061.jpg,Nel061,derm7pt_case_986,vascular_lesions,,,male,palms/soles
+NEL/Nel062.jpg,Nel062,derm7pt_case_987,vascular_lesions,,,female,anterior torso
+NEL/Nel064.jpg,Nel064,derm7pt_case_988,vascular_lesions,,,male,upper extremity
+NEL/Nel066.jpg,Nel066,derm7pt_case_989,vascular_lesions,,,female,anterior torso
+NEL/Nel068.jpg,Nel068,derm7pt_case_990,vascular_lesions,,,male,lower extremity
+NEL/Nel071.jpg,Nel071,derm7pt_case_991,vascular_lesions,,,female,upper extremity
+NEL/Nel073.jpg,Nel073,derm7pt_case_992,vascular_lesions,,,female,head/neck
+NEL/Nel075.jpg,Nel075,derm7pt_case_993,vascular_lesions,,,female,lower extremity
+NEL/Nel078.jpg,Nel078,derm7pt_case_994,vascular_lesions,,,female,palms/soles
+NEL/Nel081.jpg,Nel081,derm7pt_case_995,vascular_lesions,,,female,palms/soles
+NEL/Nel085.jpg,Nel085,derm7pt_case_8,basal_cell_carcinoma,,,male,head/neck
+NEL/Nel087.jpg,Nel087,derm7pt_case_9,basal_cell_carcinoma,,,female,posterior torso
+NEL/Nel089.jpg,Nel089,derm7pt_case_10,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel091.jpg,Nel091,derm7pt_case_11,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel092.jpg,Nel092,derm7pt_case_12,basal_cell_carcinoma,,,male,posterior torso
+NEL/Nel095.jpg,Nel095,derm7pt_case_13,basal_cell_carcinoma,,,male,head/neck
+NEL/Nel097.jpg,Nel097,derm7pt_case_14,basal_cell_carcinoma,,,female,head/neck
+NEL/Nel098.jpg,Nel098,derm7pt_case_15,basal_cell_carcinoma,,,female,upper extremity
+NEL/Nel100.jpg,Nel100,derm7pt_case_16,basal_cell_carcinoma,,,male,head/neck
+NFL/Nfl004.jpg,Nfl004,derm7pt_case_533,dermatofibroma,,,female,lower extremity
+NFL/Nfl006.jpg,Nfl006,derm7pt_case_939,benign_keratosis-like_lesions,,,male,posterior torso
+NFL/Nfl008.jpg,Nfl008,derm7pt_case_940,benign_keratosis-like_lesions,,,female,posterior torso
+NFL/Nfl010.jpg,Nfl010,derm7pt_case_941,benign_keratosis-like_lesions,,,male,head/neck
+NFL/Nfl012.jpg,Nfl012,derm7pt_case_942,benign_keratosis-like_lesions,,,male,posterior torso
+NFL/Nfl014.jpg,Nfl014,derm7pt_case_943,benign_keratosis-like_lesions,,,female,anterior torso
+NFL/Nfl016.jpg,Nfl016,derm7pt_case_944,benign_keratosis-like_lesions,,,female,upper extremity
+NFL/Nfl018.jpg,Nfl018,derm7pt_case_945,benign_keratosis-like_lesions,,,male,upper extremity
+NFL/Nfl020.jpg,Nfl020,derm7pt_case_946,benign_keratosis-like_lesions,,,male,head/neck
+NFL/Nfl022.jpg,Nfl022,derm7pt_case_947,benign_keratosis-like_lesions,,,female,head/neck
+NFL/Nfl024.jpg,Nfl024,derm7pt_case_948,benign_keratosis-like_lesions,,,male,head/neck
+NFL/Nfl026.jpg,Nfl026,derm7pt_case_949,benign_keratosis-like_lesions,,,male,anterior torso
+NFL/Nfl032.jpg,Nfl032,derm7pt_case_114,melanocytic_Nevi,,,female,palms/soles
+NFL/Nfl034.jpg,Nfl034,derm7pt_case_471,melanocytic_Nevi,,,male,anterior torso
+NFL/Nfl036.jpg,Nfl036,derm7pt_case_488,melanocytic_Nevi,,,female,lower extremity
+NFL/Nfl038.jpg,Nfl038,derm7pt_case_830,benign_keratosis-like_lesions,,,male,head/neck
+NFL/Nfl040.jpg,Nfl040,derm7pt_case_43,melanocytic_Nevi,,,female,palms/soles
+NFL/Nfl042.jpg,Nfl042,derm7pt_case_502,melanocytic_Nevi,,,female,upper extremity
+NFL/Nfl044.jpg,Nfl044,derm7pt_case_503,melanocytic_Nevi,,,female,head/neck
+NFL/Nfl046.jpg,Nfl046,derm7pt_case_44,melanocytic_Nevi,,,male,head/neck
+NFL/Nfl048.jpg,Nfl048,derm7pt_case_45,melanocytic_Nevi,,,male,lower extremity
+NFL/Nfl050.jpg,Nfl050,derm7pt_case_46,melanocytic_Nevi,,,female,upper extremity
+NFL/Nfl052.jpg,Nfl052,derm7pt_case_115,melanocytic_Nevi,,,male,posterior torso
+NFL/Nfl054.jpg,Nfl054,derm7pt_case_601,melanoma,,,male,head/neck
+NFL/Nfl063.jpg,Nfl063,derm7pt_case_662,melanoma,,,female,posterior torso
+NFL/Nfl068.jpg,Nfl068,derm7pt_case_17,basal_cell_carcinoma,,,male,posterior torso
+NFL/Nfl074.jpg,Nfl074,derm7pt_case_853,melanocytic_Nevi,,,female,posterior torso
+NGL/Ngl002.jpg,Ngl002,derm7pt_case_602,melanoma,,,male,anterior torso
+NGL/Ngl004.jpg,Ngl004,derm7pt_case_749,melanoma,,,female,lower extremity
+NGL/Ngl006.jpg,Ngl006,derm7pt_case_803,melanoma,,,male,upper extremity
+NGL/Ngl008.jpg,Ngl008,derm7pt_case_665,melanoma,,,male,posterior torso
+NGL/Ngl013.jpg,Ngl013,derm7pt_case_666,melanoma,,,female,lower extremity
+NGL/Ngl015.jpg,Ngl015,derm7pt_case_805,melanoma,,,female,anterior torso
+NGL/Ngl017.jpg,Ngl017,derm7pt_case_667,melanoma,,,female,anterior torso
+NGL/Ngl019.jpg,Ngl019,derm7pt_case_668,melanoma,,,male,posterior torso
+NGL/Ngl021.jpg,Ngl021,derm7pt_case_669,melanoma,,,female,lower extremity
+NGL/Ngl023.jpg,Ngl023,derm7pt_case_116,melanocytic_Nevi,,,female,upper extremity
+NGL/Ngl027.jpg,Ngl027,derm7pt_case_670,melanoma,,,female,lower extremity
+NGL/Ngl029.jpg,Ngl029,derm7pt_case_882,melanocytic_Nevi,,,female,upper extremity
+NGL/Ngl031.jpg,Ngl031,derm7pt_case_883,melanocytic_Nevi,,,female,lower extremity
+NGL/Ngl033.jpg,Ngl033,derm7pt_case_884,melanocytic_Nevi,,,female,lower extremity
+NGL/Ngl037.jpg,Ngl037,derm7pt_case_885,melanocytic_Nevi,,,female,upper extremity
+NGL/Ngl039.jpg,Ngl039,derm7pt_case_671,melanoma,,,male,lower extremity
+NGL/Ngl041.jpg,Ngl041,derm7pt_case_751,melanoma,,,female,lower extremity
+NGL/Ngl043.jpg,Ngl043,derm7pt_case_117,melanocytic_Nevi,,,female,lower extremity
+NGL/Ngl047.jpg,Ngl047,derm7pt_case_18,basal_cell_carcinoma,,,male,posterior torso
+NGL/Ngl049.jpg,Ngl049,derm7pt_case_118,melanocytic_Nevi,,,female,posterior torso
+NGL/Ngl053.jpg,Ngl053,derm7pt_case_119,melanocytic_Nevi,,,female,anterior torso
+NGL/Ngl055.jpg,Ngl055,derm7pt_case_672,melanoma,,,female,anterior torso
+NGL/Ngl057.jpg,Ngl057,derm7pt_case_804,melanoma,,,male,anterior torso
+NGL/Ngl060.jpg,Ngl060,derm7pt_case_886,melanocytic_Nevi,,,female,lower extremity
+NGL/Ngl062.jpg,Ngl062,derm7pt_case_604,melanoma,,,female,posterior torso
+NGL/Ngl064.jpg,Ngl064,derm7pt_case_673,melanoma,,,female,head/neck
+NGL/Ngl066.jpg,Ngl066,derm7pt_case_752,melanoma,,,male,posterior torso
+NGL/Ngl068.jpg,Ngl068,derm7pt_case_605,melanoma,,,male,anterior torso
+NGL/Ngl072.jpg,Ngl072,derm7pt_case_47,melanocytic_Nevi,,,female,head/neck
+NGL/Ngl074.jpg,Ngl074,derm7pt_case_120,melanocytic_Nevi,,,male,lower extremity
+NGL/Ngl076.jpg,Ngl076,derm7pt_case_121,melanocytic_Nevi,,,female,anterior torso
+NGL/Ngl078.jpg,Ngl078,derm7pt_case_887,melanocytic_Nevi,,,male,upper extremity
+NGL/Ngl082.jpg,Ngl082,derm7pt_case_996,vascular_lesions,,,female,head/neck
+NGL/Ngl084.jpg,Ngl084,derm7pt_case_606,melanoma,,,male,head/neck
+NGL/Ngl086.jpg,Ngl086,derm7pt_case_472,melanocytic_Nevi,,,male,anterior torso
+NGL/Ngl088.jpg,Ngl088,derm7pt_case_753,melanoma,,,male,lower extremity
+NGL/Ngl090.jpg,Ngl090,derm7pt_case_48,melanocytic_Nevi,,,male,
+NGL/Ngl092.jpg,Ngl092,derm7pt_case_122,melanocytic_Nevi,,,female,posterior torso
+NGL/Ngl094.jpg,Ngl094,derm7pt_case_123,melanocytic_Nevi,,,male,posterior torso
+NGL/Ngl096.jpg,Ngl096,derm7pt_case_124,melanocytic_Nevi,,,male,anterior torso
+NGL/Ngl098.jpg,Ngl098,derm7pt_case_473,melanocytic_Nevi,,,female,anterior torso
+NGL/Ngl100.jpg,Ngl100,derm7pt_case_674,melanoma,,,female,upper extremity
+NHL/Nhl009.jpg,Nhl009,derm7pt_case_607,melanoma,,,male,anterior torso
+NHL/Nhl011.jpg,Nhl011,derm7pt_case_19,basal_cell_carcinoma,,,female,posterior torso
+NHL/Nhl013.jpg,Nhl013,derm7pt_case_125,melanocytic_Nevi,,,male,posterior torso
+NHL/Nhl015.jpg,Nhl015,derm7pt_case_126,melanocytic_Nevi,,,male,posterior torso
+NHL/Nhl017.jpg,Nhl017,derm7pt_case_806,melanoma,,,male,posterior torso
+NIL/Nil002.jpg,Nil002,derm7pt_case_127,melanocytic_Nevi,,,female,anterior torso
+NIL/Nil004.jpg,Nil004,derm7pt_case_888,melanocytic_Nevi,,,female,lower extremity
+NIL/Nil006.jpg,Nil006,derm7pt_case_128,melanocytic_Nevi,,,female,palms/soles
+NIL/Nil008.jpg,Nil008,derm7pt_case_129,melanocytic_Nevi,,,male,posterior torso
+NIL/Nil010.jpg,Nil010,derm7pt_case_130,melanocytic_Nevi,,,female,posterior torso
+NIL/Nil021.jpg,Nil021,derm7pt_case_131,melanocytic_Nevi,,,male,lower extremity
+NIL/Nil023.jpg,Nil023,derm7pt_case_889,melanocytic_Nevi,,,male,lower extremity
+NIL/Nil025.jpg,Nil025,derm7pt_case_132,melanocytic_Nevi,,,female,posterior torso
+NIL/Nil027.jpg,Nil027,derm7pt_case_133,melanocytic_Nevi,,,male,posterior torso
+NIL/Nil029.jpg,Nil029,derm7pt_case_890,melanocytic_Nevi,,,female,lower extremity
+NIL/Nil031.jpg,Nil031,derm7pt_case_608,melanoma,,,male,upper extremity
+NIL/Nil033.jpg,Nil033,derm7pt_case_134,melanocytic_Nevi,,,female,anterior torso
+NIL/Nil035.jpg,Nil035,derm7pt_case_135,melanocytic_Nevi,,,female,anterior torso
+NIL/Nil037.jpg,Nil037,derm7pt_case_136,melanocytic_Nevi,,,female,
+NIL/Nil041.jpg,Nil041,derm7pt_case_891,melanocytic_Nevi,,,female,lower extremity
+NIL/Nil043.jpg,Nil043,derm7pt_case_137,melanocytic_Nevi,,,female,palms/soles
+NIL/Nil045.jpg,Nil045,derm7pt_case_138,melanocytic_Nevi,,,male,anterior torso
+NIL/Nil048.jpg,Nil048,derm7pt_case_139,melanocytic_Nevi,,,female,palms/soles
+NIL/Nil052.jpg,Nil052,derm7pt_case_140,melanocytic_Nevi,,,male,anterior torso
+NIL/Nil054.jpg,Nil054,derm7pt_case_141,melanocytic_Nevi,,,male,posterior torso
+NIL/Nil056.jpg,Nil056,derm7pt_case_142,melanocytic_Nevi,,,male,anterior torso
+NIL/Nil058.jpg,Nil058,derm7pt_case_892,melanocytic_Nevi,,,male,posterior torso
+NIL/Nil060.jpg,Nil060,derm7pt_case_143,melanocytic_Nevi,,,male,anterior torso
+NIL/Nil062.jpg,Nil062,derm7pt_case_807,melanoma,,,male,posterior torso
+NIL/Nil064.jpg,Nil064,derm7pt_case_754,melanoma,,,female,anterior torso
+NIL/Nil066.jpg,Nil066,derm7pt_case_675,melanoma,,,male,posterior torso
+NIL/Nil068.jpg,Nil068,derm7pt_case_755,melanoma,,,male,upper extremity
+NIL/Nil070.jpg,Nil070,derm7pt_case_676,melanoma,,,female,posterior torso
+NIL/Nil076.jpg,Nil076,derm7pt_case_677,melanoma,,,female,upper extremity
+NIL/Nil078.jpg,Nil078,derm7pt_case_678,melanoma,,,male,anterior torso
+NIL/Nil080.jpg,Nil080,derm7pt_case_609,melanoma,,,male,lower extremity
+NIL/Nil082.jpg,Nil082,derm7pt_case_756,melanoma,,,male,posterior torso
+NIL/Nil084.jpg,Nil084,derm7pt_case_610,melanoma,,,male,posterior torso
+NIL/Nil086.jpg,Nil086,derm7pt_case_808,melanoma,,,female,posterior torso
+NIL/Nil088.jpg,Nil088,derm7pt_case_679,melanoma,,,female,upper extremity
+NIL/Nil090.jpg,Nil090,derm7pt_case_757,melanoma,,,female,upper extremity
+NIL/Nil093.jpg,Nil093,derm7pt_case_758,melanoma,,,female,lower extremity
+NIL/Nil096.jpg,Nil096,derm7pt_case_680,melanoma,,,male,lower extremity
+NIL/Nil100.jpg,Nil100,derm7pt_case_681,melanoma,,,male,anterior torso
+NIL/Nil103.jpg,Nil103,derm7pt_case_682,melanoma,,,female,posterior torso
+NLL/Nll002.jpg,Nll002,derm7pt_case_683,melanoma,,,female,upper extremity
+NLL/Nll004.jpg,Nll004,derm7pt_case_684,melanoma,,,female,posterior torso
+NLL/Nll016.jpg,Nll016,derm7pt_case_144,melanocytic_Nevi,,,male,anterior torso
+NLL/Nll018.jpg,Nll018,derm7pt_case_145,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll020.jpg,Nll020,derm7pt_case_146,melanocytic_Nevi,,,male,lower extremity
+NLL/Nll024.jpg,Nll024,derm7pt_case_469,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll030.jpg,Nll030,derm7pt_case_149,melanocytic_Nevi,,,male,palms/soles
+NLL/Nll038.jpg,Nll038,derm7pt_case_504,melanocytic_Nevi,,,male,head/neck
+NLL/Nll040.jpg,Nll040,derm7pt_case_505,melanocytic_Nevi,,,female,head/neck
+NLL/Nll042.jpg,Nll042,derm7pt_case_152,melanocytic_Nevi,,,male,anterior torso
+NLL/Nll046.jpg,Nll046,derm7pt_case_153,melanocytic_Nevi,,,male,upper extremity
+NLL/Nll048.jpg,Nll048,derm7pt_case_506,melanocytic_Nevi,,,female,upper extremity
+NLL/Nll050.jpg,Nll050,derm7pt_case_507,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll056.jpg,Nll056,derm7pt_case_509,melanocytic_Nevi,,,male,anterior torso
+NLL/Nll058.jpg,Nll058,derm7pt_case_510,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll060.jpg,Nll060,derm7pt_case_154,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll062.jpg,Nll062,derm7pt_case_155,melanocytic_Nevi,,,male,anterior torso
+NLL/Nll069.jpg,Nll069,derm7pt_case_157,melanocytic_Nevi,,,male,lower extremity
+NLL/Nll072.jpg,Nll072,derm7pt_case_158,melanocytic_Nevi,,,male,lower extremity
+NLL/Nll076.jpg,Nll076,derm7pt_case_159,melanocytic_Nevi,,,female,lower extremity
+NLL/Nll084.jpg,Nll084,derm7pt_case_160,melanocytic_Nevi,,,male,posterior torso
+NLL/Nll088.jpg,Nll088,derm7pt_case_511,melanocytic_Nevi,,,female,head/neck
+NLL/Nll094.jpg,Nll094,derm7pt_case_161,melanocytic_Nevi,,,male,upper extremity
+NLL/Nll098.jpg,Nll098,derm7pt_case_162,melanocytic_Nevi,,,male,anterior torso
+NLL/Nll100.jpg,Nll100,derm7pt_case_893,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll102.jpg,Nll102,derm7pt_case_163,melanocytic_Nevi,,,female,anterior torso
+NLL/Nll104.jpg,Nll104,derm7pt_case_164,melanocytic_Nevi,,,female,lower extremity
+NLL/Nll106.jpg,Nll106,derm7pt_case_165,melanocytic_Nevi,,,female,upper extremity
+NML/Nml002.jpg,Nml002,derm7pt_case_166,melanocytic_Nevi,,,male,
+NML/Nml004.jpg,Nml004,derm7pt_case_854,melanocytic_Nevi,,,female,anterior torso
+NML/Nml006.jpg,Nml006,derm7pt_case_167,melanocytic_Nevi,,,female,posterior torso
+NML/Nml008.jpg,Nml008,derm7pt_case_168,melanocytic_Nevi,,,female,anterior torso
+NML/Nml010.jpg,Nml010,derm7pt_case_894,melanocytic_Nevi,,,male,lower extremity
+NML/Nml012.jpg,Nml012,derm7pt_case_895,melanocytic_Nevi,,,female,
+NML/Nml014.jpg,Nml014,derm7pt_case_169,melanocytic_Nevi,,,female,posterior torso
+NML/Nml016.jpg,Nml016,derm7pt_case_896,melanocytic_Nevi,,,female,lower extremity
+NML/Nml018.jpg,Nml018,derm7pt_case_170,melanocytic_Nevi,,,female,anterior torso
+NML/Nml020.jpg,Nml020,derm7pt_case_809,melanoma,,,male,anterior torso
+NML/Nml022.jpg,Nml022,derm7pt_case_685,melanoma,,,female,lower extremity
+NML/Nml024.jpg,Nml024,derm7pt_case_760,melanoma,,,male,lower extremity
+NML/Nml030.jpg,Nml030,derm7pt_case_171,melanocytic_Nevi,,,male,posterior torso
+NML/Nml034.jpg,Nml034,derm7pt_case_172,melanocytic_Nevi,,,female,posterior torso
+NML/Nml039.jpg,Nml039,derm7pt_case_489,melanocytic_Nevi,,,male,anterior torso
+NML/Nml041.jpg,Nml041,derm7pt_case_997,vascular_lesions,,,female,upper extremity
+NML/Nml043.jpg,Nml043,derm7pt_case_49,melanocytic_Nevi,,,male,palms/soles
+NML/Nml045.jpg,Nml045,derm7pt_case_474,melanocytic_Nevi,,,male,upper extremity
+NML/Nml047.jpg,Nml047,derm7pt_case_475,melanocytic_Nevi,,,male,posterior torso
+NML/Nml049.jpg,Nml049,derm7pt_case_897,melanocytic_Nevi,,,male,lower extremity
+NML/Nml051.jpg,Nml051,derm7pt_case_513,melanocytic_Nevi,,,male,posterior torso
+NML/Nml063.jpg,Nml063,derm7pt_case_514,melanocytic_Nevi,,,female,head/neck
+NML/Nml065.jpg,Nml065,derm7pt_case_515,melanocytic_Nevi,,,male,anterior torso
+NML/Nml067.jpg,Nml067,derm7pt_case_468,melanocytic_Nevi,,,male,anterior torso
+NML/Nml071.jpg,Nml071,derm7pt_case_855,melanocytic_Nevi,,,female,anterior torso
+NML/Nml073.jpg,Nml073,derm7pt_case_761,melanoma,,,male,posterior torso
+NML/Nml077.jpg,Nml077,derm7pt_case_686,melanoma,,,female,posterior torso
+NML/Nml079.jpg,Nml079,derm7pt_case_687,melanoma,,,male,lower extremity
+NML/Nml081.jpg,Nml081,derm7pt_case_810,melanoma,,,female,posterior torso
+NML/Nml085.jpg,Nml085,derm7pt_case_173,melanocytic_Nevi,,,male,posterior torso
+NML/Nml087.jpg,Nml087,derm7pt_case_50,melanocytic_Nevi,,,female,lower extremity
+NML/Nml089.jpg,Nml089,derm7pt_case_51,melanocytic_Nevi,,,female,upper extremity
+NML/Nml094.jpg,Nml094,derm7pt_case_899,melanocytic_Nevi,,,male,palms/soles
+NML/Nml096.jpg,Nml096,derm7pt_case_900,melanocytic_Nevi,,,male,upper extremity
+NML/Nml098.jpg,Nml098,derm7pt_case_20,basal_cell_carcinoma,,,male,posterior torso
+NML/Nml102.jpg,Nml102,derm7pt_case_21,basal_cell_carcinoma,,,female,upper extremity
+NML/Nml104.jpg,Nml104,derm7pt_case_22,basal_cell_carcinoma,,,male,posterior torso
+NML/Nml106.jpg,Nml106,derm7pt_case_23,basal_cell_carcinoma,,,female,head/neck
+NML/Nml108.jpg,Nml108,derm7pt_case_998,vascular_lesions,,,male,upper extremity
+NML/Nml114.jpg,Nml114,derm7pt_case_951,benign_keratosis-like_lesions,,,male,head/neck
+Gzl/gzl02.jpg,gzl02,derm7pt_case_29,basal_cell_carcinoma,,,female,posterior torso
+Gzl/gzl04.jpg,gzl04,derm7pt_case_693,melanoma,,,female,lower extremity
+Gzl/gzl06.jpg,gzl06,derm7pt_case_30,basal_cell_carcinoma,,,female,posterior torso
+Gzl/gzl08.jpg,gzl08,derm7pt_case_284,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl10.jpg,gzl10,derm7pt_case_289,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl12.jpg,gzl12,derm7pt_case_765,melanoma,,,male,posterior torso
+Gzl/gzl14.jpg,gzl14,derm7pt_case_914,melanocytic_Nevi,,,female,upper extremity
+Gzl/gzl16.jpg,gzl16,derm7pt_case_694,melanoma,,,female,posterior torso
+Gzl/gzl18.jpg,gzl18,derm7pt_case_959,benign_keratosis-like_lesions,,,male,anterior torso
+Gzl/gzl20.jpg,gzl20,derm7pt_case_613,melanoma,,,female,posterior torso
+Gzl/gzl22.jpg,gzl22,derm7pt_case_287,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl24.jpg,gzl24,derm7pt_case_60,melanocytic_Nevi,,,female,lower extremity
+Gzl/gzl26.jpg,gzl26,derm7pt_case_766,melanoma,,,male,anterior torso
+Gzl/gzl28.jpg,gzl28,derm7pt_case_614,melanoma,,,male,lower extremity
+Gzl/gzl30.jpg,gzl30,derm7pt_case_960,benign_keratosis-like_lesions,,,female,anterior torso
+Gzl/gzl32.jpg,gzl32,derm7pt_case_293,melanocytic_Nevi,,,female,anterior torso
+Gzl/gzl34.jpg,gzl34,derm7pt_case_294,melanocytic_Nevi,,,female,anterior torso
+Gzl/gzl36.jpg,gzl36,derm7pt_case_295,melanocytic_Nevi,,,male,anterior torso
+Gzl/gzl38.jpg,gzl38,derm7pt_case_31,basal_cell_carcinoma,,,male,posterior torso
+Gzl/gzl42.jpg,gzl42,derm7pt_case_62,melanocytic_Nevi,,,female,posterior torso
+Gzl/gzl46.jpg,gzl46,derm7pt_case_961,benign_keratosis-like_lesions,,,female,anterior torso
+Gzl/gzl48.jpg,gzl48,derm7pt_case_560,benign_keratosis-like_lesions,,,female,head/neck
+Gzl/gzl50.jpg,gzl50,derm7pt_case_696,melanoma,,,female,posterior torso
+Gzl/gzl52.jpg,gzl52,derm7pt_case_523,melanocytic_Nevi,,,male,anterior torso
+Gzl/gzl54.jpg,gzl54,derm7pt_case_296,melanocytic_Nevi,,,male,anterior torso
+Gzl/gzl56.jpg,gzl56,derm7pt_case_283,melanocytic_Nevi,,,female,posterior torso
+Gzl/gzl58.jpg,gzl58,derm7pt_case_913,melanocytic_Nevi,,,female,lower extremity
+Gzl/gzl60.jpg,gzl60,derm7pt_case_559,benign_keratosis-like_lesions,,,male,posterior torso
+Gzl/gzl62.jpg,gzl62,derm7pt_case_285,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl64.jpg,gzl64,derm7pt_case_813,melanoma,,,male,lower extremity
+Gzl/gzl66.jpg,gzl66,derm7pt_case_286,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl68.jpg,gzl68,derm7pt_case_522,melanocytic_Nevi,,,male,head/neck
+Gzl/gzl70.jpg,gzl70,derm7pt_case_288,melanocytic_Nevi,,,male,lower extremity
+Gzl/gzl72.jpg,gzl72,derm7pt_case_831,benign_keratosis-like_lesions,,,female,head/neck
+Gzl/gzl74.jpg,gzl74,derm7pt_case_1002,vascular_lesions,,,male,upper extremity
+Gzl/gzl76.jpg,gzl76,derm7pt_case_695,melanoma,,,female,head/neck
+Gzl/gzl78.jpg,gzl78,derm7pt_case_814,melanoma,,,female,
+Gzl/gzl80.jpg,gzl80,derm7pt_case_290,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl82.jpg,gzl82,derm7pt_case_856,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl84.jpg,gzl84,derm7pt_case_291,melanocytic_Nevi,,,male,posterior torso
+Gzl/gzl86.jpg,gzl86,derm7pt_case_292,melanocytic_Nevi,,,female,posterior torso
+Gzl/gzl88.jpg,gzl88,derm7pt_case_61,melanocytic_Nevi,,,female,lower extremity
+NAL/nal095.jpg,nal095,derm7pt_case_653,melanoma,,,female,lower extremity
+NDL/ndl013.jpg,ndl013,derm7pt_case_101,melanocytic_Nevi,,,female,lower extremity
+NDL/ndl085.jpg,ndl085,derm7pt_case_852,melanocytic_Nevi,,,male,posterior torso
+New/newl006.jpg,newl006,derm7pt_case_568,benign_keratosis-like_lesions,,,female,upper extremity
+New/newl008.jpg,newl008,derm7pt_case_569,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl010.jpg,newl010,derm7pt_case_570,benign_keratosis-like_lesions,,,male,posterior torso
+New/newl012.jpg,newl012,derm7pt_case_571,benign_keratosis-like_lesions,,,female,head/neck
+New/newl014.jpg,newl014,derm7pt_case_736,melanoma,,,female,upper extremity
+New/newl016.jpg,newl016,derm7pt_case_1010,vascular_lesions,,,male,upper extremity
+New/newl018.jpg,newl018,derm7pt_case_572,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl020.jpg,newl020,derm7pt_case_573,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl022.jpg,newl022,derm7pt_case_574,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl024.jpg,newl024,derm7pt_case_575,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl026.jpg,newl026,derm7pt_case_576,benign_keratosis-like_lesions,,,male,upper extremity
+New/newl030.jpg,newl030,derm7pt_case_934,melanocytic_Nevi,,,female,upper extremity
+New/newl032.jpg,newl032,derm7pt_case_737,melanoma,,,male,head/neck
+New/newl034.jpg,newl034,derm7pt_case_935,melanocytic_Nevi,,,female,upper extremity
+New/newl036.jpg,newl036,derm7pt_case_823,melanoma,,,male,upper extremity
+New/newl039.jpg,newl039,derm7pt_case_936,melanocytic_Nevi,,,female,lower extremity
+New/newl043.jpg,newl043,derm7pt_case_738,melanoma,,,male,anterior torso
+New/newl045.jpg,newl045,derm7pt_case_794,melanoma,,,male,posterior torso
+New/newl047.jpg,newl047,derm7pt_case_739,melanoma,,,male,posterior torso
+New/newl049.jpg,newl049,derm7pt_case_740,melanoma,,,female,lower extremity
+New/newl051.jpg,newl051,derm7pt_case_741,melanoma,,,male,lower extremity
+New/newl053.jpg,newl053,derm7pt_case_640,melanoma,,,male,head/neck
+New/newl055.jpg,newl055,derm7pt_case_795,melanoma,,,female,lower extremity
+New/newl059.jpg,newl059,derm7pt_case_742,melanoma,,,male,posterior torso
+NFL/nfl070.jpg,nfl070,derm7pt_case_663,melanoma,,,female,upper extremity
+NFL/nfl072.jpg,nfl072,derm7pt_case_664,melanoma,,,female,upper extremity
+NLL/nll014.jpg,nll014,derm7pt_case_759,melanoma,,,male,anterior torso
+NLL/nll022.jpg,nll022,derm7pt_case_147,melanocytic_Nevi,,,female,upper extremity
+NLL/nll026.jpg,nll026,derm7pt_case_148,melanocytic_Nevi,,,female,lower extremity
+NLL/nll032.jpg,nll032,derm7pt_case_150,melanocytic_Nevi,,,female,palms/soles

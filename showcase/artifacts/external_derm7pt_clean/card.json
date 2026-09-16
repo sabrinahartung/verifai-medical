@@ -1,0 +1,11 @@
+{
+  "id": "external_derm7pt_clean",
+  "name": "Skin-Lesion ResNet18 (clean split) — external",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "The HAM10000-only model on Derm7pt. Trained on one archive, so if a mixed corpus buys robustness to a new archive, this is what should fall furthest.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ResNet18 · clean split · external"
+}

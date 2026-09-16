@@ -1,0 +1,11 @@
+{
+  "id": "external_derm7pt_isic_masked",
+  "name": "Skin-Lesion ResNet18 (ISIC 2019) — external, AK masked",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "The same model and the same images, with actinic keratoses switched off in the decision rule because this population has none. An upper bound rather than a prediction — knowing that required looking at the test labels.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ResNet18 · ISIC 2019 · external, class masked"
+}
