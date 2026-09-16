@@ -41,6 +41,7 @@ model:
   loader: verifai.models.image:load
   weights_path: artifacts_training/curve_ft_n500.pt
 name: curve_ft_n500
+label: "fine-tuned, n=500"
 sample_size: null
 seed: 42
 training:

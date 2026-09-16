@@ -10,6 +10,7 @@
 #   3. python scripts/train_model.py scenarios/skin_cancer_clean.yaml
 #   4. python scripts/run_scenario.py scenarios/skin_cancer_clean.yaml
 name: skin_cancer_clean
+label: "HAM10000 corpus (clean split)"
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

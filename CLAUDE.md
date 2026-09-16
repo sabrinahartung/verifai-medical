@@ -27,7 +27,7 @@ The repo `.venv` already has both engine and showcase deps (torch, torchvision, 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (80 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (82 of them, no network or checkpoint needed):
 
 ```bash
 pip install -r requirements-dev.txt
@@ -130,6 +130,13 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   `tests/`.
 
 ### The two extension contracts
+
+Every scenario declares a top-level `label:` — a short human name. It heads that run's
+column in the comparison table, and without it the snapshot falls back to `model_id`, which
+turns the table into identifiers a reader has to decode (`external-derm7pt-isic` against
+`external-derm7pt-isic-masked` differ by one decision weight and neither string says which).
+`showcase/app.py::run_label` falls back to the gallery card's name for artifacts written
+before this existed; an explicit label always wins. A test asserts every scenario has one.
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 a new artifact folder is a new tile. `card:` in the YAML is passed straight through to `card.json`.

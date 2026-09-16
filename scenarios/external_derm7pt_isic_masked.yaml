@@ -72,5 +72,6 @@ model:
   decision_weights:
     actinic_keratoses: 0
 name: external_derm7pt_isic_masked
+label: "ISIC corpus — absent class masked"
 sample_size: null
 seed: 42

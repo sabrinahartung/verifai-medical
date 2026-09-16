@@ -1161,7 +1161,7 @@ def test_curve_scenarios_differ_only_in_size_and_regime():
 
     loaded = {p.name: flat(yaml.safe_load(p.read_text(encoding="utf-8"))) for p in points}
     allowed = {"training.manifest_prefix", "training.freeze_backbone", "training.lr",
-               "name", "model.id", "model.weights_path"}
+               "name", "label", "model.id", "model.weights_path"}
     names = sorted(loaded)
     ref = loaded[names[0]]
     for other in names[1:]:
@@ -1319,3 +1319,51 @@ def test_balanced_accuracy_says_how_many_classes_it_averaged():
     assert '"classes_absent_from_test"' in src
     assert "not comparable" in src, \
         "the summary has to say it in words, not only in a field nobody reads"
+
+
+def test_every_scenario_declares_a_human_label():
+    """Without one the comparison table heads its columns with model ids.
+
+    `external-derm7pt-isic` against `external-derm7pt-isic-masked` differ by a
+    single decision weight, and neither string says which is which — a reader has
+    to decode the table instead of reading it.
+    """
+    yaml = pytest.importorskip("yaml")
+    missing = []
+    for path in sorted((REPO / "scenarios").glob("*.yaml")):
+        sc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        label = sc.get("label")
+        if not label:
+            missing.append(path.name)
+            continue
+        assert label != sc.get("model", {}).get("id"), \
+            f"{path.name}: label must not simply repeat the model id"
+        assert "_" not in label, f"{path.name}: {label!r} reads like an identifier"
+    assert not missing, f"scenarios without a label: {missing}"
+
+
+def test_older_artifacts_fall_back_to_the_card_name():
+    """Snapshots written before scenarios declared a label carry the model id.
+
+    Re-running eighteen evaluations to change a caption would be absurd, so the
+    app resolves it from the gallery card, which was always human-readable. An
+    explicit label must still win — the fallback may not override a real one.
+    """
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+
+    app._CARD_NAMES["some_scenario"] = "A readable name"
+    legacy = {"scenario": "some_scenario", "label": "model-id-x", "model_id": "model-id-x"}
+    assert app.run_label(legacy) == "A readable name"
+
+    explicit = {"scenario": "some_scenario", "label": "Focal loss (γ=2)",
+                "model_id": "model-id-x"}
+    assert app.run_label(explicit) == "Focal loss (γ=2)", \
+        "an explicit label must survive the fallback"
+
+    # No card either: the model id is still more informative than the scenario
+    # directory name, so it stands rather than being replaced by something worse.
+    unknown = {"scenario": "never_seen", "label": "mid", "model_id": "mid"}
+    assert app.run_label(unknown) == "mid"
+    assert app.run_label({"scenario": "never_seen"}) == "never_seen"

@@ -71,5 +71,6 @@ model:
   decision_weights:
     melanoma: 30
 name: external_derm7pt_isic_highsens
+label: "ISIC · melanoma ×30 (tuned on HAM10000)"
 sample_size: null
 seed: 42

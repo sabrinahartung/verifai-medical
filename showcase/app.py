@@ -163,6 +163,32 @@ def load_snapshots() -> list[dict]:
     return sorted(snaps, key=lambda s: s.get("created_at", ""))
 
 
+# Scenario id -> the card's human name, filled once per render from the catalog.
+# A module-level cache rather than a parameter because run_label is called from
+# eight places, several of them deep inside the comparison view.
+_CARD_NAMES: dict[str, str] = {}
+
+
+def run_label(snap: dict) -> str:
+    """What to call this run in a table, a chart legend or a warning.
+
+    A scenario declares `label:` and the exporter writes it into the snapshot;
+    without one it falls back to `model_id`, and a table headed
+    `external-derm7pt-isic` against `external-derm7pt-isic-masked` is one a reader
+    has to decode rather than read — the two differ by a single decision weight
+    and nothing in those strings says which is which.
+
+    Every scenario carries a label now, but artifacts written before that do not,
+    and re-running eighteen evaluations to change a caption would be absurd. So a
+    snapshot whose label is merely its model id falls back to the gallery card's
+    name, which was always human-readable.
+    """
+    label = snap.get("label")
+    if label and label != snap.get("model_id"):
+        return label
+    return _CARD_NAMES.get(snap.get("scenario", ""), label or snap.get("scenario", "?"))
+
+
 def comparability_key(snap: dict) -> tuple:
     """Runs are comparable only when scored on exactly the same rows.
 
@@ -214,7 +240,7 @@ def best_run(key: str, runs: list[dict], direction: str | None) -> str | None:
     if not vals:
         return None
     pick = max(vals, key=lambda rv: rv[1]) if direction == "higher" else min(vals, key=lambda rv: rv[1])
-    return pick[0].get("label") or pick[0]["scenario"]
+    return run_label(pick[0])
 
 
 def dominated_by(runs: list[dict], keys: list[str], dirs: dict[str, str | None]) -> dict[str, str]:
@@ -229,11 +255,11 @@ def dominated_by(runs: list[dict], keys: list[str], dirs: dict[str, str | None])
         return {}
     out: dict[str, str] = {}
     for a in runs:
-        la = a.get("label") or a["scenario"]
+        la = run_label(a)
         for b in runs:
             if a is b:
                 continue
-            lb = b.get("label") or b["scenario"]
+            lb = run_label(b)
             better_somewhere = False
             worse_somewhere = False
             for k in ranked:
@@ -601,7 +627,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             key = comparability_key(s)
             if key in kept_keys:
                 hidden_comparable.setdefault(key, set()).add(
-                    s.get("label") or s["scenario"])
+                    run_label(s))
         snaps = kept
         st.caption(f"Filtered to the {len(ids)} configuration(s) in this lineage. "
                    f"Comparability is still decided by the evaluation set, not the lineage.")
@@ -667,7 +693,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         # Collapse to the newest per configuration, with the full record a click away.
         by_label: dict[str, list[dict]] = {}
         for r in sorted(usable, key=lambda r: r.get("created_at", "")):
-            by_label.setdefault(r.get("label") or r["scenario"], []).append(r)
+            by_label.setdefault(run_label(r), []).append(r)
         repeats = sum(len(v) - 1 for v in by_label.values())
         if repeats and not st.checkbox(
                 f"Show every recorded run ({repeats} repeat(s) of a configuration hidden)",
@@ -705,7 +731,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             st.divider(); continue
 
         dirs = {k: direction_for(k, usable) for k in chosen}
-        labels = [r.get("label") or r["scenario"] for r in usable]
+        labels = [run_label(r) for r in usable]
 
         # --- is there an outright winner, or is this a trade-off? ---
         dom = dominated_by(usable, chosen, dirs)
@@ -740,7 +766,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 entry = explain_metric(k)
                 row = {"term": entry["term"] if entry else "—", **row}
             for r in usable:
-                lab = r.get("label") or r["scenario"]
+                lab = run_label(r)
                 v = r["metrics"].get(k)
                 row[lab] = None if v is None else round(v, 4)
             row["best"] = leader or "—"
@@ -765,7 +791,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                               index=min(1, len(ranked_keys) - 1), key=f"y_{gi}")
             fig = go.Figure()
             for r in usable:
-                lab = r.get("label") or r["scenario"]
+                lab = run_label(r)
                 fig.add_trace(go.Scatter(
                     x=[r["metrics"].get(xk)], y=[r["metrics"].get(yk)], mode="markers+text",
                     text=[lab], textposition="top center", name=lab, marker=dict(size=14)))
@@ -875,6 +901,9 @@ def dashboard(card: dict):
 
 # ---------- main ----------
 cards = load_catalog()
+# run_label falls back to these for artifacts written before scenarios declared a
+# `label:`. Filled once, here, because the catalog is loaded exactly once.
+_CARD_NAMES.update({c["id"]: c["name"] for c in cards if c.get("name")})
 if st.session_state.get("compare"):
     comparison(load_snapshots(), cards)
     st.stop()

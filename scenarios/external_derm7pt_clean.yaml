@@ -69,5 +69,6 @@ model:
   loader: verifai.models.image:load
   weights_path: artifacts_training/skin_cancer_clean.pt
 name: external_derm7pt_clean
+label: "HAM10000 corpus only"
 sample_size: null
 seed: 42

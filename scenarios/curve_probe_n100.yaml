@@ -41,6 +41,7 @@ model:
   loader: verifai.models.image:load
   weights_path: artifacts_training/curve_probe_n100.pt
 name: curve_probe_n100
+label: "linear probe, n=100"
 sample_size: null
 seed: 42
 training:

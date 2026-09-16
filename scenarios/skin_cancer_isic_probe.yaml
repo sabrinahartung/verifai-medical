@@ -38,6 +38,7 @@
 #   3. python scripts/train_model.py scenarios/skin_cancer_isic.yaml   # ~15 min on MPS
 #   4. python scripts/run_scenario.py scenarios/skin_cancer_isic.yaml
 name: skin_cancer_isic_probe
+label: "Linear probe (frozen features)"
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

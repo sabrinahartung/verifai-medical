@@ -77,7 +77,7 @@ a workflow keyed to `main` would silently never fire):
 
 ```mermaid
 flowchart LR
-    P["push to main"] --> T["tests<br/><i>CPU torch + 80 contract tests</i>"]
+    P["push to main"] --> T["tests<br/><i>CPU torch + 82 contract tests</i>"]
     T -->|pass| D["mkdocs build --strict"]
     T -->|fail| X["✋ nothing published"]
     D --> G["GitHub Pages"]
