@@ -520,8 +520,27 @@ number in this table. Its specificity is **0.230**: it calls melanoma on more th
 quarters of the lesions that are not melanoma. J falls from 0.633 to 0.195, barely above the
 0.0 of answering "melanoma" every time.
 
+In cases, on the 1,003 lesions of which 252 are melanoma:
+
+| | flagged as melanoma | of 1,003 | sensitivity | PPV |
+|---|---:|---:|---:|---:|
+| "say melanoma every time" | 1,003 | 100% | 1.000 | 0.251 |
+| **ISIC · melanoma ×30** | **821** | **82%** | 0.964 | 0.296 |
+
+It catches 243 of 252 melanomas and calls melanoma on 578 of the 751 lesions that are not.
+Flagging 82% of everything does not reach the sensitivity of flagging 100% of everything,
+which is what "0.964 on unseen data" actually describes.
+
 The rule is not portable, and sensitivity alone cannot show that. Any threshold must be
 re-tuned on validation data from the population it will run on.
+
+!!! tip "The signal that would have caught this without computing J"
+    Overall accuracy fell 0.657 → 0.385 while melanoma sensitivity held. **When one metric
+    holds against the trend of every other, the model has not preserved its skill — it has
+    moved its operating point.** A metric improving while everything around it collapses is
+    almost always an artefact of where the decision boundary sits, not evidence of
+    robustness. Read sensitivity next to specificity or PPV; on its own it is half a
+    measurement.
 
 ### Two things that turned out not to matter
 

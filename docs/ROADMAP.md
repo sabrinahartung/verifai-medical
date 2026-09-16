@@ -5,6 +5,86 @@ Tick the boxes as you go; each step leaves the repo in a working state.
 
 ---
 
+## Where things stand (2026-09-16)
+
+**24 artifact folders, 82 contract tests, three evaluation sets.** Read
+[Current results](results.md) for the measurements; this section is the short version
+of what they add up to and what to do next.
+
+### The four things that have been learned
+
+**1. The decision rule is where the leverage is, not the model.** Focal loss, balanced
+oversampling, a 2.2× bigger backbone and 3.1× more training data each moved melanoma
+sensitivity by an amount indistinguishable from noise. A free change to how the
+probabilities are read moved it from 0.638 to 0.976. Nothing else has come close.
+
+**2. Distribution beats volume, and the two nearly cancelled.** Within one corpus, going
+from 7,031 to 21,770 images is worth +10.5 points of top-1 (separated). At equal volume,
+in-distribution images are worth +9.5 points over out-of-distribution ones (separated).
+Experiment 3 compared an in-distribution corpus against 3× as much out-of-distribution
+data, which is why it read as "no change".
+
+**3. Internal ranking does not survive a new clinic.** On Derm7pt the single-archive
+model collapses (ΔJ −0.244) while the mixed-corpus one holds (−0.047) — a benefit that
+was invisible internally, where they differed by 1.0 point with overlapping intervals.
+The linear probe, weakest internally, is the only configuration that does not degrade at
+all (+0.009): frozen features never specialised, so there is nothing to unlearn.
+
+**4. A tuned threshold does not transfer.** `melanoma ×30` reports 0.964 external
+sensitivity and that number is worthless on its own — see below.
+
+### The trap in this project's own numbers
+
+`external-derm7pt-isic-highsens` shows **0.964 melanoma sensitivity on unseen data**, which
+reads as a triumph. In cases:
+
+| | flagged as melanoma | of 1,003 | sensitivity | PPV |
+|---|---:|---:|---:|---:|
+| "say melanoma every time" | 1,003 | 100% | 1.000 | 0.251 |
+| **this configuration** | **821** | **82%** | 0.964 | 0.296 |
+
+It flags 82% of every lesion it sees and does not reach the sensitivity of answering
+"melanoma" unconditionally. Specificity fell 0.657 → 0.230; Youden's J fell 0.633 → 0.195,
+where 0 is guessing.
+
+**The rule of thumb worth keeping:** when sensitivity holds while overall accuracy collapses
+(0.657 → 0.385 here), the model has not preserved its skill — it has moved its operating
+point. A metric improving against the trend of every other metric is almost always an
+artefact. Read sensitivity next to specificity or PPV, never alone.
+
+### What to do next, in order
+
+1. **Re-tune the decision rule on external validation data.** The clearest open question:
+   how much of the collapse is the rule rather than the model. It costs part of the clean
+   one-shot external measurement, so split Derm7pt first and decide explicitly which half
+   pays for it.
+2. **Finish the context prior.** The machinery is built and tested
+   (`scripts/build_context_prior.py`, `model.decide(probs, meta)`); `prior_strength` still
+   needs tuning on validation and no scenario uses it yet. Note Derm7pt has no `age`
+   column, so only the site half would apply there.
+3. **A second external set**, because one archive supports "more robust against *this*
+   archive" and not a general claim.
+4. **A second domain.** Chest X-ray is nearly free — same adapter, same manifest format,
+   swap the ITA skin-tone metric for subgroup fairness on sex and age. It turns the
+   README's domain-agnostic claim into a demonstration, which a tenth skin model cannot.
+
+### Operational notes that cost time this session
+
+- **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
+  `st.markdown` renders as unstyled text. Use `:colour[...]` markdown and
+  `st.container(border=True)`. `st.info(icon=...)` also validates its icon and raises on
+  anything that is not a real emoji — `◐` and `∅` are not.
+- **`torch.hub` cannot fetch pretrained weights** on this python.org macOS build without a
+  CA bundle. `train_model.py` sets `SSL_CERT_FILE` from certifi on import; ResNet18 only
+  ever worked because its weights were already cached.
+- **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named `master`
+  in three places after the default moved to `main`; nothing errored, the workflow simply
+  stopped matching.
+- The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
+  directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+
+---
+
 ## Why this exists
 
 The showcase currently evaluates on **7 images**. The obvious fix — "use the whole
