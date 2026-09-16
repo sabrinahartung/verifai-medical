@@ -115,6 +115,28 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "every time would score.",
         "tension": "Balanced accuracy, which weights every class equally instead.",
     }),
+    ("performance.balanced_accuracy_n_classes", {
+        "term": "Classes in the balanced average",
+        "measures": "How many classes actually contributed to the balanced accuracy "
+                    "beside it — that is, how many occur in this evaluation set at all.",
+        "ideal": "Equal to the number of classes the model can predict; anything lower "
+                 "means the evaluation set does not contain them all.",
+        "reading": "This is what makes two balanced accuracies comparable or not. A mean "
+                   "over six classes and a mean over seven share a name and are different "
+                   "quantities, and an external evaluation set is exactly where they "
+                   "diverge. Check this before reading any difference between two runs as "
+                   "a difference in the models.",
+    }),
+    ("performance.classes_absent_from_test", {
+        "term": "Classes absent from the test set",
+        "measures": "How many classes the model can predict that never appear in the "
+                    "evaluation data.",
+        "ideal": "0 — every class the model knows is represented and can be scored.",
+        "reading": "Their sensitivity is undefined rather than zero: there is nothing to "
+                   "catch, so failing to catch it means nothing. The model can still "
+                   "predict them, and every such prediction is automatically wrong, which "
+                   "shows up in overall accuracy but in no per-class recall.",
+    }),
     ("performance.balanced_accuracy", {
         "term": "Balanced accuracy",
         "measures": "The average of the per-class sensitivities — each class counts "

@@ -1276,3 +1276,46 @@ def test_dx_type_is_not_available_as_a_context_feature():
     from verifai.core.context import BUCKETERS
     assert "dx_type" not in BUCKETERS
     assert "sex" not in BUCKETERS, "measured lift 0.96 vs 1.03 — not worth the argument"
+
+
+def test_a_class_absent_from_the_test_set_is_undefined_not_zero():
+    """No cases to catch is not the same as catching none of them.
+
+    A sensitivity of 0.0 for a class with no support would read as total failure
+    on that class and would drag the balanced average down for a reason that has
+    nothing to do with the model.
+    """
+    pytest.importorskip("numpy")
+    from verifai.metrics.performance.classification import _per_class
+
+    classes = ["a", "b", "c"]
+    #            predicted a, b, c
+    cm = [[8, 2, 0],        # 10 true "a"
+          [3, 7, 0],        # 10 true "b"
+          [0, 0, 0]]        # class "c" never occurs in this evaluation set
+    pc = _per_class(cm, classes)
+
+    assert pc["c"]["support"] == 0
+    assert pc["c"]["sensitivity"] is None, "undefined, never 0.0"
+    assert pc["a"]["sensitivity"] == 0.8 and pc["b"]["sensitivity"] == 0.7
+
+    contributing = [v["sensitivity"] for v in pc.values() if v["sensitivity"] is not None]
+    assert len(contributing) == 2, "the absent class must drop out of the average"
+    assert abs(sum(contributing) / len(contributing) - 0.75) < 1e-9
+
+
+def test_balanced_accuracy_says_how_many_classes_it_averaged():
+    """A mean over six classes and a mean over seven share a name.
+
+    They are different quantities, and an external evaluation set is exactly
+    where that happens — Derm7pt contains no actinic keratoses. Without the count
+    travelling alongside, two numbers from different sets look directly
+    comparable on the page and are not.
+    """
+    import inspect
+    from verifai.metrics.performance import classification
+    src = inspect.getsource(classification)
+    assert '"balanced_accuracy_n_classes"' in src
+    assert '"classes_absent_from_test"' in src
+    assert "not comparable" in src, \
+        "the summary has to say it in words, not only in a field nobody reads"

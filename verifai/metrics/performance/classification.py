@@ -93,8 +93,16 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     top3_ci_ = wilson(top3_correct, n)
     per_class = _per_class(cm, classes)
 
+    # Classes the model can predict but this evaluation set never contains. Their
+    # sensitivity is undefined, not zero — there is nothing to catch — so they drop
+    # out of the average. That silently changes what `balanced_accuracy` *is*: a
+    # mean over six classes and a mean over seven share a name and are different
+    # quantities. An external set is exactly where that happens (Derm7pt has no
+    # actinic keratoses), so the class count travels with the number and the
+    # summary says so out loud.
     sens = [v["sensitivity"] for v in per_class.values() if v["sensitivity"] is not None]
     balanced = round(sum(sens) / len(sens), 4) if sens else None
+    absent = sorted(c for c, v in per_class.items() if not v["support"])
 
     # PPV at a stated deployment prevalence, when the scenario declares one
     prevalence = ((ctx.get("scenario", {}) or {}).get("clinical", {}) or {}).get("prevalence") or {}
@@ -120,7 +128,13 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     note = (f" Small sample (n={n}) — a plausibility check, not a benchmark."
             if n < VERDICT_MIN_N else "")
     summary = (f"Top-1 accuracy {fmt(acc, acc_ci)} on {n} labeled examples; "
-               f"balanced {balanced}. ")
+               f"balanced {balanced}")
+    if absent:
+        summary += (f" over {len(sens)} of {len(classes)} classes — "
+                    f"{', '.join(absent)} {'does' if len(absent) == 1 else 'do'} not occur "
+                    f"in this evaluation set, so the balanced figure is not comparable with "
+                    f"one computed over all {len(classes)}")
+    summary += ". "
     if worst:
         w = per_class[worst]
         summary += (f"Weakest class {worst}: sensitivity "
@@ -131,6 +145,8 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         pillar="performance", metric="top1_accuracy", domain="image",
         value={"accuracy": round(acc, 4), "accuracy_ci": acc_ci, "n": n, "correct": correct,
                "balanced_accuracy": balanced,
+               "balanced_accuracy_n_classes": len(sens),
+               "classes_absent_from_test": len(absent),
                "top3_accuracy": round(top3, 4), "top3_accuracy_ci": top3_ci_,
                "per_class": per_class,
                "per_class_recall": {c: v["sensitivity"] for c, v in per_class.items()},
