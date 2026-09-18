@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-VERIFAI Showcase: file-based Responsible-AI evaluation of ML models across six pillars
-(integrity, performance, fairness, robustness, explainability, privacy). Deliberately **no server, no DB**:
+VERIFAI Showcase: file-based Responsible-AI evaluation of medical AI models across six pillars
+(integrity, performance, fairness, robustness, explainability, privacy), with a seventh — safety —
+planned for generative models. `docs/pillars.md` is the metric catalogue. Deliberately **no server, no DB**:
 a heavy offline *engine* run produces static artifacts (JSON + PNGs), and a light Streamlit
 *showcase* only reads them. Keep that split — it is what makes the public demo free and always-on.
 
@@ -64,6 +65,13 @@ reports a proportion without an interval is incomplete: with 13 images, a recall
 be taken on the interval rather than the point estimate, do so — privacy passes on the upper
 bound, and a fairness gap is only claimed when the groups' intervals separate.
 
+Engine dependencies carry licence terms just as datasets do, and they are tracked the same way
+in `docs/references.md`. Quantus is LGPL-3.0-or-later, so it is used unmodified behind an
+adapter module and never forked; the HolisticBias prompt data is CC BY-SA 4.0, so publishing
+scores over it is fine while publishing derived prompt material is not. `docs/pillars.md`
+carries a dated toolkit table — a library named in a plan is a claim with a shelf life, and two
+of the nine on the last shortlist had already stopped installing.
+
 `docs/references.md` is the numbered bibliography. A new dataset or a metric taken from the
 literature gets an entry there and is cited as `[n]` where it is used — datasets especially,
 because several carry licence terms that constrain what the showcase may publish (Derm7pt's
@@ -76,8 +84,11 @@ dashboard is aimed at readers who have never seen a Responsible-AI report, and t
 per-metric `explain` text defines terms one at a time but never side by side.
 
 `docs/` is a MkDocs site (`.venv/bin/mkdocs serve`) covering the architecture, data model,
-pipeline, the six pillars and the split-integrity story. `docs/ROADMAP.md` holds the plan and
-the leakage audit behind it — read it before planning any larger evaluation run. When you
+pipeline, the pillars and the split-integrity story. `docs/ROADMAP.md` holds the plan and
+the leakage audit behind it — read it before planning any larger evaluation run, and before
+adding a metric or an adapter: it defines where this is going (any checkpoint local or on the
+Hub, several medical domains, a far larger metric catalogue) and which of today's invariants
+are deliberate rather than incidental. When you
 change engine behaviour, update the matching page: the numbers in `docs/results.md` and
 `docs/pipeline.md` are measured, not illustrative, so they must not drift.
 
@@ -196,6 +207,17 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
 - `showcase/artifacts/_sample_skin_resnet/` is a dev fixture with fake numbers, flagged by
   `"sample": true` in its `card.json`; the app shows a warning banner for it. Never set
   `sample: false` on placeholder data.
+- **Never aggregate the pillars into one score, and never do arithmetic across metrics.** Not a "responsibility score", not a
+  weighted RAI index, not a five-star rating — the same argument as the retired accuracy
+  threshold, one level up. The weights would be the value judgement the reader came to
+  make, and the components are not commensurable (an AUC, a calibration error and an
+  attack success rate under some perturbation budget answer to different threat models).
+  What a report may aggregate is *coverage*: how many applicable metrics were measured,
+  how many came back `insufficient` or `unavailable`, and why. That is a completeness
+  statement, never a quality one — counting what was *measured* is completeness, counting
+  what *passed* is a rating. Thresholds are a separate question from aggregation: the planned
+  findings layer brings criteria back, but they live in a versioned policy file with a
+  required rationale and owner, never inside a metric. See `docs/ROADMAP.md`.
 
 The model is an educational proof-of-concept, not a medical device — don't add copy that implies
 diagnostic use.

@@ -14,7 +14,7 @@ flowchart TB
         end
         M["verifai/models<br/><i>domain adapter</i>"]
         D["verifai/datasets<br/><i>manifest loader</i>"]
-        MET["verifai/metrics<br/><i>six pillars</i>"]
+        MET["verifai/metrics<br/><i>the pillars</i>"]
         E["verifai/export<br/>write_report()"]
         Y --> R
         R -->|"guard"| I
@@ -96,7 +96,7 @@ detect and would otherwise produce a full report of flattering numbers.
 
 | Module | Owns | Must not |
 |---|---|---|
-| `core/findings.py` | `Finding`, `Report`, the pillar and verdict vocabularies | know about any specific metric |
+| `core/findings.py` | `Finding`, `Report`, the pillar, sub-aspect and verdict vocabularies | know about any specific metric |
 | `core/run.py` | `METRIC_REGISTRY`, seeding, the integrity guard | import a metric directly |
 | `core/integrity.py` | `audit_split()` — the one leakage implementation | be duplicated anywhere |
 | `models/image.py` | `ImageClassifier`, device resolution, Grad-CAM layer lookup | hardcode a class list |

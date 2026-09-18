@@ -2,9 +2,15 @@
 
 [![tests & docs](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml)
 
-**Systematic, reproducible evaluation of ML models along the Responsible-AI pillars** —
-performance, fairness, robustness, explainability, privacy — across several data domains
-(image first; text/LLM to follow).
+**Systematic, reproducible evaluation of medical AI models along the Responsible-AI pillars** —
+integrity, performance, fairness, robustness, explainability, privacy — with every number
+carrying the sample size and interval that produced it, and none of them scored against a
+threshold.
+
+Today this evaluates image classifiers, in dermatology. The engine seams are built so a model
+arrives as a scenario file rather than a code change; making that true for *any* checkpoint
+(local or Hugging Face) and for text, speech and generated text is the plan in
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 > This version turns the larger VERIFAI framework into a **file-based, reproducible, free-to-run**
 > form: the (potentially heavy) evaluation runs *once* — locally on CPU for small samples, or on a
@@ -12,7 +18,7 @@ performance, fairness, robustness, explainability, privacy — across several da
 > shows them interactively: **tiles → click → dashboard**. No server, no database, no running costs.
 
 **Full documentation:** `mkdocs serve` (or `docs/`) — architecture, the data model, the
-pipeline, all six pillars, and the split-integrity story, with diagrams.
+pipeline, the full metric catalogue across the pillars, and the split-integrity story.
 
 ---
 
@@ -43,7 +49,7 @@ streamlit run showcase/app.py
 **Big run without GPU worries:** `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) — exactly so your
 Mac does **not** have to compute the full subset.
 
---- thank
+---
 
 ## Architecture at a glance
 
@@ -78,10 +84,13 @@ showcase/           SHOP WINDOW (deploys for free on Streamlit Community Cloud)
 | Fairness | `skin_tone_ita` | Skin-type coverage via ITA (label-free); subgroup gap on the big run |
 | Privacy | `membership_inference_auc` | **honest:** needs a train/holdout split → in the GPU run, no invented number |
 
-**Honesty about the sample:** n=7 is a *plausibility check*, not a benchmark. Every metric says so
-in its text and only claims a hard verdict (pass/fail) once there are enough data points. For
-solid numbers, run the larger subset via the GPU notebook — **same code path**, just more rows in
-the manifest.
+**Honesty about the sample:** n=7 is a *plausibility check*, not a benchmark. Every metric states
+its `n` and stays at `insufficient` until the sample supports a claim. The status vocabulary is
+deliberately **epistemic, never evaluative** — `measured` · `insufficient` · `unavailable` ·
+`invalid` — because what counts as accurate, fair or robust *enough* depends on where the model
+runs and what being wrong costs, which is the reader's call and not a constant in a metric module.
+There is no pass, no fail, and no composite score. For solid numbers, run the larger subset —
+**same code path**, just more rows in the manifest.
 
 ## Extensible: adding a new model / a new domain
 
@@ -90,7 +99,7 @@ the manifest.
 3. Done — the next time you open the app, **a new tile** appears automatically. No app code changes.
 
 A new metric? It returns a small chart specification in `Finding.details["chart"]` (optionally
-`["chart2"]`) — `{"kind": "bar"|"line"|"heatmap"|"gauge"|"images", ...}` — and the app renders it
+`["chart2"]`) — `{"kind": "bar"|"line"|"heatmap"|"scale"|"images", ...}` — and the app renders it
 generically with Plotly. The metric signature is the same everywhere:
 `run(model, dataset, ctx) -> Finding`.
 
@@ -124,9 +133,15 @@ That is a deliberate design decision, not obfuscation:
 - [x] Reproducible example sample (7 real HAM10000 images + manifest)
 - [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one
 - [x] Larger subset on a free GPU (solid fairness/privacy numbers)
-- [ ] add Text scenario
-- [ ] add LLM scenario
 - [x] Deploy to Streamlit Community Cloud + short video
+- [x] Lesion-grouped split, leakage guard, uncertainty intervals, cost-sensitive decisions
+- [x] External validation on a second archive (Derm7pt) — the internal ranking inverts
+- [ ] Adapter contract + capability gating, so a metric skips with a reason instead of assuming pixels
+- [ ] Provenance & label-space preflight, for models whose training data we cannot inspect
+- [ ] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapters
+- [ ] A far larger metric catalogue: calibration, subgroup fairness, adversarial robustness, XAI evaluation
+- [ ] A second domain (chest X-ray), then text
+- [ ] Generative AI: contamination, groundedness, extraction — see the roadmap
 
 ## Data / license
 

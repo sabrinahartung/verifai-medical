@@ -1,6 +1,6 @@
 # VERIFAI Showcase
 
-**Systematic, reproducible Responsible-AI evaluation of ML models** across six pillars —
+**Systematic, reproducible Responsible-AI evaluation of medical AI models** across the pillars —
 integrity, performance, fairness, robustness, explainability and privacy.
 
 The evaluation runs *once*, offline, and produces static artifacts. A small Streamlit app
@@ -103,14 +103,31 @@ claim this project exists to catch.
     A model is a scenario YAML. Run it, get a folder, get a tile. A new metric supplies its
     own chart specification and its own explanatory text, so the app never learns about it.
 
+## How to read these docs
+
+This project is partly built and partly planned, and the two are kept visually apart rather
+than blended. The vocabulary is the same on every page:
+
+| Word | Means |
+|---|---|
+| **Running today** · **shipped** | implemented, registered, and producing findings in the artifacts committed to this repository |
+| **Planned** | designed and argued for, and not yet written. A heading or a lead line says so before you read the section |
+
+Six metrics run today; the catalogue plans fifty-one. A document that read as though all of it
+existed would be the same kind of overclaim this project was built to catch — so
+[The pillars](pillars.md) opens with what runs, and [the roadmap](ROADMAP.md) is the only page
+that is a plan from top to bottom.
+
 ## Where to start
 
 | If you want to… | Read |
 |---|---|
+| See what actually runs | [The pillars → Running today](pillars.md#running-today-six-metrics) |
+| See what is planned, and in what order | [Roadmap](ROADMAP.md) |
 | Understand how the parts fit together | [Architecture overview](architecture.md) |
 | Know what a `Finding` is | [Data model](data-model.md) |
 | Run the whole thing yourself | [The pipeline](pipeline.md) |
-| Know what is actually measured | [The six pillars](pillars.md) |
+| Know what is actually measured | [The pillars](pillars.md) |
 | Understand the leakage story | [Split integrity](integrity.md) |
 | See the numbers | [Current results](results.md) |
 | Not know what a term means | **[Glossary](glossary.md)** |

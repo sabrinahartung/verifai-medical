@@ -1,5 +1,5 @@
 site_name: VERIFAI Showcase
-site_description: File-based Responsible-AI evaluation across six pillars
+site_description: File-based Responsible-AI evaluation of medical AI across seven pillars
 site_url: https://sabrinahartung.github.io/verifai-medical/
 repo_url: https://github.com/sabrinahartung/verifai-medical
 repo_name: sabrinahartung/verifai-medical
@@ -49,7 +49,7 @@ nav:
       - Data model: data-model.md
       - The pipeline: pipeline.md
   - Evaluation:
-      - The six pillars: pillars.md
+      - The pillars: pillars.md
       - Split integrity: integrity.md
       - Current results: results.md
   - References: references.md

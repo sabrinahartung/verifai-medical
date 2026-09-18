@@ -1,42 +1,77 @@
-# Roadmap — towards a trustworthy, fully evaluated model
+# Roadmap — from one skin-lesion model to a Responsible-AI evaluation service
 
-Status of this document: written 2026-09-07, after the leakage audit below.
-Tick the boxes as you go; each step leaves the repo in a working state.
+!!! abstract "This page is the plan"
+    Everything below the "What has been built" table is **planned, not built**. For what runs
+    today, read [The pillars → Running today](pillars.md#running-today-six-metrics) — six
+    metrics — or [Current results](results.md) for the numbers they produced.
+
+Written 2026-09-07 after the leakage audit below; restructured 2026-09-16 around a
+larger target. The history that motivates all of it is compressed into
+[What has been built](#what-has-been-built) and lives in full in
+[Current results](results.md).
+
+---
+
+## Where this is going
+
+Today VERIFAI evaluates **one problem** (skin lesions), with **one model adapter**
+(a torchvision `state_dict`), against **one modality** (images). Twenty-four artifact
+folders, all dermatology.
+
+The target is a **model-agnostic, domain-agnostic evaluation service for medical AI**:
+
+> Point it at a model — a local checkpoint or a Hugging Face link — and it fetches
+> what it needs, checks what it can, evaluates it against a test set for that
+> domain, and publishes an artifact that explains every number and its impact.
+
+Four things have to become true for that:
+
+1. **Any model.** A declared adapter contract, not one hardcoded loader. Third-party
+   checkpoints arrive in formats this repo has never seen.
+2. **Any medical domain.** Images, text, later speech and generated text — with the
+   metric catalogue expanded far beyond the six metrics that exist today.
+3. **Two honest entry states.** *The model is trained and ready to load*, or *the
+   model must be trained first and the data is here.* Both end in the same report.
+4. **An interface a reader can follow.** Today's gallery shows all twenty-four runs
+   at once and expects you to know what a lineage is.
+
+What does **not** change: the engine runs offline and writes static artifacts, the
+Streamlit app reads them, the public deploy stays free and always-on, and no number
+is ever scored against a threshold. See [What does not move](#what-does-not-move).
 
 ---
 
 ## Where things stand (2026-09-16)
 
-**24 artifact folders, 82 contract tests, three evaluation sets.** Read
-[Current results](results.md) for the measurements; this section is the short version
-of what they add up to and what to do next.
+**24 artifact folders, 82 contract tests, three evaluation sets.**
+[Current results](results.md) has the measurements; this is what they add up to.
 
 ### The four things that have been learned
 
-**1. The decision rule is where the leverage is, not the model.** Focal loss, balanced
-oversampling, a 2.2× bigger backbone and 3.1× more training data each moved melanoma
-sensitivity by an amount indistinguishable from noise. A free change to how the
-probabilities are read moved it from 0.638 to 0.976. Nothing else has come close.
+**1. The decision rule is where the leverage is, not the model.** Focal loss,
+balanced oversampling, a 2.2× bigger backbone and 3.1× more training data each moved
+melanoma sensitivity by an amount indistinguishable from noise. A free change to how
+the probabilities are *read* moved it from 0.638 to 0.976. Nothing else has come close.
 
-**2. Distribution beats volume, and the two nearly cancelled.** Within one corpus, going
-from 7,031 to 21,770 images is worth +10.5 points of top-1 (separated). At equal volume,
-in-distribution images are worth +9.5 points over out-of-distribution ones (separated).
-Experiment 3 compared an in-distribution corpus against 3× as much out-of-distribution
-data, which is why it read as "no change".
+**2. Distribution beats volume, and the two nearly cancelled.** Within one corpus,
+7,031 → 21,770 images is worth +10.5 points of top-1 (separated intervals). At equal
+volume, in-distribution images are worth +9.5 points over out-of-distribution ones
+(separated). Experiment 3 compared an in-distribution corpus against 3× as much
+out-of-distribution data, which is why it read as "no change".
 
 **3. Internal ranking does not survive a new clinic.** On Derm7pt the single-archive
-model collapses (ΔJ −0.244) while the mixed-corpus one holds (−0.047) — a benefit that
-was invisible internally, where they differed by 1.0 point with overlapping intervals.
-The linear probe, weakest internally, is the only configuration that does not degrade at
-all (+0.009): frozen features never specialised, so there is nothing to unlearn.
+model collapses (ΔJ −0.244) while the mixed-corpus one holds (−0.047) — a benefit
+invisible internally, where they differed by 1.0 point with overlapping intervals.
+The linear probe, weakest internally, is the only configuration that does not degrade
+at all (+0.009): frozen features never specialised, so there is nothing to unlearn.
 
 **4. A tuned threshold does not transfer.** `melanoma ×30` reports 0.964 external
 sensitivity and that number is worthless on its own — see below.
 
 ### The trap in this project's own numbers
 
-`external-derm7pt-isic-highsens` shows **0.964 melanoma sensitivity on unseen data**, which
-reads as a triumph. In cases:
+`external-derm7pt-isic-highsens` shows **0.964 melanoma sensitivity on unseen data**,
+which reads as a triumph. In cases:
 
 | | flagged as melanoma | of 1,003 | sensitivity | PPV |
 |---|---:|---:|---:|---:|
@@ -44,735 +79,709 @@ reads as a triumph. In cases:
 | **this configuration** | **821** | **82%** | 0.964 | 0.296 |
 
 It flags 82% of every lesion it sees and does not reach the sensitivity of answering
-"melanoma" unconditionally. Specificity fell 0.657 → 0.230; Youden's J fell 0.633 → 0.195,
-where 0 is guessing.
+"melanoma" unconditionally. Specificity fell 0.657 → 0.230; Youden's J fell
+0.633 → 0.195, where 0 is guessing.
 
-**The rule of thumb worth keeping:** when sensitivity holds while overall accuracy collapses
-(0.657 → 0.385 here), the model has not preserved its skill — it has moved its operating
-point. A metric improving against the trend of every other metric is almost always an
-artefact. Read sensitivity next to specificity or PPV, never alone.
-
-### What to do next, in order
-
-1. **Re-tune the decision rule on external validation data.** The clearest open question:
-   how much of the collapse is the rule rather than the model. It costs part of the clean
-   one-shot external measurement, so split Derm7pt first and decide explicitly which half
-   pays for it.
-2. **Finish the context prior.** The machinery is built and tested
-   (`scripts/build_context_prior.py`, `model.decide(probs, meta)`); `prior_strength` still
-   needs tuning on validation and no scenario uses it yet. Note Derm7pt has no `age`
-   column, so only the site half would apply there.
-3. **A second external set**, because one archive supports "more robust against *this*
-   archive" and not a general claim.
-4. **A second domain.** Chest X-ray is nearly free — same adapter, same manifest format,
-   swap the ITA skin-tone metric for subgroup fairness on sex and age. It turns the
-   README's domain-agnostic claim into a demonstration, which a tenth skin model cannot.
-
-### Operational notes that cost time this session
-
-- **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
-  `st.markdown` renders as unstyled text. Use `:colour[...]` markdown and
-  `st.container(border=True)`. `st.info(icon=...)` also validates its icon and raises on
-  anything that is not a real emoji — `◐` and `∅` are not.
-- **`torch.hub` cannot fetch pretrained weights** on this python.org macOS build without a
-  CA bundle. `train_model.py` sets `SSL_CERT_FILE` from certifi on import; ResNet18 only
-  ever worked because its weights were already cached.
-- **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named `master`
-  in three places after the default moved to `main`; nothing errored, the workflow simply
-  stopped matching.
-- The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
-  directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+**The rule of thumb worth keeping:** when sensitivity holds while overall accuracy
+collapses (0.657 → 0.385 here), the model has not preserved its skill — it has moved
+its operating point. A metric improving against the trend of every other metric is
+almost always an artefact. Read sensitivity next to specificity or PPV, never alone.
 
 ---
 
 ## Why this exists
 
-The showcase currently evaluates on **7 images**. The obvious fix — "use the whole
-test set" — does not work, because the model has already seen almost all of it.
-
+The showcase originally evaluated on **7 images**, and the obvious fix — "use the
+whole test set" — did not work, because the model had already seen almost all of it.
 The `skin-lesion-resnet18` checkpoint was trained on the Hugging Face dataset
-`marmal88/skin_cancer`. Querying that dataset's parquet metadata directly:
+`marmal88/skin_cancer`; querying that dataset's parquet metadata directly:
 
 | Check | Result |
 |---|---|
 | Its `test` split | 1,285 images |
 | Test images whose **image_id also appears in `train`** | **1,025 (80%)** |
 | Test images whose **lesion** was seen in training | 1,132 (88%) |
-| Test images left after excluding train lesions | 153 |
 | …after excluding train **and** validation lesions | **28** |
 | HAM10000 images covered by `train` + `validation` | **9,964 of 10,015 (99.5%)** |
 | HAM10000 lesions covered by `train` + `validation` | **7,442 of 7,470 (99.6%)** |
 
-So evaluating on all 1,285 images would produce a high accuracy that means nothing —
-it is mostly a memorisation check. `n=7` labelled "not a benchmark" is *more* honest
-than a leaked `n=1285` carrying a green `pass` badge.
+**The images were never the problem. The split was.** The fix was to re-split
+HAM10000 grouped by `lesion_id`, which is what every clean number in this repo now
+rests on. Full story: [Split integrity](integrity.md).
 
-**The images were never the problem. The split was.** HAM10000 is a standard
-dermatoscopic benchmark; its real limitations are class imbalance (67% nevi) and a
-skew towards light skin — both of which the fairness pillar already reports.
-
-### The fix
-
-Re-split HAM10000 **grouped by `lesion_id`**, so no lesion appears on both sides.
-That yields roughly **1,100 held-out lesions / ~1,500 test images** the model
-provably never saw, and activates every verdict gate in the engine
-(`n>=30` for accuracy, `n>=20` for robustness, `>=10` per bin for fairness).
-
-Not every pillar is blocked by leakage, which is worth knowing:
-
-| Pillar | Needs unseen data? |
-|---|---|
-| Performance, subgroup accuracy | **Yes** — this is what leakage corrupts |
-| Robustness (corruption stability) | No — it measures whether predictions *flip*, a property of the model |
-| Fairness (ITA coverage) | No — it describes the dataset, not generalisation |
-| Explainability (Grad-CAM) | No — illustrative either way |
-| Privacy (membership inference) | **Yes**, and worst hit: with 99.5% of the data in training there is almost no non-member set |
+That audit is also why the platform plan below leads with provenance. Evaluating
+*someone else's* model means you cannot run this check at all — and saying so is the
+product, not a gap in it.
 
 ---
 
-## Step 1 — Make the engine model-agnostic ✅ done 2026-09-07
-
-*Goal: a second model can be added without editing engine code.*
-
-- [x] `models/image.py` — move `CLASSES` out of the module constant and into the
-      scenario spec (`model.classes`), keeping today's list as the default
-- [x] `models/image.py` — make the architecture configurable (`model.arch`,
-      default `resnet18`) instead of hardcoding `resnet18()`
-- [x] `models/image.py` — **fix device handling**: it loads with
-      `map_location="cpu"` and never moves the model, so the "free GPU" notebook
-      silently runs on CPU and the Mac's MPS is unused. Add `model.device`
-      (`auto` → cuda → mps → cpu) and record the resolved device in `Report.meta`
-- [x] `datasets/loaders.py` — **break the backwards dependency**: the dataset
-      loader currently does `from verifai.models.image import CLASSES`. Dataset
-      classes must come from the data (sorted unique manifest labels) or from the
-      dataset spec, never from the model
-- [x] `explainability/gradcam.py` — `layer4[-1]` is ResNet-specific. Let the
-      model adapter expose its own `cam_layer`, configurable per scenario
-
-**Acceptance: met.** Re-running `scenarios/skin_cancer.yaml` with no scenario edits
-produced findings identical to the pre-refactor baseline (top-1 100%, faithfulness
-0.669, stability 75%). 82 contract tests in `tests/` cover the seams; run them with
-`.venv/bin/python -m pytest tests/ -q`.
-
-Measured while doing this: MPS is **slower** than CPU here (5.5s vs 3.2s at n=7),
-because everything still runs at batch size 1 and per-image transfer dominates.
-The scenario is therefore pinned to `device: cpu`, and the device is now recorded
-in `report.json` under `meta.device`. Batching (see gaps below) is what makes a
-GPU pay off — the device fix is its prerequisite, not a speedup on its own.
-
-## Step 2 — Training, with the split as a contract ✅ code done 2026-09-07
-
-*Goal: training and evaluation can never disagree about what was held out.*
-
-- [x] `scripts/build_splits.py` — stratified split **on `lesion_id`**. Better than
-      `GroupShuffleSplit`: every lesion carries exactly one diagnosis (verified), so
-      the split is stratified *and* grouped. Reads only metadata columns over HTTP
-      range requests — a few MB, not the 3.6 GB the images would cost
-- [x] Manifests written and committed: `data/manifests/ham10000_{train,val,test}.csv`,
-      carrying `filename, image_id, lesion_id, label, dx_type, age, sex, localization`
-- [x] `scripts/materialize_images.py` — fetches the JPEGs the manifests name into
-      the gitignored `data/raw/ham10000/`, deduplicated by image_id. `--max-size 320`
-      re-encodes on the way in: **~140 MB instead of 2.7 GB** (measured, 19x), which
-      costs training nothing because the first transform resizes to 224 anyway.
-      Keep one resolution for a whole comparison — a blur radius or JPEG quality
-      means something different at a different size, so the robustness numbers
-      shift. The choice is recorded in `_materialize.json` and the script refuses
-      to mix resolutions in one directory
-- [x] `scripts/train_model.py` — reads the `training:` block, trains on train,
-      selects on val by **balanced** accuracy, never opens the test manifest, and
-      writes `<name>_training.json` recording exactly which manifests were used
-- [x] `scenarios/skin_cancer_clean.yaml` — the retrained model's scenario
-- [ ] Upload the checkpoint to the HF Hub (`.pt` is gitignored)
-
-**The resulting split:**
-
-| Split | Images | Lesions |
-|---|---|---|
-| train | 7,014 | 5,230 |
-| val | 1,508 | 1,120 |
-| **test** | **1,493** | **1,120** |
-
-Zero shared lesions and zero shared images between any pair of splits, checked by
-the script itself, which exits non-zero rather than emit a leaking split. Class
-stratification holds at 11–16% per class in test, including **163 melanomas** —
-against 1 in the best clean subset the old split could offer.
-
-**Verified end to end** on a 42-image miniature of the real split (build → fetch →
-train 2 epochs on MPS → evaluate → artifacts), so the pipeline is known to work
-before committing to the full download and training run.
-
-### Compute: this runs locally, and it is fast
-
-Measured on this machine (Apple M1 Max, 10 cores, 64 GB) rather than estimated —
-an earlier guess of "1–2 h on MPS" was wrong by about 15x:
-
-| Stage | Throughput | Time |
-|---|---|---|
-| ResNet18 fwd+bwd on MPS, bs=32 | 348 img/s | ~20 s/epoch |
-| JPEG decode + augment, 8 workers, 320px | 1,259 img/s | ~6 s/epoch |
-| **Realistic full epoch (7,014 images)** | **286 img/s** | **24.5 s** |
-| **Full 12-epoch training run** | | **~5 min** |
-| Evaluation of the 1,493-image test split | | ~2 min on CPU |
-
-Inference, measured the same way — MPS is worth it for anything but a toy run:
-
-| Device / batch | img/s | 1,493 images x 7 passes |
-|---|---|---|
-| cpu, batch 1 (today) | 99 | 105 s |
-| **mps, batch 1 (today)** | **365** | **29 s** |
-| mps, batch 32 (needs batching) | 1,266 | 8 s |
-
-MPS costs ~206 ms of one-time setup and then runs at 2.8 ms/img against CPU's 9.8,
-so it pays for itself after **~30 forward passes** — which a scenario reaches at
-about 5 images, since each one costs ~7 passes. That is why `skin_cancer.yaml` (n=7)
-is pinned to cpu while `skin_cancer_clean.yaml` (n=1,493) uses `auto`. Batching the
-forward passes would win another ~3.5x on top, but 29 s is not worth the refactor yet.
-
-One reproducibility caveat: results are bit-identical *per device*, not across
-devices. CPU and MPS agreed exactly on every metric at n=7, but at n=14 deletion
-faithfulness came out 0.066 on CPU and 0.065 on MPS — float ordering differs
-between backends, and that metric stacks quantile, masking and two forward passes.
-Expect third-decimal drift when comparing runs made on different devices; this is
-why `report.json` records `meta.device`.
-
-Data loading is not the bottleneck once `workers: 8` is set — decoding runs about
-3.5x faster than the GPU consumes, which is the right shape. Two settings matter
-on macOS: `persistent_workers` (spawning 8 loader processes costs ~10 s, and
-without it they respawn every epoch) and `--max-size 320` when materialising.
-
-**No cloud is required for any of this.** The pipeline is local end to end. Because
-`device: auto` resolves cuda → mps → cpu, the same scenario runs unchanged on a
-CUDA machine later — the local option is not a fallback, it is the default path.
-
-## Step 3 — Make leakage a first-class finding ✅ done 2026-09-07
-
-*Goal: the framework catches the mistake that invalidated the last run.*
-
-- [x] New pillar `integrity` with metric `split_leakage`, reporting shared lesion
-      IDs, duplicate image IDs and the contamination percentage
-- [x] `run_scenario.py` raises `SplitLeakageError` **before any metric runs**
-      rather than quietly producing a flattering number. `integrity.enforce: false`
-      downgrades it to a reported finding
-- [x] `verifai/core/integrity.py` is the single implementation, used by both the
-      guard and the metric, so they cannot drift apart
-- [x] Renders as a normal tile finding with its own `explain` block; `integrity`
-      sits first in the dashboard because every other pillar is conditional on it
-
-Two honesty bugs were found and fixed while building this:
-
-- A manifest without `image_id`/`lesion_id` columns compared as *zero* overlap and
-  scored a green "clean split" — publishing an unverified split as a verified one.
-  `audit_split` now separates `verifiable` from `clean`, and unverifiable reports
-  `info` with an explicit "this is not a clean bill of health".
-- `scenarios/skin_cancer.yaml` now runs the check and states plainly that its
-  integrity is unverified — which is the truthful status for a checkpoint trained
-  on ~99.5% of HAM10000.
-
-This is the step that turns the original flaw into the product's strongest claim:
-*this tool catches the error behind most published accuracy numbers.*
-
-## Step 4 — Retrain, evaluate, deploy
-
-Fully local. The whole sequence is roughly 15 minutes of wall time:
-
-```bash
-python scripts/build_splits.py                              # done; manifests committed
-python scripts/materialize_images.py --max-size 320         # ~140 MB, a few minutes
-python scripts/train_model.py scenarios/skin_cancer_clean.yaml   # ~5 min on MPS
-python scripts/run_scenario.py scenarios/skin_cancer_clean.yaml  # ~2 min, integrity-checked
-git add showcase/artifacts && git commit && git push        # push == deploy
-```
-
-- [x] Retrained on the clean lesion-grouped split — 12 epochs in **4.6 min** on MPS,
-      best val balanced accuracy 0.724
-- [x] Full evaluation over the real holdout: **1,493 images, 1:49**, every verdict
-      gate active for the first time
-- [x] Membership inference computed for real: members = train manifest,
-      non-members = test manifest, rank-based AUC with no new dependency
-- [x] Per-example bar chart replaced above 50 images by a confusion matrix plus
-      per-class recall
-- [ ] Push. **Streamlit Community Cloud redeploys on push, so committing the
-      artifacts *is* the deploy.**
-
-### The first trustworthy result
-
-| Pillar | Verdict | Result |
-|---|---|---|
-| Integrity | ✅ pass | 0 shared lesions, 0 shared images across 1,493 test images |
-| Performance | ✅ pass | 79.6% top-1, **72.8% balanced** |
-| Privacy | ✅ pass | membership-inference AUC 0.558 (0.5 = ideal) |
-| Robustness | ⚠️ warn | 71.7% of predictions survive corruption |
-| Fairness | ❌ **fail** | **21.3-point** accuracy gap across ITA skin-tone bins |
-
-What the headline number hides, and why the confusion matrix earns its place:
-
-| Class | Recall | Support |
-|---|---|---|
-| melanocytic_Nevi | 0.862 | 1,009 |
-| basal_cell_carcinoma | 0.855 | 76 |
-| vascular_lesions | 0.818 | 22 |
-| dermatofibroma | 0.769 | 13 |
-| **melanoma** | **0.638** | 163 |
-| benign_keratosis-like_lesions | 0.586 | 157 |
-| actinic_keratoses | 0.566 | 53 |
-
-**80% accuracy, and it misses one melanoma in three.** The class that matters most
-clinically is the second worst. That is the whole argument for this project in one
-table — and note that none of these numbers could have been believed before the
-integrity check passed.
-
-On fairness: light 78.5% (n=1,325), medium 96.3% (n=108), dark 75.0% (n=60). The
-gap is real and fails the threshold, but read the supports before drawing a
-conclusion — it is driven as much by the small medium-skin bin scoring unusually
-high as by dark skin scoring low.
-
-## Step 4b — Clinical metrics and uncertainty ✅ done 2026-09-08
-
-*Goal: measure the thing you are about to improve, before improving it.*
-
-- [x] `verifai/metrics/_stats.py` — Wilson score intervals (correct at the extremes,
-      where the normal approximation is not), Hanley–McNeil for AUC, Bayes PPV at a
-      stated prevalence. Pure `math`, no scipy
-- [x] Per-class **sensitivity, specificity and PPV**, each with a 95% interval
-- [x] **Top-3 differential accuracy** — how a dermatologist actually consumes a
-      suggestion, and the metric that shows this model is better than top-1 implies
-- [x] Intervals on robustness stability, fairness subgroup accuracy, and the MIA AUC
-- [x] Verdicts taken on the *interval* where it matters: privacy passes on the upper
-      bound, and a fairness gap is only claimed when the two groups' intervals separate
-- [x] Asymmetric error bars in the bar renderer (Wilson intervals are not symmetric)
-
-Why this had to come before any model variant: the old metric measured top-1 argmax
-accuracy only. Improving melanoma detection can *lower* top-1 accuracy while making
-the model clinically better — optimising against that metric would have punished the
-intended change.
-
-## Step 4c — First loop iteration: cost-sensitive decision ✅ done 2026-09-09
-
-- [x] `ImageClassifier.decide()` / `.rank()` — the decision rule lives on the model
-      adapter, configured per scenario. Four metrics were each hardcoding `argmax`
-      independently; they now route through one place
-- [x] `scripts/tune_decision.py` — sweeps the weight on **validation**, never test,
-      and prints the sensitivity/PPV/accuracy trade-off with intervals
-- [x] Two variants evaluated on the frozen test set (`melanoma ×5`, `melanoma ×50`)
-- [x] Snapshot flattening deepened to reach `per_class.<class>.<metric>` — at the old
-      depth the very number the experiment was about was missing from the comparison
-
-**Result: melanoma sensitivity 0.638 → 0.945 with no retraining**, at the cost of PPV
-(0.495 → 0.264) and nevi sensitivity (0.862 → 0.640). Top-1 accuracy fell 0.796 → 0.656
-and the verdict went `pass` → `warn`, so an accuracy-only evaluation would have rejected
-a clinically much better configuration. See [Current results](results.md).
-
-## Step 4d — Focal loss and oversampling ✅ done 2026-09-09
-
-- [x] `FocalLoss` in `scripts/train_model.py` (γ configurable; γ=0 recovers CE exactly,
-      asserted in tests) and `training.loss: focal`
-- [x] `training.sampling: balanced` via `WeightedRandomSampler`, with a warning when
-      class weighting is left on as well, since that double-corrects
-- [x] Two variants trained and evaluated on the frozen test set
-
-**Negative result, and the most useful one so far.** Neither intervention produced a
-demonstrated change in melanoma sensitivity: focal −14.1 points, oversampling +1.8, both
-with intervals overlapping the baseline. Meanwhile the free decision-rule change from
-step 4c moved it +30.7. Top-3 accuracy is 0.974–0.979 across *all five* configurations —
-these interventions do not change what the model knows, only where it commits. The next
-real gain therefore has to come from information, not from reshaping the same loss.
-
-That argues for promoting step 5 (more real minority images) ahead of further loss
-engineering.
-
-## Step 5 — A larger image set
-
-*Goal: more data, and a test set the model has no relationship to at all.*
-
-HAM10000 is 10,015 images and the model will have seen 70% of them. The next
-honest gain comes from data drawn from somewhere else entirely.
-
-- [x] `scripts/build_isic_train.py` — builds an ISIC 2019 training manifest with
-      every val and test lesion held back. Excludes by `image_id` **and**
-      `lesion_id`, re-reads the written file to prove the anti-join held, and
-      refuses to leave a leaking manifest on disk. 7 contract tests, no network
-- [x] **The overlap, measured.** Holding back val+test costs **3,001 images —
-      11.8% of ISIC 2019 and only 7.5% of its melanoma**. The remaining 22,330
-      are fair training data, HAM10000's own training portion included. The join
-      is exact, not approximate: HAM10000's `image_id` *is* an ISIC id
-      (`ISIC_0024342`), so this is a string anti-join and needs no image hashing
-- [x] Class vocabularies mapped. `SCC` is **dropped** by default: the frozen test
-      set has seven classes, so an eighth head could never be scored on it and
-      would make the run incomparable for no measurable gain. `--keep-scc` opts
-      in. `UNK` is never a label — it is "none of the above", not a diagnosis
-- [x] `scenarios/skin_cancer_isic.yaml`, warm-started from **ImageNet** rather
-      than `skin-lesion-resnet18`. That checkpoint's training data covered 9,964
-      of 10,015 HAM10000 images including this test set, so initialising from it
-      would re-contaminate the new model — and the integrity check cannot catch
-      it, because it inspects manifests, not checkpoint provenance
-- [x] **Manifests built, and the numbers are now measured rather than projected.**
-      The two ISIC 2019 metadata CSVs are 2.4 MB together, so this step needs no
-      images and runs locally in seconds:
-
-      | | |
-      |---|---|
-      | ISIC 2019 rows | 25,331 |
-      | dropped: `SCC` (no HAM10000 equivalent) | 628 |
-      | held back: in our val/test | 2,933 |
-      | **`isic_train.csv`** | **21,770 images / 11,477 lesions** |
-      | melanoma | **774 → 4,183 (5.4×)** |
-      | basal cell carcinoma | 364 → 3,173 (8.7×) |
-      | actinic keratoses | 228 → 836 (3.7×) |
-      | nevi | 4,698 → 10,868 (2.3×) |
-
-      Leakage check: 0 shared images and 0 shared lesions against both
-      `ham10000_val.csv` and `ham10000_test.csv`.
-
-      Two things the run surfaced, both benign but worth recording:
-
-      - **All 10,015 HAM10000 images are in ISIC 2019, and ISIC keeps their
-        `HAM_` lesion ids** — so lesion-level matching genuinely works here, and
-        the exclusion is not resting on image ids alone.
-      - **ISIC splits what HAM10000 lumped.** 197 images HAM calls
-        `actinic_keratoses` are `SCC` to ISIC (68 in our val/test, 129 in train).
-        Dropping SCC therefore drops those 129 from training, and explains why
-        2,933 rather than 3,001 rows were excluded by image id: the other 68 had
-        already been dropped as SCC. They are absent from training either way,
-        which is the only property that matters. They remain in the test
-        manifest under their HAM label, so evaluation is unchanged — but it does
-        mean 68 test/val images are, by a more granular vocabulary, carcinomas
-        scored as keratoses. That is HAM10000's `akiec` label noise, not ours.
-      - **Label agreement is exact.** Of the 6,885 HAM training images kept,
-        ISIC's diagnosis matches HAM's for **6,885 and disagrees for 0**, so the
-        new model trains on the same labels for the same images. Had they
-        disagreed, the comparison would have confounded a label change with a
-        data change.
-
-- [x] `scripts/materialize_isic.py` — reads the 9.1 GB zip **in place** rather
-      than extracting it (every member is read once, so extracting would cost
-      another 9.1 GB for nothing). Of the 23,278 images the corpus needs, 8,393
-      are HAM10000 images we already hold at 320px and are **copied
-      byte-for-byte** instead of re-encoded; only 14,885 are encoded from the
-      zip. The copy is not just a time saving: `train_model.py` selects a
-      checkpoint on validation read from `training.images_dir` while
-      `tune_decision.py` tunes the decision weight on validation read from
-      `dataset.images_dir`, so re-encoding the shared rows would leave the
-      threshold tuned on different pixels than the checkpoint was selected on.
-      `_materialize.json` records both provenances, since that is the only place
-      the distinction survives
-- [x] Downloaded, materialized, trained and evaluated. 23,278 images at 320px
-      came to 360 MB (8,393 copied byte-identical, 14,885 encoded from the zip);
-      training took 13.5 min on MPS, close to the 15 min projected from
-      pipeline.md. **Integrity passed on real data**: none of the 1,493 test
-      images shares a lesion or an image with the 23,278 trained on, and the run
-      landed in the same comparability group as the existing five
-
-**Result: a second negative result, with one real gain.** See
-[Experiment 3](results.md#experiment-3-a-3x-larger-more-diverse-training-set).
-
-3.1x the training images and 5.4x the melanoma produced **no established change**
-in top-1 accuracy, top-3, melanoma sensitivity, or membership-inference AUC —
-every interval overlaps the baseline's. Melanoma sensitivity moved -1.8 points.
-
-What it did buy is **robustness**, the only demonstrated gain in the project so
-far: +8.4 points under Gaussian noise and +4.6 under brightness, both with
-separated intervals. ISIC aggregates several archives, so the corpus spans more
-cameras and lighting than HAM10000 — the model got harder to perturb without
-getting more accurate.
-
-What it cost is **fairness**: the skin-tone gap widened from 0.213 to 0.326, with
-accuracy on the darkest bin falling 0.750 -> 0.600 (n=60) while the lightest bin
-rose. The aggregate improved by concentrating its gains where the data already
-was.
-
-Top-3 accuracy is 0.974-0.979 across all six configurations. Three interventions
-have now been measured against this test set and the free decision-rule change
-remains the only one that moved melanoma sensitivity at all (+30.7 points). The
-bottleneck was never the number of images, and it is not the loss function
-either.
-
-- [ ] **Next, and now the interesting one:** a genuinely external test set (PH2,
-      Derm7pt, PAD-UFES-20). The training corpus is now a mixture of archives
-      while the test set is pure HAM10000, so part of the missing accuracy gain
-      is probably distribution mismatch — and that is only measurable against
-      data from somewhere else entirely
-- [x] Re-tuned the decision rule on the new model's validation split, and it
-      **corrected experiment 3's conclusion**. Below `w=5` the two models'
-      frontiers are identical; at matched validation PPV 0.26 the ISIC model
-      reaches 0.949 sensitivity against the old model's 0.852, intervals
-      separated. The extra data did move the frontier — in the screening regime
-      only, which is where `argmax` cannot see it. `w=30` evaluated once on test:
-      **0.976 sensitivity, 4 of 163 melanomas missed**, the best of any
-      configuration. The +9.7 validation advantage came out as +3.1 on test with
-      overlapping intervals, which is what selecting a weight on validation does
-      and why test is seen once. See
-      [Experiment 4](results.md#experiment-4-tuning-the-new-model-and-where-experiment-3-was-wrong)
-
-**The test set is now the binding constraint.** With 163 melanomas, sensitivity
-near 0.97 carries an interval of about ±0.03, so differences under ~5 points
-cannot be resolved on this data at all. Establishing the remaining gain is a
-sample-size problem, not a modelling one.
-
-- [ ] An external test set (PH2, Derm7pt, PAD-UFES-20) — now the highest-value
-      step for two independent reasons: the training corpus is a mixture of
-      archives while the test set is pure HAM10000, and 163 melanomas is too few
-      to resolve the differences the tuning sweep suggests are real
-- [x] Architecture tested and **negative**. ResNet50, 2.2x the parameters
-      (25.6M vs 11.7M), every other setting fixed: validation balanced accuracy
-      rose 0.724 -> 0.744 but none of it survived to test — top-1 0.806 -> 0.801,
-      top-3 0.9766 -> 0.9752, intervals overlapping. See
-      [Experiment 5](results.md#experiment-5-resnet50-capacity-is-not-the-ceiling-either)
-- [x] Resolution ruled out as a lever, not merely untried. The frozen test images
-      are 320x240, so training above ~240 on the short side only interpolates,
-      and re-materializing them higher would change the pixels seven published
-      runs were scored on. The 320px storage choice, made for disk, quietly
-      became a measurement commitment — worth knowing before the next such
-      decision
-
-**Top-3 accuracy is 0.975-0.977 across all eight configurations** — two corpora,
-two architectures, two loss functions, a sampling scheme, three decision rules.
-Nothing has changed what the model knows. That is a statement about the
-information in the inputs, not about the models.
-
-- [ ] **Use the metadata.** `age`, `sex` and `localization` sit on every manifest
-      row (98% / 98% / 90% populated in training, 100% in test) and feed no model
-      at all — they exist only as fairness grouping keys. A dermatologist uses
-      site and age; an image-only classifier cannot. This is the one untested
-      lever that adds *signal* rather than parameters, and it needs no new data.
-      Note it also raises a fairness question worth stating up front: conditioning
-      on sex or age makes the model's subgroup behaviour a design choice rather
-      than an artefact
-- [x] **External test set — done, and it inverts the internal ranking.** Derm7pt
-      [4], 1,003 cases and 252 melanoma, no retraining. Read on Youden's J,
-      because sensitivity alone says the models survived and they did not: a
-      model can raise sensitivity by calling melanoma more often, which is what
-      the shift caused. The single-archive model collapses (ΔJ −0.244) while the
-      mixed-corpus one holds (−0.047), confirming the prediction the learning
-      curve left open. The linear probe — weakest internally — is the only
-      configuration that does not degrade at all (+0.009). And the decision
-      weight tuned on HAM10000 validation does not transfer: 0.964 external
-      sensitivity looks untouched while specificity falls to 0.230, so J drops
-      0.633 → 0.195, barely above answering "melanoma" every time. See
-      [Experiment 7](results.md#experiment-7-the-first-numbers-not-measured-on-ham10000)
-- [ ] **Re-tune the decision rule on external validation data.** Experiment 7
-      showed the HAM10000-tuned weight is not portable. A weight tuned on a held-
-      out part of Derm7pt would say how much of the collapse is the rule rather
-      than the model — but it costs the clean one-shot external measurement, so
-      split the external set first and decide explicitly which half pays for it
-- [ ] A second external set, to say anything general. One archive supports "more
-      robust against *this* archive", not a law
-
-
-### Two experiments that need no new data
-
-Both are standard practice worth having done once, and both attack the finding
-that has survived everything else: top-3 accuracy sits at 0.975-0.977 across all
-eight configurations, so nothing tried so far has changed what the model *knows*.
-
-- [x] **Linear probing vs full fine-tuning — done, and it loses everywhere.**
-      Frozen ImageNet features reach 0.648 top-1 against fine-tuning's 0.806 at
-      the full corpus, and the textbook crossover at small n never appears: the
-      probe trails at 120 images just as it does at 21,770. The domain gap from
-      ImageNet to dermoscopy is large enough that adapting the backbone is worth
-      more than the overfitting it risks. `training.freeze_backbone: true`
-- [x] **Learning curve — done, and it resolves experiment 3.** Quantity matters
-      (+10.5 points from 7,031 to 21,770 ISIC images, separated) and distribution
-      matters more (+9.5 points for 7,014 HAM10000 images over 7,031 ISIC ones at
-      equal volume, separated). Experiment 3 compared an in-distribution corpus
-      against 3x as much out-of-distribution data, and the two effects nearly
-      cancelled — which is why it read as "no change". Top-3 is not constant
-      either: 0.778 at 120 images rising to 0.977, so the flat top-3 across the
-      earlier eight configurations was a plateau they all sat on, not a property
-      of the model. See
-      [Experiment 6](results.md#experiment-6-a-learning-curve-and-what-it-says-about-experiment-3)
-- [ ] **Repeat the curve with several seeds per point.** Each point is currently
-      one run, which supports the large effects above but not the small wiggles —
-      the dip at 7,031 against 2,002 has touching intervals and may be seed noise
-
-
-Neither needs another dataset, and Derm7pt is specifically *not* a candidate for
-either: once it is the external test set, training on it in any form destroys the
-only independent measurement available.
-
-Its 7-point concept annotations are tempting for a Concept Bottleneck Model,
-which would sit close to the explainability pillar. That needs the concepts at
-training time, so it is a separate project with its own data, not a variation
-on this one.
-
-**Image directories are per-corpus, not merged.** ISIC images go to
-`data/raw/isic2019/`, self-contained, including re-materialized copies of the
-6,885 HAM10000 images that `isic_train.csv` shares — about 108 MB of duplication.
-
-`data/raw/ham10000/` stays frozen, because it is the pixel source for five
-published artifacts: merging into it would retroactively change what those
-numbers mean, one layer below the manifest. `materialize_images.py` already
-enforces this — its `_materialize.json` stamp records `source`, `max_size` and
-`quality`, and it exits rather than mixing settings in one directory, so a merge
-would also make the existing stamp (`source: marmal88/skin_cancer`) false.
-
-The directory name carries the edition. `isic2019`, not `isic`, so adding ISIC
-2020 later does not make an existing path ambiguous.
-
-**One deliberate departure from the original plan above.** It said to "re-run
-`build_splits.py` over the union", i.e. re-split everything once ISIC was mixed
-in. That is wrong, and the comparison view is what makes it wrong: re-splitting
-moves the test set, which changes the evaluation manifest's content hash, which
-puts the new run in a different comparability group from the five existing
-configurations — so the one thing the larger training set was *for*, showing
-where it performs better, would have been impossible to display.
-
-So the test manifest is frozen instead, and only training grows. Validation is
-the existing `ham10000_val.csv` copied under the new prefix rather than
-resampled, because `tune_decision.py` tunes the decision rule on val and a
-different val would silently change what a tuned weight means.
-
-A larger training set does not license a new test set. Same rows, same bytes,
-same hash — that is the price of being able to compare at all.
-- [ ] Consider a genuinely **external** test set (PH2, Derm7pt, PAD-UFES-20) as a
-      separate scenario. Different camera, different clinic, different population:
-      the gap between the internal and external number *is* the generalisation
-      result, and is worth publishing as its own tile
-
-Note that a larger training set does not by itself justify a bigger *test* set —
-what makes the test number trustworthy is that no lesion in it was ever trained on.
-
-## Step 6 — Snapshots and a comparison view
-
-*Goal: show improvement over time, without inviting a dishonest comparison.*
-
-- [x] Keep every evaluation instead of overwriting: every run writes
-      `showcase/artifacts/<id>/history/<created_at>.json` alongside `report.json`
-      (which stays "latest", so the dashboard is unchanged). ~2.7 KB per snapshot
-- [x] Each snapshot records what makes it comparable: the evaluation manifest's
-      **content hash** (not its path — a manifest can be regenerated with a
-      different seed and keep its name), the row count, and the integrity verdict
-- [x] Metrics are flattened generically (`<pillar>.<path>`, numeric leaves only,
-      booleans excluded), so a new metric becomes comparable without the exporter
-      learning anything about it
-- [x] Comparison view: runs grouped by evaluation set, metric table with a delta
-      column, and a per-metric chart
-- [x] **Refusal**, which is the point: runs scored on different rows are never
-      plotted together, and a run whose split was contaminated or unverified is
-      excluded with the reason shown
-- [ ] `lineage:` on the card, to group retrains of one model family across folders
-
-**The trap this must avoid.** Two numbers are only comparable if they come from
-the same test manifest *and* both snapshots were clean. Comparing the original
-checkpoint against the retrained one is not a fair fight in either direction:
-
-- Evaluated on its own contaminated split, the old model scores inflated numbers.
-- Evaluated on the new clean manifest, it *still* scores inflated numbers, because
-  it trained on ~99.5% of HAM10000 — the new test set is unseen for the new model,
-  not for the old one.
-
-So the comparison view must refuse to plot snapshots with mismatched test
-manifests, and must render the integrity verdict beside every bar. A green
-"+12 points" against a leaked baseline would be exactly the kind of claim this
-project exists to catch. Where no fair comparison is possible, say so instead of
-drawing the chart.
-
-## Step 7 — Group the gallery ✅ done 2026-09-10
-
-*Goal: one tile per scenario stops working once one model has ten configurations.*
-
-Today every scenario produces a folder, and every folder produces a tile. The three
-cost-sensitive runs are already three tiles for **one** model; focal loss, oversampling and a
-backbone comparison would add several more, and a second use case would sit undifferentiated
-among them.
-
-Two grouping axes, deliberately separate:
+## What has been built
+
+| Step | Done | What it established | Evidence |
+|---|---|---|---|
+| **1** Model-agnostic engine | 2026-09-07 | classes, architecture, Grad-CAM layer and device all come from the scenario; the dataset no longer imports its classes from the model | 82 tests in `tests/` |
+| **2** Training as a contract | 2026-09-07 | lesion-grouped split (train 7,014 / val 1,508 / **test 1,493**, 163 melanomas), zero shared lesions; `train_model.py` never opens the test manifest | `scripts/build_splits.py` |
+| **3** Leakage as a finding | 2026-09-07 | `integrity.split_leakage` + a runner precondition that raises rather than report a flattering number; one implementation shared by guard and metric | [Split integrity](integrity.md) |
+| **4** First trustworthy result | 2026-09-08 | 79.6% top-1, 72.8% balanced, MIA-AUC 0.558, 71.7% corruption stability, a 21.3-point skin-tone gap — and melanoma recall 0.638, the second worst of seven classes | [Results](results.md) |
+| **4b** Uncertainty | 2026-09-08 | Wilson / Hanley–McNeil intervals, per-class sensitivity·specificity·PPV, top-3 accuracy; verdicts taken on the *interval* where a claim is at stake | `verifai/metrics/_stats.py` |
+| **4c** Cost-sensitive decisions | 2026-09-09 | `model.decide()/rank()` — four metrics had each reimplemented `argmax`; sensitivity 0.638 → 0.945 with no retraining | [Experiment 1](results.md#experiment-1-a-cost-sensitive-decision-rule) |
+| **4d** Focal loss, oversampling | 2026-09-09 | **negative**: neither moved melanoma sensitivity beyond noise | [Experiment 2](results.md#experiment-2-focal-loss-and-oversampling-a-negative-result) |
+| **5** A larger corpus | 2026-09-12 | ISIC 2019 with every val/test lesion held back: 21,770 images, melanoma 774 → 4,183. Bought **robustness** (+8.4 noise, +4.6 brightness), cost **fairness** (gap 0.213 → 0.326) | [Experiment 3](results.md#experiment-3-a-3x-larger-more-diverse-training-set) · [4](results.md#experiment-4-tuning-the-new-model-and-where-experiment-3-was-wrong) |
+| **5b** Architecture, probing, curve | 2026-09-15 | ResNet50 **negative** (0.806 → 0.801); linear probing loses at every size; the learning curve resolved experiment 3 | [5](results.md#experiment-5-resnet50-capacity-is-not-the-ceiling-either) · [6](results.md#experiment-6-a-learning-curve-and-what-it-says-about-experiment-3) |
+| **6** Snapshots + comparison | 2026-09-10 | every run recorded with the evaluation manifest's **content hash**; the view *refuses* to plot runs scored on different rows or on a contaminated split | `verifai/export/artifacts.py` |
+| **7** Grouped gallery | 2026-09-10 | `card.group` / `card.lineage`; seven tiles became three cards. Presentation never widens comparability — asserted in tests | `showcase/app.py` |
+| **8** External validation | 2026-09-16 | Derm7pt, 1,003 cases, no retraining: **the internal ranking inverts** | [Experiment 7](results.md#experiment-7-the-first-numbers-not-measured-on-ham10000) |
+
+**Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
+corpora, two architectures, two loss functions, a sampling scheme, three decision
+rules. Nothing tried has changed what the model *knows*. That is a statement about
+the information in the inputs, not about the models.
+
+---
+
+## The open scientific work
+
+Unfinished, and still ranked by what it would establish:
+
+- [ ] **Re-tune the decision rule on external validation data.** Experiment 7 showed
+      the HAM10000-tuned weight is not portable. A weight tuned on a held-out part of
+      Derm7pt would say how much of the collapse is the rule rather than the model —
+      but it costs the clean one-shot external measurement, so split the external set
+      first and decide explicitly which half pays for it.
+- [ ] **Finish the context prior.** The machinery is built and tested
+      (`scripts/build_context_prior.py`, `model.decide(probs, meta)`);
+      `prior_strength` still needs tuning on validation and no scenario uses it yet.
+      Derm7pt has no `age` column, so only the site half would apply there.
+- [ ] **A second external set.** One archive supports "more robust against *this*
+      archive", not a law.
+- [ ] **Repeat the learning curve with several seeds per point.** Each point is one
+      run today, which supports the large effects but not the small wiggles.
+- [ ] **Use the metadata as model input.** `age`, `sex` and `localization` sit on
+      every manifest row and feed no model. The one untested lever that adds *signal*
+      rather than parameters — and it makes subgroup behaviour a design choice rather
+      than an artefact, which is worth stating up front.
+- [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
+
+**The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97
+carries an interval of about ±0.03, so differences under ~5 points cannot be resolved
+on this data at all. Establishing the remaining gain is a sample-size problem, not a
+modelling one.
+
+---
+
+## The platform plan
+
+Eight phases. Phase A is the seam everything else plugs into and is built first.
+
+### Phase A — the two contracts, and capability gating
+
+The model contract is *already* domain-neutral; nobody wrote it down. Read off the
+metrics: four of six need only `dataset.load(sample)` → payload and
+`model.predict_probs(payload)` / `.decide()` / `.rank()`. Only Grad-CAM needs
+`.torch_module` + `.cam_layer`; only the ITA metric needs pixels.
+
+- `verifai/models/base.py` — a `ModelAdapter` Protocol: `classes`, `predict_probs`,
+  `decide`, `rank`, plus `metadata: dict` (provenance, preprocessing fingerprint) and two
+  declarations that decide what may run against it:
+    - **`access`** — one rung of the ladder in [The pillars](pillars.md#how-much-of-the-model-do-you-have):
+      `labels` → `probs` → `logits` → `gradients` → `weights` → `training_data`. A total order,
+      so gating is a comparison rather than a set intersection, and each level includes the ones
+      below it. `ImageClassifier` declares `weights`, or `training_data` when the scenario has a
+      `training:` block.
+    - **`modality`** — what `dataset.load()` hands back: `pixels` · `tokens` · `audio` · `rows`.
+  Half the catalogue cannot run against a hosted API, and this is what lets the runner say so
+  instead of silently producing a shorter report.
+- `METRIC_REGISTRY` entries become a small frozen dataclass — `target`, `tasks`,
+  `modalities`, `requires` — with a plain string still accepted, so nothing breaks.
+- The runner checks requirements **before** calling a metric and emits
+  `Finding(verdict="unavailable", summary="… requires gradients; this model is reachable only
+  through an API, so gradients do not exist for it")` rather than crashing. That is the existing
+  idiom from `privacy/mia.py`, applied to a new reason — and the reason is the finding, because
+  a metric that silently did not run is indistinguishable from a model with nothing to report.
+- Separate the two axes the code conflates: `domain:` is the *payload type*, `task:`
+  (default `classification`) is what decides which metrics apply. The `Domain`
+  literal already lists `llm`, which is a task, not a domain — retire it the way
+  `kind: "gauge"` and the pass/warn/fail verdicts were retired, by going on reading it.
+
+### Phase B — what you can, and cannot, verify about someone else's model
+
+For a third-party checkpoint there is no training manifest, so the split check —
+this project's strongest claim — cannot run. The honest answer is a finding, not silence.
+
+- **`integrity.provenance`** — `measured` when training manifests are declared and
+  checkable (the `<name>_training.json` `train_model.py` already writes),
+  `unavailable` for an undeclared third-party checkpoint, saying plainly that no
+  split check is possible. Never "clean".
+- **Corpus-level leakage.** A curated ancestry table (HAM10000 ⊂ ISIC 2019, Derm7pt
+  independent, …) lets a model's *declared* training datasets be checked against the
+  evaluation set's corpus even with no row ids. It is the only leakage check
+  available for a Hub model, and it is this project's origin story generalised.
+- **Label-space compatibility**, before any metric runs: identical · dataset ⊂ model
+  (report which classes go unscored — the Derm7pt case, handled ad hoc today) ·
+  model ⊂ dataset · disjoint, which requires an explicit `label_map:` and is never
+  guessed.
+- **Preprocessing fingerprint** recorded in `report.json`. For a third-party model
+  `preprocessor_config.json` is the only record of training-time preprocessing, and
+  a mismatch means every metric silently measures a different model.
+- **The strongest privacy attack is permanently out of reach here, and says so.** A
+  shadow-model membership attack needs the training *distribution* to build shadows from;
+  for a third-party checkpoint there is none, so `privacy.mia_shadow` reports
+  `unavailable` for reasons that will never change, rather than appearing as a number
+  somebody might later fill in. It belongs in this phase rather than with the other
+  privacy metrics because it is the same argument as `integrity.provenance`: **what
+  cannot be measured about someone else's model is itself a result**, and reporting it is
+  the difference between an evaluation and an advertisement.
+
+This is also what the external-validation literature prescribes for "trained model,
+new dataset" (TRIPOD+AI [[14]](references.md#ref-14)): freeze the model, map label spaces explicitly, expect
+prevalence shift, report discrimination **and calibration**, and never reuse an
+operating point tuned elsewhere — split the external set and pay for the re-tune out
+of one half. Which is exactly the open item at the top of this page.
+
+### Phase C — resolving a model, and the adapter catalogue
+
+- `verifai/models/resolve.py` — `hf:owner/repo[@rev]` or a local path → a **draft**
+  `model:` block for review, never an auto-run. Reads `HfApi().model_info` without
+  downloading: `pipeline_tag`, `library_name`, `config.json` (`id2label`,
+  `architectures`), card metadata (`datasets`, `license`), and the commit sha, which
+  becomes a pinned `revision`.
+- Adapters, in order, each roughly 80 lines:
+    1. **torchvision / timm `state_dict`** — exists. Carries no metadata at all, so
+       `arch` and `classes` must be declared; the resolver says so rather than guessing.
+    2. **`hf_image`** — `AutoModelForImageClassification` + `AutoImageProcessor`.
+       Self-describing: `id2label` gives the class order, the processor gives the exact
+       preprocessing. This is where "paste a link and it works" is genuinely true.
+    3. **`hf_text`** — `AutoModelForSequenceClassification` + `AutoTokenizer`;
+       `dataset.load()` returns a string and `predict_probs` is unchanged.
+- `transformers` goes in `requirements-engine.txt` only, never in the showcase list.
+- Deliberately **not** first: ONNX, sklearn/joblib, generative checkpoints. Each is a
+  different loading story and none of them is on the path to the next result.
+
+### Phase D — the two entry tracks, one command
+
+| The model is… | What runs |
+|---|---|
+| trained and ready (local `.pt`, or a Hub link) | resolve → preflight → evaluate → export |
+| not trained yet, but the data is here | resolve data → train (`training:` block) → preflight → evaluate → export |
+
+One dispatcher over scripts that already exist:
+`verifai resolve <link>` → a draft scenario ·
+`verifai preflight <scenario>` → provenance, label space and integrity with **no**
+metric run, which is the thing to run before a long evaluation ·
+`verifai run <scenario>` → trains first when `training:` is present and the
+checkpoint is missing, then evaluates and exports.
+
+### Phase E — the interface
+
+The current app is one 915-line file routed through `st.session_state` and
+`st.rerun()`, and its front page is twenty-four runs deep.
+
+- **Navigation that matches the mental model:** use case → model → run, on
+  `st.navigation` / `st.Page` (Streamlit 1.63 is installed), which also gives URLs
+  and a working back button.
+- Split `showcase/app.py` into `catalog.py`, `render.py` and
+  `views/{gallery,report,compare}.py`, keeping the public names importable from
+  `showcase.app` so the existing tests keep passing.
+- **Archive.** `card.status: active | archived`, default `active`. Today that leaves
+  the ISIC model and its decision-rule siblings on the front page and files the eight
+  learning-curve runs, focal, oversample and the ResNet50 probe behind an expander.
+  Archiving is **presentation**: the comparison view still sees them, and an archived
+  run scored on the same manifest must be *disclosed*, exactly as the lineage filter
+  already must. New metrics get tested against the archived runs without
+  recomputing the active one.
+- **A real explanation component, not an expander.** Every finding needs one consistent,
+  visible info box answering five questions in the same order every time: **what was measured**,
+  **what came out**, **why it matters**, **how to read the chart**, and **what this does not
+  tell you**. Those map to `explain.what`, the finding's own `summary`, `explain.impact`,
+  `explain.how` and `explain.limits` — so the wording keeps shipping from the engine and the app
+  stays a renderer. Today the first two are inline and the rest are behind "How to read this
+  chart", which buries the two that a non-specialist most needs. The reader this is aimed at has
+  never seen a Responsible-AI report; a number with no box is a number they cannot use.
+- **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
+  a reader sees whether it is a *good* number rather than only what it is. A metric that returns
+  a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
+- **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
+  for review → pick a test set → preflight → run → link to the new report — that
+  appears only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`,
+  imported lazily so the public path never touches it. `showcase/requirements.txt`
+  stays torch-free, which makes Streamlit Community Cloud the self-enforcing gate.
+
+### Phase F — the metric catalogue: the taxonomy becomes data
+
+Phase A is the *mechanism*. This is the *content* it exists to carry — the
+aspect → sub-aspect → per-modality tree, extended to generative AI and to a seventh
+pillar, and kept in the medical domain.
+
+**The full catalogue — fifty-one metrics, each with what it establishes and what it needs —
+is [The pillars](pillars.md).** Six are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
+and says only what order to build in and why.
 
 ```mermaid
 flowchart TB
-    G1["🔬 Skin lesion — HAM10000"]
-    G2["🫁 Chest X-ray — (future)"]
-    G3["🧪 Demo fixtures"]
-    G1 --> L1["resnet18-clean<br/><i>lineage</i>"]
-    L1 --> R1["baseline (argmax)"]
-    L1 --> R2["melanoma ×5"]
-    L1 --> R3["melanoma ×50"]
-    G1 --> L2["resnet18-focal<br/><i>lineage</i>"]
-    style G1 fill:#EDE9FB,stroke:#5B3FD6,color:#1a1a2e
-    style G3 fill:#EEEEEE,stroke:#999,color:#1a1a2e
+    R["Report"] --> I["integrity"] & P["performance"] & F["fairness"] & B["robustness"] & X["explainability"] & V["privacy"] & S["safety"]
+    I --> I1["row overlap ✅"] & I2["corpus overlap"] & I3["compatibility"]
+    P --> P1["discrimination ✅"] & P2["calibration"] & P3["decision quality"] & P4["uncertainty"]
+    F --> F1["group"] & F2["individual"] & F3["data ✅"]
+    B --> B1["natural ✅"] & B2["adversarial"]
+    X --> X1["faithfulness ✅"] & X2["complexity"] & X3["robustness"] & X4["sanity"]
+    V --> V1["membership ✅"] & V2["memorisation"] & V3["inference"]
+    S --> S1["scope · escalation · harm<br/>refusal · uncertainty"]
+    style R fill:#EDE9FB,stroke:#5B3FD6,color:#1a1a2e
+    style S fill:#FFF6E0,stroke:#C77700,color:#1a1a2e
 ```
 
-- [x] `card.group` — a section heading in the gallery ("Skin lesion — HAM10000").
-      Ungrouped cards fall into a default section, so nothing breaks
-- [x] Moved `_sample_skin_resnet` into a **Demo fixtures** group, so placeholder data is
-      visually separated from real results rather than sitting beside them
-- [x] `card.lineage` — configurations of the same underlying model collapse into **one**
-      card showing "3 runs", which opens the comparison view already filtered to that lineage
-- [x] The comparison view keeps grouping by evaluation-set hash regardless: `group` and
-      `lineage` are presentation, **comparability is evidence**, and the two must not be
-      confused. Two runs in one lineage that were scored on different manifests still must
-      not be plotted together
+Four of these pillars are the standard Responsible-AI taxonomy (XAI · ethical · secure ·
+privacy-preserving). Three are this project's own, and each earns its place by asking
+something the other four cannot:
 
-**Result: seven tiles became three cards.** One section per problem, and the five clean-split
-configurations collapsed into a single card that opens straight into their comparison — which
-is the useful view of a set that exists to be read against itself.
+- **integrity** — a fairness gap measured on a contaminated split is not a fairness
+  result. Everything else is conditional on it.
+- **calibrated performance** — a sensitivity figure without its operating point is not a
+  performance result, as this repo's own `melanoma ×30` demonstrates.
+- **safety** — see [Phase I](#phase-i-generative-ai-in-the-medical-domain). It asks what
+  happens if someone *acts* on the output, which no accuracy number answers.
 
-A test now asserts the constraint that was easy to violate: two configurations of one lineage
-scored on *different* manifests still land in different comparability groups. Lineage narrows
-what is displayed; it never widens what may be compared.
+Two schema changes, both small:
 
----
+- `Finding.subaspect: str | None`, so the dashboard groups pillar → sub-aspect → metric
+  instead of one flat list per pillar. At six metrics a flat list was fine; at fifty it
+  is a wall.
+- the Phase-A registry entry grows `modalities` beside `tasks` and `requires` — which
+  *is* the taxonomy's third row: one sub-aspect, a different implementation per modality.
 
-## Known scaling gaps (bite at n>1000, not at n=7)
+#### Build order
 
-- Everything runs at **batch size 1** (`to_tensor` does `.unsqueeze(0)` per image)
-- `fairness/skin_tone_ita.py` recomputes the clean prediction that
-  `performance/classification.py` already made — 7 forward passes per image, 2 redundant
-- `details["per_example"]` is written for every image, so `report.json` grows linearly
-- ~~`ImageSample` carries only `id/path/label`~~ — **closed.** Every extra manifest
-  column lands on `ImageSample.meta` (`image_id`, `lesion_id`, `dx_type`, `age`, `sex`,
-  `localization`), so real demographic subgroups are available today and would beat the
-  ITA pixel proxy. Nothing currently reads them except the integrity check
+Tiers, not a queue: everything in a tier is independent of everything else in it.
 
+| Tier | Needs | Metrics |
+|---|---|---|
+| **1** | nothing new — can land before Phase A | calibration · ROC/PR discrimination · operating points & net benefit · selective prediction · PPV at a stated prevalence · group fairness · data representation · provenance · label space · preprocessing fingerprint |
+| **2** | Phase A capability gating | adversarial (FGSM · PGD · DeepFool) · corruption severity sweep · XAI complexity · XAI randomisation · XAI stability · insertion+deletion faithfulness · calibration by group · corpus ancestry · near-duplicates |
+| **3** | more data, masks, or a model we trained | individual fairness · intersectional gaps · acquisition shift · per-group MIA · shadow MIA · memorisation · attribute inference · localisation · explanation agreement |
+| **4** | the text domain (Phase G) | text perturbation · token occlusion |
+| **5** | the generative task (Phase H) | everything under `task: generation`, including the whole safety pillar |
 
----
+**Start with `performance.calibration`.** It would have exposed `melanoma ×30` without
+needing the specificity column beside it; calibration is the first thing to break under
+the distribution shift Experiment 7 measured; it is pure maths that fits `_stats.py` with
+no new dependency; and it ports to every probability-emitting domain. Nothing else in the
+catalogue has that combination.
 
-## Where this goes next: domains, and what each step demonstrates
+**Then `fairness.group`**, over the real manifest columns (`sex`, `age`, site) the loader
+has carried since step 1 and nothing has ever read. More general than the ITA pixel proxy,
+which becomes the dermatology-specific extra rather than the only fairness metric.
 
-The README calls this framework domain-agnostic. That is currently a *claim* — all nine
-scenarios are skin lesions. Measured against the code, here is how true it actually is:
+#### Three things fifty metrics break
 
-| Module | Image-bound? |
+Each is cheap to fix now and expensive later, so all three are prerequisites rather than
+polish:
+
+- **Per-metric tests do not scale.** One **conformance test over the registry** replaces
+  fifty: every registered metric declares `tasks` / `modalities` / `requires` / `version`,
+  returns `better` directions for its numeric leaves, resolves to a glossary entry, and
+  carries an `explain` block with all four keys. A second test asserts that no glossary
+  pattern is fully shadowed by an earlier one — the ordered `fnmatch` list gets fragile
+  fast once there are dozens of patterns.
+- **No scenario can run everything.** Declare a per-metric **cost** (forward passes per
+  sample) and ship **presets** — `quick` · `standard` · `full` — so `verifai preflight`
+  can estimate a run's length beforehand instead of after. The robustness metric alone
+  already costs ~7 passes per sample.
+- **A metric's definition can drift and silently invalidate the history.** Give each
+  registry entry a `version`, record it in the snapshot, and have the comparison view
+  refuse to plot two runs whose metric versions differ — the same rule as the evaluation
+  manifest's content hash, one level down. **This is the most important item on this
+  page.** Without it, fifty metrics across a growing history quietly produce false deltas,
+  which is the precise failure this project exists to prevent.
+
+#### Two rules the expansion forces
+
+**A threat model is part of the number.** An attack success rate is meaningless without
+white-box vs black-box, the norm, the perturbation budget and the iteration count, so an
+adversarial metric carries all four **in `value`**, not only in prose. And adversarial
+robustness must never be merged into one "robustness" figure with corruption stability:
+they answer different questions — whether a clinically irrelevant perturbation flips the
+call, versus whether a deliberate one can be constructed — and a reader shown one number
+will assume the wrong one.
+
+**Write it when it is short.** FGSM, PGD, additive noise and occlusion are tens of lines each
+in numpy/torch, and the wording has to be ours anyway. Take a dependency only where
+re-implementing is genuinely error-prone, and only in `requirements-engine.txt`.
+
+**And check that the dependency still exists.** A toolkit named in a plan is a claim with a
+shelf life. The shortlist this catalogue was built from [[34]](references.md#ref-34) was sixteen months old when it was
+audited, and by then **two of its nine installable toolkits had stopped working** — one pinned
+`numpy<2` into a corner Python 3.13 cannot build, the other had not been released since 2021 —
+while a third had moved repository and left a dead link behind. Nothing in that document said
+so, because a name on a list carries no expiry date. The toolkit table in
+[The pillars](pillars.md#what-would-implement-these) therefore records a verified date, the
+version, months since the last commit, and whether it actually resolves against this stack.
+
+#### Quantus is the exception, and it is taken
+
+XAI evaluation is the case the lean-dependency rule carves out: MPRT, ROAD and the relative
+stability estimators are subtle enough that re-implementing them means re-deriving a JMLR paper.
+**Quantus [[27]](references.md#ref-27) is adopted** — verified to resolve against this stack (Python 3.13, numpy 2.5,
+torch 2.14), adding `quantus[captum]` plus eleven transitive packages, engine-only, never in
+`showcase/requirements.txt`. It covers five of the eight explainability rows and brings a sixth
+sub-aspect, `axiomatic`, that the catalogue did not have.
+
+It arrives behind **one adapter module**. No metric imports `quantus` directly, so the library
+can be swapped or dropped without touching the catalogue. Five conditions on that adapter:
+
+1. **`return_aggregate=False`.** Quantus returns per-instance scores by default; the earlier
+   prototype set this to `True` and threw the distribution away. Every number here needs an
+   interval, and the per-sample scores are what `_stats.py` needs to build one.
+2. **Declare directions, never invert.** The prototype computed `1 - avg_sensitivity` so that
+   lower-is-better metrics would feed a composite score. Keep the native value and declare
+   `better: {"avg_sensitivity": "lower"}`; inverting bakes a presentation choice into the
+   measurement.
+3. **The configuration is part of the number.** `abs`, `normalise`, `perturb_baseline`,
+   `nr_samples` all change the result, so they belong in `value` — the same rule as an
+   adversarial threat model.
+4. **The attribution method is part of the comparability key.** A Quantus score is a property of
+   *(model, explanation method, metric config)*, not of the model. Two runs scored with
+   Integrated Gradients and with Saliency are not comparable, and nothing in today's snapshot
+   would notice.
+5. **Batching comes first.** Quantus is batch-first (numpy arrays, `batch_size=64`) while
+   `to_tensor` still does `.unsqueeze(0)` per image. The known scaling gap stops being optional
+   here — which is a reason to fix it, not a blocker.
+6. **Wrap it, never fork it.** Quantus is **LGPL-3.0-or-later**, alone among the toolkits here.
+   Importing it unmodified imposes nothing on this repository; patching it would put those
+   patches under the LGPL. The adapter module was already the design; the licence makes it a
+   requirement rather than a preference.
+
+One unverified risk: Quantus 0.6.0 declares `requires_python >=3.8` with no 3.13 classifier, so
+3.13 is untested upstream. It resolves; smoke-test one metric on the 7-image scenario before
+committing the pin.
+
+**One idea ports across every modality.** Deletion faithfulness — mask the evidence, watch
+the probability fall — is already implemented for pixels in `gradcam.py`. Generalise it
+into a single metric with a per-domain masking function (pixels, tokens, audio frames)
+rather than writing a third explainability metric. Add insertion alongside deletion:
+deletion on its own is gameable.
+
+### Phase G — the findings layer: measurement, judgement, and the line between them
+
+Adopted from the 2.0 backend [[34]](references.md#ref-34), which solved this better than the current repository does.
+Today verifai-medical refuses thresholds outright, on the grounds that a threshold would have
+to be justified and nothing here can justify one. That is half right. The better answer is not
+to ban the judgement but to **make the justification a required field, and keep it out of the
+metric**:
+
+| Layer | Owns | Lives in |
+|---|---|---|
+| **Indicator** | what was **measured** | the metric |
+| **Criterion** | whether that is **acceptable** | a versioned policy file |
+| **Finding** | the two, joined | the engine |
+
+> **The findings layer never computes a statistic. It applies a pre-registered threshold to a
+> statistic the metric already published.**
+
+Everything else follows from that one sentence, and it decides the hard cases: a metric that
+publishes no aggregate is reported as *not summarised* rather than having one manufactured for
+it in the engine, and the fix is ten lines inside the metric, written by whoever understands
+that statistic.
+
+**Intended use becomes a profile, not a refusal.** The same metric carries a different
+criterion and a different materiality under `medical_decision_support` than under
+`research_prototype`. "What counts as robust enough depends on where the model runs" stops
+being a reason to report nothing and becomes a selectable, named, documented thing.
+
+**Every criterion is attributable.** A policy rule requires `rationale` (why this threshold),
+`source` (where it comes from, including "convention, owner: X, treat as provisional") and
+`references`. The existing policy file already says of its own robustness threshold: *"NOT
+taken from a published standard: no reference corpus of dermoscopy model flip rates exists."*
+That is the `Verified` / `Compiled` discipline of [references.md](references.md), applied to
+judgements instead of citations.
+
+**Criteria are gated on the interval.** `ci_gate: true` means a criterion decides only when
+the confidence interval does not straddle it; otherwise the finding is `inconclusive` — *"this
+cannot be decided at n=163"*, which is a result, not a gap.
+
+**Three kinds of baseline, with deliberately different weight**, because a reader needs to
+know what a number *should* be and not every "should" is equally arguable:
+
+| Kind | Example | Weight |
+|---|---|---|
+| `control` — measured in this run | Grad-CAM faithfulness 0.500 against a **random attribution control** measured under identical conditions [[42]](references.md#ref-42) | **strongest** — data, not opinion |
+| `chance` / `ideal` — definitional | MIA AUC against 0.5; flip rate against 0% | strong — follows from what the statistic is |
+| `criterion` — from the policy | flip rate ≤ 5% for medical use | **weakest** — authored, versioned, arguable, and labelled as a judgement |
+
+A fourth kind is **refused**: external norms. "Good dermoscopy models achieve ≤3% flip rate"
+would need a reference corpus that does not exist, and inventing one is worse than having no
+baseline at all.
+
+**Every gap is expressed in the indicator's own unit.** "9.5 percentage points above the 5%
+criterion" is a fact; "68% of the way to ideal" is a score. Normalising onto a shared scale is
+how a rating creeps back in, and it is precisely what the 2023 prototype did.
+
+**A richer status vocabulary.** Today everything that is not `measured` or `insufficient`
+collapses into `unavailable`, which conflates four different situations:
+
+| Status | Means |
 |---|---|
-| `export/artifacts.py` | not at all — zero image references |
-| `core/findings.py` | only the `Domain` literal, which already lists `image` / `text` / `tabular` / `llm` |
-| `core/run.py`, `core/integrity.py` | comments, plus an `id_key` that is already configurable |
-| `metrics/performance`, `robustness`, `privacy`, `integrity` | essentially domain-free |
-| `metrics/explainability/gradcam.py` | **genuinely image-bound** |
-| `metrics/fairness/skin_tone_ita.py` | **genuinely image-bound** (ITA is computed from pixels) |
+| `within_criterion` / `outside_criterion` | measured, and the interval clears the criterion |
+| `inconclusive` | measured, but the interval spans the criterion — undecidable at this n |
+| `not_assessed` | the metric ran and **declined** to estimate |
+| `not_summarised` | the metric ran but published **no aggregate** to judge |
+| `not_evaluated` | the metric was selected and **crashed** |
+| `no_criterion` | measured, but no rule exists in the active profile |
 
-### A second imaging domain is nearly free
+These live in **one array, not one per status** — "areas not assessed" are findings too, and
+two arrays would let the not-assessed list quietly get dropped in a refactor. Silence reads as
+approval.
 
-Chest X-ray is still image classification: same `ImageClassifier`, same manifest format,
-same metrics, and Grad-CAM is standard in that literature. The work is a scenario plus one
-metric swap — `fairness.skin_tone` is meaningless on radiographs, so subgroup fairness
-would run on `sex`/`age`, which the loader already carries.
+**An abstention without a reason is a bug.** The 2.0 schema enforces it at construction: an
+indicator whose status is not `measured` and which carries no `status_reason` raises. This
+repository has the same rule as a convention; making it an invariant is a few lines.
 
-**That is the cheapest way to turn the central architectural claim into a demonstration.**
-A tenth skin-lesion model adds nothing a reader cannot already see; one radiograph scenario
-proves the thing the README asserts.
+#### Comparing models that were not evaluated under the same suite
 
-### Text is a real project, not a variation
+The access ladder creates a problem the manifest hash does not cover: two runs can be scored on
+identical images and still not be comparable, because one model could be opened and the other
+could only be queried. Three distinct failure modes hide in that, and only the first is obvious.
 
-New loader, new model adapter, and the metrics need rethinking rather than porting:
-Grad-CAM becomes attention or SHAP, and "add noise" becomes typos and paraphrase. The
-core — findings, runner, exporter, comparison view — would not have to change, which is
-itself the interesting result.
+1. **A gap read as a verdict.** The API-only model has no adversarial row, and a reader concludes
+   it is untested and therefore riskier — or that the local model "scored worse on robustness",
+   when the local model is simply the only one that could be attacked at all.
+2. **The same row meaning two things.** `explainability.complexity` over Integrated Gradients
+   and over occlusion attributions both populate the row. Neither is wrong; they are not the
+   same measurement. This is worse than a gap, because a gap is visible.
+3. **The one that makes the tool unfair.** White-box attacks are *stronger*. A model you can
+   inspect is attacked harder and therefore scores worse on robustness — not because it is less
+   robust, but because you were able to try harder. Left alone, **the framework would
+   systematically reward opacity**, which for a Responsible-AI tool is close to the worst
+   failure available.
 
-### More metrics per pillar
+Three rules, all extensions of machinery already planned:
 
-The snapshot format makes this cheap: register the metric, re-run the scenarios, and the
-comparison view picks it up with no change to `app.py`. Worth doing not for the count but
-because every added metric makes the project's own argument concrete — that one number per
-pillar hides more than it shows, which is exactly what accuracy did to melanoma sensitivity.
+- **Level down when comparing.** A comparison group runs at the *weakest* access level present
+  in it. A black-box attack against a local checkpoint is perfectly valid, so levelling down is
+  always possible; the reverse never is. White-box findings are still reported on their own run
+  — they are real results — but they sit outside the cross-run table, labelled *"measured for
+  this model only; not used in the comparison."*
+- **Conditions go in the comparability key.** Today that key is the evaluation manifest's content
+  hash. It has to carry, per metric row, the access level and the method and configuration —
+  attribution method, attack, epsilon, metric version. Two runs share a row only when all of
+  those match. This is what catches failure mode 2.
+- **Say it at the top of the group, not in a footnote.** *"These runs were evaluated at
+  different access levels. 18 metrics are compared at the black-box level; 9 further metrics
+  were measured for `skin-cancer-isic` only, because it is a local checkpoint."* Plus an
+  access-level badge on every run.
 
-### Techniques this repo can currently show
+This also keeps two axes apart that are easy to confuse, and neither is a property of the
+model's quality:
 
-Done and evidenced by artifacts: leak-free grouped splitting, a guard that refuses to
-evaluate a contaminated split, cost-sensitive decision rules tuned on validation, focal
-loss, class weighting, balanced oversampling, transfer learning across two architectures,
-corpus scaling to 21,770 images, Wilson / Hanley-McNeil intervals, membership-inference
-attack, Grad-CAM with a deletion-faithfulness check, and — rarest of the list — three
-negative results reported as negative.
+| Axis | Decides | Declared by |
+|---|---|---|
+| **intended-use profile** (`medical_decision_support` / `research_prototype`) | which *criteria* apply to a number | the policy file |
+| **access level** (`labels` … `training_data`) | which *numbers can exist at all* | the model adapter |
 
-Open, and each demonstrating a technique not yet covered: linear probing, a learning curve,
-metadata as model input, an external test set, and a second domain.
+The honest framing, and it belongs in the app's own copy: this makes the tool **more** fair, not
+less. The asymmetry exists the moment an API model is evaluated. The only choice is whether it
+is stated or silent.
+
+Two things to reconcile when porting, rather than copying blind:
+
+- The existing four-word vocabulary (`measured` · `insufficient` · `unavailable` · `invalid`)
+  is what every published artifact carries, and `showcase/app.py::normalise_verdict` already
+  maps a retired vocabulary once. The new statuses are strictly finer, so the mapping is
+  downward and the old artifacts keep rendering.
+- `invalid` has no equivalent above, and it should keep its own place: a contaminated split is
+  not a failed criterion, it is a measurement that means nothing. Integrity stays a gate in
+  front of the policy layer, not a rule inside it.
+
+### Phase H — domains: chest X-ray, then text
+
+- **Chest X-ray first**, because it is nearly free: same `ImageClassifier`, same
+  manifest format, Grad-CAM is standard in that literature, and the one swap is
+  `fairness.skin_tone` → the `fairness.subgroup` metric from Phase F. It turns the
+  README's domain-agnostic claim into a demonstration, which a tenth skin model
+  cannot. The dataset needs a licence check and a [references](references.md) entry,
+  and the scenario must state the label noise the public chest corpora are known for.
+- **Text second**, and it is the real port: `hf_text`, a manifest loader with a
+  `text` column, `robustness.text_perturbation` (typos, casing, whitespace,
+  word substitution) and token occlusion for explainability. **No library helps here, and that is now measured rather than assumed.** Quantus supports
+  images, tabular and time series and lists NLP as "next up", i.e. not yet; `ferret`, the text
+  XAI toolkit the older shortlist named [[34]](references.md#ref-34), pins `numpy<2` and no longer installs on a current
+  Python, with no commits for 23 months. Two independent dead ends, so the five explainability
+  rows Quantus covers for images are written by hand for text. The catalogue must not imply
+  otherwise. Performance, fairness,
+  privacy and integrity carry over unchanged — which is itself the interesting result.
+- **Speech**, scoped honestly: audio *classification* fits the contract as it stands.
+  ASR does not — no fixed class list, WER/CER instead of accuracy — and it is the
+  first task where `classes` stops existing.
+
+### Phase I — generative AI, in the medical domain
+
+`task: generation` is where the classification assumptions end: no confusion matrix,
+no PPV, no fixed label set. What each pillar becomes:
+
+- **integrity → benchmark contamination.** The direct analogue of split leakage: was
+  the evaluation benchmark inside the training corpus? Same argument, same refusal,
+  one level up — and the single most important check on any published LLM number.
+  n-gram or canary overlap when the corpus is known; a membership-style probe
+  (benchmark versus paraphrased benchmark) when it is not.
+- **performance → no single ground truth.** Reference-based scores are weak here;
+  reference-free judging is strong and is itself a model. Medical framing:
+  groundedness against a cited source, hallucination rate, clinical-claim support.
+- **explainability →** source attribution for retrieved answers, chain-of-thought
+  faithfulness (does the stated reasoning *cause* the answer — testable by
+  intervention), and calibration of verbalised confidence.
+- **fairness →** matched clinical vignettes differing only in a demographic;
+  differences in advice quality, hedging, and refusal rate.
+- **robustness →** prompt perturbation, option-order and format sensitivity,
+  sycophancy under pushback, jailbreak resistance.
+- **privacy →** training-data extraction, PII regurgitation, canary exposure.
+#### Safety — the seventh pillar
+
+Agreed, with a boundary that has to be written down or it collapses back into performance:
+
+> **Performance asks whether the output is correct. Safety asks what happens if someone
+> acts on it.**
+
+For a classifier the output is a label, and "acting on it" is the operating-point
+question — which discrimination, calibration and net benefit already answer in full.
+That is why six pillars sufficed for everything in this repo so far. For a generative
+medical system the output is *advice*, and no accuracy number tells you whether it told
+someone to stay home. That gap is the pillar. Five metrics, all `task: generation`:
+
+| Metric | What it establishes |
+|---|---|
+| `scope_compliance` | stays inside its stated indication; does not claim diagnostic authority it lacks |
+| `escalation` | defers to a clinician on red-flag vignettes |
+| `harm_rate` | actively harmful advice, graded against a published rubric |
+| `refusal_appropriateness` | **both directions** — refusing an answerable, safe question is a failure too, and over-refusal is a real cost to real users |
+| `uncertainty_communication` | hedges when it should, and does not hedge when it should not |
+
+Three consequences:
+
+- Safety is **`unavailable` for `task: classification` by declaration, not by omission** —
+  no metric is registered for that task, which the Phase-A capability gate already handles.
+- The dashboard must then distinguish **"not applicable to this task"** from **"not
+  evaluated in this run"**. Today `showcase/app.py` renders both as `–` with the help text
+  *"Not evaluated in this run."*, which would be false for every artifact now published.
+- Colour is free: Streamlit supports `:yellow[...]`, so `PILLAR_COLOR["safety"]` needs no
+  reshuffle of the six already assigned. Order stays integrity first, safety last.
+
+**Wiring it: document now, wire with the first safety metric.** Adding `"safety"` to the
+`Pillar` literal and to `PILLARS` today would put a permanently empty seventh column on
+all 24 published dashboards, which teaches a reader to ignore a pillar before it has ever
+said anything. The literal, the question text, the colour and the not-applicable state all
+land together, as one coherent change, when there is something to put in the column.
+
+**The rule that keeps judge-based metrics honest.** A judge is a model evaluating a
+model. Any judge-based finding must record the judge's identity and version, the exact
+prompt, and its agreement with human labels on a sample — without that agreement
+number the verdict stays `insufficient`. Otherwise the framework would be doing
+precisely what it exists to catch: reporting a confident number whose provenance
+nobody checked.
+
+---
+
+## No composite score
+
+The standard taxonomy this catalogue is drawn from ends in a single aggregate — a
+Responsibility Score. The prototype [[33]](references.md#ref-33) implemented it: a 0–10 value per pillar, rendered as
+`danger` / `warning` / `success`, mapped to sentences like *"The model is not robust at all
+according to this test."* **This project will not produce one.**
+
+- A weighted sum is a **value judgement smuggled in as arithmetic**. The weights are exactly
+  the question the reader came to decide.
+- The components are **not commensurable**. An AUC, a calibration error and an attack success
+  rate under some perturbation budget are different units answering to different threat
+  models.
+- It is **unfalsifiable**. Nothing about a deployment can make a composite score wrong, which
+  means nothing about it can make it right either.
+- Measured here: the accuracy threshold this project already removed marked the configuration
+  catching 159 of 163 melanomas a *warning* and the one missing 82 of them a *pass*. A single
+  score does the same thing and hides more of it.
+- And the prototype's own version proves the point at the presentation layer: *"the model is
+  not robust at all"* was rendered without the threat model, the perturbation budget or the
+  sample size anywhere near it. The measurement underneath was fine. The sentence was not.
+
+**This is not the same as refusing to judge.** [Phase G](#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them)
+brings criteria back deliberately — attributable to a named owner, justified in prose,
+versioned, gated on the confidence interval, and different under a medical profile than under
+a research one. What stays forbidden is **arithmetic across metrics**: no mean, no weighted
+index, no "3 of 8 pillars passed". A fraction is a rating wearing different clothes.
+
+### What takes its place
+
+Four things, all of them presentational rather than evaluative:
+
+1. **A coverage map**, and the distinction it rests on is worth stating precisely, because it
+   is one word away from the thing just forbidden. Counting what was **measured** is
+   completeness: "13 of 19 applicable metrics measured; 4 inconclusive at this n; 2 not
+   assessed because this adapter exposes no gradients." Counting what **passed** is a rating.
+   The first says how much of the picture you are looking at; the second pretends to say how
+   good the picture is.
+2. **`explain.impact`** — a fourth key beside `what` / `how` / `limits`: who is
+   affected by this number being what it is, in this clinical context. It lives in the
+   engine with the rest of the wording, so a new metric still needs no app change.
+3. **Declared tensions.** `verifai/core/glossary.py` already carries a `tension`
+   field; extend it to cross-metric impossibility statements — calibration and
+   equalised odds cannot both hold when base rates differ between groups; sensitivity
+   trades against PPV; privacy against utility; accuracy against adversarial
+   robustness. Saying what *cannot* be simultaneously optimised is the scientific
+   replacement for a score that implies everything can be.
+4. **An evaluation card export** — the report as a readable Markdown/PDF document:
+   coverage map, every metric with its interval and its impact statement, and a
+   closing "what this evaluation does not tell you". No composite number in it anywhere.
+
+---
+
+## Known scaling gaps
+
+Harmless at n=7, real at n>1000, and **worse** the moment an adapter loads something
+bigger than a ResNet18:
+
+- Everything runs at **batch size 1** (`to_tensor` does `.unsqueeze(0)` per image).
+  A robustness metric costs ~7 forward passes per sample; on a ViT or a text
+  transformer that stops being a rounding error. Measured here, batching would win
+  ~3.5× on MPS on top of the device fix.
+- `fairness/skin_tone_ita.py` recomputes the clean prediction that
+  `performance/classification.py` already made — 2 redundant passes of 7.
+- `details["per_example"]` is written for every sample **by every metric**, so a fifty-metric
+  report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
+  opt-in per metric, before the catalogue lands.
+
+## Operational notes that have cost time
+
+- **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
+  `st.markdown` renders as unstyled text. Use `:colour[...]` and
+  `st.container(border=True)`. `st.info(icon=...)` validates its icon and raises on
+  anything that is not a real emoji — `◐` and `∅` are not.
+- **`torch.hub` cannot fetch pretrained weights** on this python.org macOS build
+  without a CA bundle; `train_model.py` sets `SSL_CERT_FILE` from certifi on import.
+- **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named
+  `master` in three places after the default moved to `main`; nothing errored, the
+  workflow simply stopped matching.
+- The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
+  directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+- Results are bit-identical **per device**, not across devices: expect third-decimal
+  drift between CPU and MPS, which is why `report.json` records `meta.device`.
+
+---
+
+## What does not move
+
+A platform plan is exactly when invariants get quietly dropped. These do not:
+
+- **A measurement and a judgement are never the same object.** A metric publishes what it
+  measured and nothing else; any criterion applied to it is owned by a versioned policy,
+  attributable to a person, and carries its rationale with it. No composite score, ever, and
+  no arithmetic across metrics.
+- **A metric that cannot be computed returns `None` and says why.** It never invents
+  a placeholder and never quietly skips.
+- **Every metric reports uncertainty**, and a verdict is taken on the interval
+  wherever a claim rests on it.
+- **Comparability is evidence, not presentation.** The evaluation manifest's content
+  hash decides it. Group, lineage, archive and any future filter narrow what is
+  *shown* and never widen what may be *compared* — and must disclose comparable runs
+  they hide.
+- **Offline engine → static artifacts → a reader that recomputes nothing.**
+  The run mode is local-only and `showcase/requirements.txt` stays torch-free.
+- **No server, no database.** Results are files, and committing them is the deploy.
+- **English throughout**, in the code and in every user-facing string.
+- **Not a medical device.** No copy that implies diagnostic use.

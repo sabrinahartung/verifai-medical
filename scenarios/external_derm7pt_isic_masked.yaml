@@ -23,14 +23,7 @@
 #   2. python scripts/run_scenario.py scenarios/external_derm7pt_isic_masked.yaml
 card:
   group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · ISIC 2019 · external, class masked
-  card:
-  group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · external validation (Derm7pt)
-  card:
-  group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · external validation (Derm7pt)
-  card: null
   name: ISIC 2019 corpus — absent class masked
   emoji: 🌍
   description: The same model and the same images, with actinic keratoses switched

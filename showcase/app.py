@@ -549,8 +549,10 @@ def _lineage_card(lineage: str, members: list[dict], key: str):
 
 def gallery(cards: list[dict]):
     st.title("VERIFAI — Responsible-AI Showcase")
-    st.caption("Pick a model — and see its analysis across the five pillars: performance, "
-               "fairness, robustness, explainability, privacy.")
+    # Derived from PILLARS rather than written out: this line claimed "five pillars"
+    # and then listed five of the six for as long as integrity had existed.
+    st.caption("Pick a model — and see its analysis across every pillar: "
+               + ", ".join(p.capitalize() for p in PILLARS) + ".")
 
     with st.expander("What am I looking at?"):
         st.markdown(

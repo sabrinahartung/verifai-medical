@@ -23,14 +23,7 @@
 #   2. python scripts/run_scenario.py scenarios/external_derm7pt_isic_highsens.yaml
 card:
   group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · ISIC 2019 · melanoma x30 · external
-  card:
-  group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · external validation (Derm7pt)
-  card:
-  group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · external validation (Derm7pt)
-  card: null
   name: ISIC 2019 · melanoma ×30 (rule tuned on HAM10000)
   emoji: 🌍
   description: The best internal melanoma detector, with a weight tuned on HAM10000

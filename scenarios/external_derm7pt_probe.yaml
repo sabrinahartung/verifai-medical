@@ -23,14 +23,7 @@
 #   2. python scripts/run_scenario.py scenarios/external_derm7pt_probe.yaml
 card:
   group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · linear probe · external
-  card:
-  group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · external validation (Derm7pt)
-  card:
-  group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · external validation (Derm7pt)
-  card: null
   name: Linear probe (frozen ImageNet features)
   emoji: 🌍
   description: Frozen ImageNet features with only a trained head. Least adapted to

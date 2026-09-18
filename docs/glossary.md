@@ -221,20 +221,45 @@ Split integrity
 
 Pillar
 :   One dimension of the evaluation: performance, fairness, robustness, explainability, privacy —
-    plus integrity, which is a precondition rather than a property.
+    plus integrity, which is a precondition rather than a property, and safety, which asks what
+    happens if someone *acts* on the output and is defined only for generative systems.
 
 Finding
 :   One metric's result: a value, a verdict, a one-sentence summary, explanatory text, and a
     chart specification. The single unit that flows from engine to dashboard.
 
 Verdict
-:   `pass` · `warn` · `fail` · **`info`**. `info` means **no verdict was claimed** — the sample
-    was too small or required data was missing. It is *not* a weak pass, and the dashboard says
-    "No verdict" so it can't be misread as "we checked and it was fine".
+:   `measured` · `insufficient` · `unavailable` · `invalid`. Deliberately **epistemic, never
+    evaluative**: it says what is *known* about a number, not whether the number is good.
+    There is no pass and no fail, because what counts as accurate, fair or robust enough
+    depends on where the model runs and what being wrong costs — the reader's call, not a
+    constant in a metric module. `invalid` is the one hard signal, and it judges the
+    *measurement* rather than the model: a contaminated split does not measure generalisation
+    at all.
 
-Verdict gate
-:   The minimum evidence before a metric is allowed to judge. Accuracy stays `info` below n=30;
-    robustness below n=20; a fairness gap needs two groups of ≥10 whose intervals separate.
+Evidence gate
+:   The minimum evidence before a metric may state a result. Accuracy stays `insufficient`
+    below n=30; robustness below n=20; a fairness gap needs two groups of ≥10 whose intervals
+    separate; membership inference needs 50 per side.
+
+Access level
+:   How much of the model this evaluation actually has: `labels` · `probs` · `logits` ·
+    `gradients` · `weights` · `training_data`, in increasing order, each level including the ones
+    before it. It decides which metrics **can exist** for a run, and it is a fact about the
+    evaluation setup, never a judgement about the model. See
+    [The pillars](pillars.md#how-much-of-the-model-do-you-have).
+
+White-box / black-box
+:   White-box means the evaluation can reach inside the model — gradients, and sometimes the
+    parameters themselves. Black-box means it can only send inputs and read outputs. The
+    distinction is not a detail: a white-box attack is *stronger*, so a model that can be
+    inspected scores worse on robustness than an opaque one evaluated the same day. Comparisons
+    are therefore levelled down to the weakest access present, or the tool would reward opacity.
+
+Coverage
+:   The only thing this project aggregates: how many applicable metrics were measured, how many
+    came back `insufficient` or `unavailable`, and why. A completeness statement, never a
+    quality one — there is no composite score, and there will not be one.
 
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content
@@ -245,3 +270,221 @@ Comparability
 :   Two runs may only be compared if they scored the same rows (identical manifest hash) and
     both had a verified split. Otherwise the tool refuses and says why, rather than drawing a
     chart of a difference it cannot support.
+
+---
+
+## Planned — terms the expanded catalogue introduces
+
+Defined ahead of the metrics that will use them (see [The pillars](pillars.md) for which
+tier each lands in). Worked examples here are **illustrative**, not measurements from this
+project's runs — where a number is real, it says so.
+
+### Calibration
+
+Calibration
+:   Do the probabilities mean what they say? Among the cases a model calls 90% likely, about
+    90% should actually be that class. A model can rank cases perfectly and still be badly
+    calibrated — discrimination and calibration are independent properties, and the second is
+    the first to break when the model meets a new population.
+
+Reliability curve
+:   Calibration, drawn. Predicted probability on the x-axis, observed frequency on the y-axis.
+    The diagonal is perfect. Above it, the model is underconfident; below it, overconfident —
+    which in a triage tool means false reassurance.
+
+ECE (expected calibration error)
+:   The average gap between predicted and observed, weighted by how many cases fall in each
+    bin. **0 is ideal.** If a bin of 100 cases is given 0.9 confidence and only 70 are right,
+    that bin contributes a gap of 0.2.
+
+Brier score
+:   Mean squared error of the probabilities themselves. **0 is ideal.** It moves with both
+    discrimination and calibration at once, which makes it a good summary and a poor diagnosis —
+    read it with the reliability curve, not instead of it.
+
+Calibration intercept and slope
+:   The two numbers external-validation studies report. Intercept says whether the model is
+    systematically over- or under-predicting on the new population (**0 is ideal**); slope says
+    whether its confidence is too extreme or too timid (**1 is ideal**). A slope below 1 is the
+    classic signature of a model meeting a population it was not trained on.
+
+### Decision quality
+
+ROC-AUC
+:   The probability that a randomly chosen positive case is ranked above a randomly chosen
+    negative one. **0.5 is guessing, 1.0 is perfect.** It ignores prevalence entirely, which is
+    exactly why it flatters a model on a rare class.
+
+PR-AUC (average precision)
+:   The same ranking question asked in terms of precision and recall. Unlike ROC-AUC it *does*
+    move with prevalence, so on an imbalanced problem it is the honest one. Its baseline is the
+    positive rate, not 0.5.
+
+Youden's J
+:   Sensitivity + specificity − 1. **0 is guessing.** One number that cannot be gamed by moving
+    the operating point, which is why this project reads external validation on it — a model can
+    always raise sensitivity by calling the positive class more often, and J does not reward that.
+
+Net benefit (decision curve analysis)
+:   Asks whether using the model beats the two trivial strategies — treat everybody, treat
+    nobody — across a range of thresholds. The threshold encodes how many false alarms one
+    missed case is worth, which is a clinical value judgement, so the metric reports the whole
+    **curve** and never picks a point on it.
+
+Selective prediction
+:   What happens when the model is allowed to say "I don't know". Accuracy plotted against
+    coverage: if accuracy climbs steeply as the least confident cases are set aside, the
+    confidence signal is useful for triage. If it stays flat, the model does not know what it
+    does not know.
+
+### Fairness definitions
+
+Demographic parity
+:   Equal positive rates across groups. Assumes the groups have equal base rates — where they
+    genuinely differ, enforcing this makes the model worse for everybody. Rarely the right
+    question in medicine, and included so it can be read against the others.
+
+Equalised odds
+:   Equal sensitivity **and** equal specificity across groups. Usually the fairness definition
+    that matches a clinical goal: the same chance of being caught, whoever you are.
+
+Equal opportunity
+:   The weaker half of equalised odds — equal sensitivity only. Appropriate when a missed case
+    is the harm that matters and a false alarm is cheap.
+
+Predictive parity
+:   Equal PPV across groups: "when it says melanoma, it is right equally often for everyone".
+
+The impossibility result
+:   When base rates genuinely differ between groups, equal calibration and equalised odds
+    **cannot both hold**. This is arithmetic, not a design failure. It is why the fairness
+    pillar reports several definitions side by side and names the tension, rather than
+    reporting one number called *fairness*.
+
+Individual fairness
+:   Similar cases get similar decisions. Measured as a flip rate: change only a sensitive
+    attribute and count how often the answer changes.
+
+### Adversarial robustness
+
+Threat model
+:   The assumptions an attack is measured under: white-box (the attacker has the weights) or
+    black-box, which norm bounds the perturbation, how large it may be, and how many iterations
+    the attacker gets. **An attack success rate without these four is not a measurement**, so
+    each adversarial metric carries them in its result.
+
+FGSM · PGD · DeepFool
+:   Three standard white-box attacks of increasing strength: one gradient step, many projected
+    steps, and a search for the nearest decision boundary. Reported against an additive-noise
+    baseline, so the reader can see how much of the damage needed an *adversary* rather than
+    just bad luck.
+
+Adversarial versus natural robustness
+:   Different questions. Natural asks whether a clinically irrelevant distortion flips the
+    call; adversarial asks whether a deliberate one can be constructed. They are never merged
+    into one "robustness" number.
+
+### Explanation quality
+
+Insertion and deletion
+:   Deletion masks the most-attended evidence and watches confidence fall; insertion starts from
+    nothing and adds the most-attended evidence back. Deletion alone is gameable, so both are
+    reported.
+
+Complexity (sparseness, entropy)
+:   How concentrated an attribution is. An explanation that highlights everything explains
+    nothing, and this is the number that says so.
+
+Randomisation check
+:   Randomise the model's parameters layer by layer and recompute the explanation. If it barely
+    changes, the method is an edge detector reacting to the image, not an explanation of the
+    model. The cheapest way to catch explainability theatre, and almost nobody runs it.
+
+Max-sensitivity
+:   How much the explanation moves when the input is nudged imperceptibly. A method whose
+    heatmap is rewritten by invisible noise is not describing a stable reason.
+
+### Privacy
+
+Population attack
+:   The cheap membership attack this project already runs: compare the model's confidence on
+    members against non-members, with no extra training.
+
+Shadow attack
+:   The stronger membership attack — train models on data drawn from the same distribution to
+    learn what "a member" looks like. It needs that distribution, so for a checkpoint whose
+    training data is unknown it is not merely unimplemented but **impossible**, and the report
+    says so rather than leaving a blank.
+
+Canary
+:   A deliberately meaningless, unique sequence planted in the training data *before* training —
+    for example a record reading `patient id 481-90-2231`, where the digits are drawn at random
+    from a known space. It stands in for the real thing you are afraid of leaking: an identifier,
+    a rare diagnosis string, a line of a free-text note.
+
+Canary exposure
+:   How strongly the trained model prefers the canary it actually saw over every other sequence
+    it *could* have seen from the same random space. Roughly, the number of bits by which the
+    true canary outranks the field: if it is the single most likely of a billion candidates,
+    exposure is about 30 bits and the string is effectively extractable; if its rank is no better
+    than chance, exposure is about 0 and no memorisation has been shown. **0 is ideal.**
+
+    Why it is stronger evidence than a membership attack: you planted it, so you know it is in
+    there and you know exactly what it looks like. That turns an average-case guess into a
+    calibrated worst-case measurement with a known ground truth. The price is that **you must
+    control training** — you cannot plant a canary in a checkpoint someone else trained, which
+    is why it sits beside shadow MIA as permanently unavailable for third-party models.
+
+    It suits sequence models best. For an image classifier the analogue — a distinctive planted
+    image — is weaker, because there is no ranked vocabulary to measure exposure against.
+
+Attribute inference
+:   Whether a sensitive attribute the model was never asked to predict can be recovered from its
+    outputs or its internal representations.
+
+### Generative
+
+Benchmark contamination
+:   Split leakage, one level up: was the evaluation benchmark inside the training corpus? The
+    single most important unasked question behind most published LLM scores, and the direct
+    analogue of the audit that started this project.
+
+Groundedness
+:   Are the claims in an answer supported by the sources it was given? Distinct from correctness:
+    an answer can be true and ungrounded, which is still a failure for a system that is supposed
+    to cite.
+
+Hallucination rate
+:   Unsupported claims per answer. Counted, not scored — the number means nothing without the
+    rubric that defined "unsupported", so the rubric travels with it.
+
+Chain-of-thought faithfulness
+:   Does the stated reasoning actually *cause* the answer? Tested by intervening on the
+    reasoning and seeing whether the answer follows. Reading the reasoning and finding it
+    plausible tests nothing.
+
+Sycophancy
+:   Whether the answer changes when the user pushes back without new evidence. In a clinical
+    setting, a model that folds is worse than one that was wrong confidently, because the
+    disagreement was the signal.
+
+LLM judge
+:   A model used to grade another model's output. It is itself a model under evaluation, so any
+    judge-based finding records the judge's identity and version, the exact prompt, and its
+    agreement with human labels on a sample. Without that agreement number the verdict stays
+    `insufficient`.
+
+### Safety
+
+Scope compliance
+:   Does the system stay inside the indication it claims, and refrain from asserting authority
+    it does not have — the machine-checkable form of "this is not a medical device".
+
+Escalation
+:   On a red-flag presentation, does it send the user to a clinician? Measured on vignettes
+    written for the purpose.
+
+Refusal appropriateness
+:   Measured in **both** directions. Answering what it should refuse is the obvious failure;
+    refusing what it should answer is the one that gets ignored, and it has a real cost to real
+    users.

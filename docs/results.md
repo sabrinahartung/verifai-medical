@@ -75,8 +75,10 @@ Overall: top-1 **0.796** [0.775, 0.816], balanced **0.728**, and top-3 different
 | medium (III–IV) | 0.963 | [0.91, 0.99] | 108 |
 | dark (V–VI) | 0.750 | [0.63, 0.84] | 60 |
 
-The 21.3-point gap exceeds the 15-point `fail` threshold, and the intervals for the two extreme
-groups do **not** overlap, so the difference is supported rather than noise.
+The 21.3-point gap is reported against no threshold — there is none to exceed, and a
+15-point line would have to be justified by where the model is used. What makes it a claim
+rather than a number is that the intervals for the two extreme groups do **not** overlap, so
+the difference is supported rather than noise.
 
 !!! warning "But it is not the gap you would assume"
     The supported gap runs between **medium (0.963) and dark (0.750)** — driven by the small
@@ -97,8 +99,9 @@ groups do **not** overlap, so the difference is supported rather than noise.
 | Gaussian blur r=2 | 71.7% | [69.4, 74.0] |
 | noise σ=18 | 63.8% | [61.3, 66.2] |
 
-Mean 71.7%, below the 85% `pass` threshold. Roughly one prediction in three flips under
-noise that does not change the diagnosis.
+Mean 71.7%. Roughly one prediction in three flips under noise that does not change the
+diagnosis — read next to performance, since a confidently wrong model that stays wrong
+scores 1.0 here.
 
 ## Privacy
 
@@ -112,8 +115,8 @@ ones — a real but small separation, landing in the "low risk" band.
 
 Mean deletion faithfulness **0.45** over 7 Grad-CAM overlays: masking the highlighted region
 costs the predicted class 45 percentage points of confidence on average, which puts it in
-the "partly faithful" band. Reported as `info` — there is no defensible universal threshold
-for "faithful enough", and 7 overlays is an illustration rather than a measurement.
+the "partly faithful" band. Reported without a threshold — there is no defensible universal
+value for "faithful enough" — and 7 overlays is an illustration rather than a measurement.
 
 ## Experiment 1 — a cost-sensitive decision rule
 
@@ -472,7 +475,7 @@ domains, not a law.
 
 ## Experiment 7 — the first numbers not measured on HAM10000
 
-Every result so far lived on one test set. Derm7pt [4] is a different clinic, a different
+Every result so far lived on one test set. Derm7pt [[4]](references.md#ref-4) is a different clinic, a different
 camera and a different population, and no model here has ever trained on it: 1,003 usable
 cases, **252 melanoma**, evaluated with the same checkpoints and no retraining.
 

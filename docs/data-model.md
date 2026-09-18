@@ -19,6 +19,7 @@ classDiagram
     }
     class Finding {
         +Pillar pillar
+        +str subaspect
         +str metric
         +Domain domain
         +Any value
@@ -51,8 +52,24 @@ classDiagram
 
 ## Vocabularies
 
+The literals below are what the engine writes today. Where an addition is planned it says so
+inline — nothing here is aspirational unless it is labelled.
+
+
 `Pillar`
 : `integrity` · `performance` · `fairness` · `robustness` · `explainability` · `privacy`
+
+    `safety` joins them with the first generative metric — see
+    [The pillars](pillars.md#safety-what-happens-if-someone-acts-on-this). It is not in the
+    literal yet on purpose: adding it before anything can fill it would put a permanently
+    empty column on every published dashboard, which teaches readers to ignore a pillar
+    before it has ever said anything.
+
+`Finding.subaspect`
+: Optional, and the grouping level between pillar and metric — `calibration` under
+    performance, `adversarial` under robustness, `randomisation` under explainability. At six
+    metrics a flat list per pillar was fine; at the [catalogue's](pillars.md) fifty-one it is a
+    wall, so the dashboard groups pillar → sub-aspect → metric.
 
 `Verdict`
 : `measured` · `insufficient` · `unavailable` · `invalid`
@@ -77,7 +94,10 @@ classDiagram
 
 `Report.meta` records `seed`, `sample_size` (what was actually evaluated, not what the YAML
 declared) and `device` — the last because results are bit-identical *per device*, not across
-devices.
+devices. It will also record the **access level** the run had over the model
+(`labels` … `training_data`), because that decides which metrics could exist at all and is what
+lets the comparison view level two runs down to the weakest access they share rather than
+reading a missing row as a worse model.
 
 ## The `explain` contract
 
@@ -89,6 +109,12 @@ engine, not the app, so a new metric brings its own wording and the app needs no
 | `what` | What is measured, and why it matters | inline, always visible |
 | `how` | How to read this particular chart | in the "How to read this chart" expander |
 | `limits` | What this number does **not** tell you | same expander, under "What it does *not* tell you" |
+| `impact` | Who is affected by the number being what it is, in this clinical context | same expander |
+
+`impact` is what replaces a composite score. A reader who cannot be handed "7.4 out of 10"
+still needs to know what a 21-point subgroup gap *means* for the people on the wrong side of
+it, and that sentence belongs with the metric, in the engine, rather than in a dashboard the
+metric knows nothing about.
 
 `limits` is the one that earns its place. It is where each metric names the trap it sets:
 

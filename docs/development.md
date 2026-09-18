@@ -143,7 +143,7 @@ docs/               this site
 | Symptom | Cause |
 |---|---|
 | `SplitLeakageError` on a new scenario | test manifest overlaps training — this is working correctly |
-| Integrity reports `info`, not `pass` | manifests lack `image_id`/`lesion_id` to compare on |
+| Integrity reports `unavailable`, not `measured` | manifests lack `image_id`/`lesion_id` to compare on — an unanswered question, not a clean bill of health |
 | MPS slower than CPU | tiny run; ~206 ms setup dominates below ~30 forward passes |
 | `num_workers>0` looks catastrophic | macOS spawn cost; needs `persistent_workers` and enough images to amortise |
 | Robustness numbers moved | images re-materialised at a different `--max-size` |

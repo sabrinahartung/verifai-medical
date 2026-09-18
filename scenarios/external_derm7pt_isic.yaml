@@ -23,14 +23,7 @@
 #   2. python scripts/run_scenario.py scenarios/external_derm7pt_isic.yaml
 card:
   group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · ISIC 2019 · external
-  card:
-  group: External validation — Derm7pt (unseen clinic)
   lineage: ResNet18 · external validation (Derm7pt)
-  card:
-  group: External validation — Derm7pt (unseen clinic)
-  lineage: ResNet18 · external validation (Derm7pt)
-  card: null
   name: ISIC 2019 corpus — as deployed
   emoji: 🌍
   description: 'The ISIC-trained model on Derm7pt, unchanged. The honest number: what
