@@ -124,6 +124,8 @@ that is a plan from top to bottom.
 |---|---|
 | See what actually runs | [The pillars → Running today](pillars.md#running-today-six-metrics) |
 | See what is planned, and in what order | [Roadmap](ROADMAP.md) |
+| Understand what this is *for*, and why not just use a toolkit | [Direction](direction.md) |
+| See what a finished report could look like | [A worked example](case-view.md) |
 | Understand how the parts fit together | [Architecture overview](architecture.md) |
 | Know what a `Finding` is | [Data model](data-model.md) |
 | Run the whole thing yourself | [The pipeline](pipeline.md) |

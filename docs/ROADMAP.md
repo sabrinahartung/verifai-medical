@@ -1,5 +1,10 @@
 # Roadmap — from one skin-lesion model to a Responsible-AI evaluation service
 
+!!! question "The reasoning lives next door"
+    Why this framework is not just a wrapper around Quantus, where the line between measuring
+    and judging sits, and how deep the reporting should go: [Direction](direction.md).
+    What the destination looks like as screens: [A worked example](case-view.md).
+
 !!! abstract "This page is the plan"
     Everything below the "What has been built" table is **planned, not built**. For what runs
     today, read [The pillars → Running today](pillars.md#running-today-six-metrics) — six
