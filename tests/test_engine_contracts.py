@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -14,6 +15,20 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
+
+def _showcase_source() -> str:
+    """Every line of the showcase package, concatenated.
+
+    The assertions below are about the *rendering path*, which used to be one
+    file. It is now a package, and reading `app.py` alone would quietly stop
+    checking the code that actually draws anything — a test that passes because
+    it is looking in the wrong place is worse than no test.
+    """
+    files = sorted((REPO / "showcase").rglob("*.py"))
+    assert files, "the showcase package must not be empty"
+    return "\n".join(f.read_text(encoding="utf-8") for f in files)
+
+
 sys.path.insert(0, str(REPO))
 
 from verifai.core.run import METRIC_REGISTRY, _load          # noqa: E402
@@ -882,7 +897,7 @@ def test_explanation_cards_survive_streamlits_html_sanitiser():
     assert "<" not in md and "style=" not in md, "no raw HTML in the card"
     assert "Membership-inference AUC" in md and "Measures" in md
 
-    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    source = _showcase_source()
     assert "unsafe_allow_html" not in source, (
         "the explanation path must not depend on HTML Streamlit may strip")
 
@@ -1065,7 +1080,7 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
         "fixture check: a hidden run must actually beat the shown ones, or this "
         "test would pass even with the disclosure removed")
 
-    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    source = _showcase_source()
     assert "hidden_comparable" in source, \
         "the comparison view must track runs the lineage filter hides"
     assert "were scored on these same images" in source, \
@@ -1367,3 +1382,72 @@ def test_older_artifacts_fall_back_to_the_card_name():
     unknown = {"scenario": "never_seen", "label": "mid", "model_id": "mid"}
     assert app.run_label(unknown) == "mid"
     assert app.run_label({"scenario": "never_seen"}) == "never_seen"
+
+
+# --- the skeleton: placeholders for what is planned and not built -------------
+def _heading_ids(path) -> set:
+    """Approximate python-markdown's toc slugifier for one file's headings."""
+    import re as _re
+    import unicodedata as _ud
+    ids = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = _re.match(r"^#{1,6}\s+(.*)", line)
+        if not m:
+            continue
+        t = _re.sub(r"`([^`]*)`", r"\1", m.group(1).strip().lower())
+        t = _re.sub(r"\[\[?([^\]]*)\]\]?\([^)]*\)", r"\1", t)
+        t = _re.sub(r"[*_]", "", t)
+        t = _ud.normalize("NFKD", t)
+        t = _re.sub(r"[^\w\s-]", "", t)
+        ids.add(_re.sub(r"\s+", "-", t.strip()))
+    return ids
+
+
+def test_every_placeholder_points_at_a_plan_that_still_exists():
+    """A placeholder is a promise. An unresolvable one is a stale promise.
+
+    Each entry in `planned.py` names the document section that says what the
+    component is for and what is blocking it. If that section is renamed or
+    deleted, the placeholder has to be updated or removed in the same change —
+    otherwise the app goes on advertising a plan nobody can read.
+    """
+    sys.path.insert(0, str(REPO / "showcase"))
+    from planned import PLANNED
+
+    assert PLANNED, "the skeleton must not be empty while components are unbuilt"
+    for key, entry in PLANNED.items():
+        for field in ("title", "shows", "blocked_by", "phase"):
+            assert entry.get(field), f"{key} is missing {field}"
+        doc, _, anchor = entry["phase"].partition("#")
+        path = REPO / "docs" / doc
+        assert path.exists(), f"{key} points at a document that does not exist: {doc}"
+        assert anchor, f"{key} must name a section, not just a file"
+        assert anchor in _heading_ids(path), (
+            f"{key} points at docs/{doc}#{anchor}, which is not a heading there")
+
+
+def test_planned_components_are_hidden_unless_asked_for():
+    """The public deploy must never advertise capability it does not have.
+
+    Same rule as the `sample: true` banner, one level up: an empty "Coverage
+    map" card on a live page is a claim about the future rendered in the
+    present. Skeleton mode is opt-in through the environment, which is why the
+    torch-free Streamlit Cloud deploy is safe by default.
+    """
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import render
+
+    assert render.SKELETON == (os.getenv("VERIFAI_SKELETON") == "1")
+    if not render.SKELETON:
+        assert render.placeholder("coverage_map") is False, \
+            "placeholders must not draw unless VERIFAI_SKELETON=1"
+    assert render.placeholder("not_a_planned_component") is False
+
+
+def test_the_showcase_package_stays_free_of_heavy_imports():
+    """`showcase/requirements.txt` has no torch and the skeleton must not add one."""
+    source = _showcase_source()
+    for heavy in ("import torch", "import torchvision", "from torch",
+                  "import transformers"):
+        assert heavy not in source, f"the showcase must not need {heavy!r}"
