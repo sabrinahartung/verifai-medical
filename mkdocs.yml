@@ -57,6 +57,7 @@ nav:
   - Where this is going:
       - Direction: direction.md
       - A worked example: case-view.md
+      - UI/UX design: ui-ux-design.md
       - Roadmap: ROADMAP.md
   - Working on it:
       - Extending: extending.md
