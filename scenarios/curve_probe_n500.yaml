@@ -42,6 +42,7 @@ model:
   weights_path: artifacts_training/curve_probe_n500.pt
 name: curve_probe_n500
 label: "linear probe, n=500"
+project: "Skin lesion classification"
 sample_size: null
 seed: 42
 training:

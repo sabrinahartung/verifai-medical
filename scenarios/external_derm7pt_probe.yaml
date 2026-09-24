@@ -63,5 +63,6 @@ model:
   weights_path: artifacts_training/skin_cancer_isic_probe.pt
 name: external_derm7pt_probe
 label: "Linear probe (frozen features)"
+project: "Skin lesion classification"
 sample_size: null
 seed: 42

@@ -133,8 +133,21 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   so a new metric becomes comparable without this module knowing about it. Every snapshot
   carries the evaluation manifest's **content hash** and the integrity verdict — those two
   fields are what let `showcase/app.py` refuse a dishonest comparison, so do not drop them.
-- `showcase/app.py` — auto-discovers every `artifacts/<id>/` folder with both `card.json` and
-  `report.json`; clicking through renders the report grouped by pillar. The gallery is sectioned
+- `verifai/export/model_registry.py` — writes `showcase/artifacts/model_registry.json`: every
+  declared **model** and its configurations, read from the scenarios, so a model that has never
+  been evaluated still exists for the showcase. A model is a **checkpoint, identified by its
+  content hash** — never by `model.id`, which names three checkpoints in one direction and one
+  checkpoint answers to five ids in the other. The scenario whose `name` is the checkpoint's
+  filename trained it (`train_model.py` writes `<out_dir>/<name>.pt`); every other scenario on
+  those weights is a configuration of it. Evaluation status is **not** stored — the showcase
+  derives it from which artifact folders exist. Deterministic output; `run_scenario.py`
+  refreshes it after every run, and a test fails when it falls out of step with the scenarios.
+- `showcase/` — `app.py` is routing and re-exports only (`st.navigation`); `catalog.py` reads
+  artifacts and snapshots and owns the verdict vocabulary, `registry.py` reads the model
+  registry, `render.py` draws, `views/` holds one module per page. It auto-discovers every
+  `artifacts/<id>/` folder with both `card.json` and `report.json`; clicking through renders the
+  report grouped by pillar. Planned-but-unbuilt components live in `planned.py` and render only
+  under `VERIFAI_SKELETON=1` — never on the public deploy. The gallery is sectioned
   by `card.group` (which problem) and collapses `card.lineage` (configurations of one
   investigation) into a single card. Both are **presentation only**: comparability is decided by
   the evaluation manifest's content hash, and a lineage filter must never widen it — asserted in
@@ -149,8 +162,15 @@ turns the table into identifiers a reader has to decode (`external-derm7pt-isic`
 `showcase/app.py::run_label` falls back to the gallery card's name for artifacts written
 before this existed; an explicit label always wins. A test asserts every scenario has one.
 
+Every scenario also declares a top-level `project:` — the problem it belongs to (today all of
+them: `"Skin lesion classification"`). The overview groups models by it. All configurations of
+one checkpoint must agree on it; the registry builder raises if they do not. Like `card.group`
+it is presentation: it never widens what may be compared.
+
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 a new artifact folder is a new tile. `card:` in the YAML is passed straight through to `card.json`.
+To list a model *before* evaluating it, run `scripts/build_model_registry.py`; it then shows as
+not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
 `METRIC_REGISTRY`, list its id under `metrics:` in the scenario. To be rendered, return a chart

@@ -41,6 +41,7 @@
 #   4. python scripts/run_scenario.py scenarios/skin_cancer_isic.yaml
 name: skin_cancer_isic_r50
 label: "ResNet50 · ISIC corpus"
+project: "Skin lesion classification"
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

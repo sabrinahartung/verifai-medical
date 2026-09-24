@@ -638,7 +638,7 @@ evaluated, and how does one compare to its predecessor*.
 |---|---|---|---|
 | ~~**0**~~ | ~~Repoint the two tests that assert on `showcase/app.py`'s **source text**~~ — **done 2026-09-19**: they now scan the whole package, so a split cannot silently stop checking the code that draws | no | no |
 | ~~**1**~~ | ~~Package split · `st.navigation` · URLs · `planned.py` · `absence()`~~ — **done 2026-09-19**, see below | no | navigation only |
-| **2** | **Registry** **58 59 62** — models as declared data, status derived from artifacts | an exporter, no model code | yes |
+| ~~**2**~~ | ~~**Registry** **58 59 62**~~ — **done 2026-09-24**, see below | an exporter, no model code | not yet — step 3 reads it |
 | **3** | **Projects and the model page** **60 61 63 64 65 66 70**; `group`/`lineage` become derived | no | yes — the largest change |
 | **4** | **`details["baseline"]`** on all six metrics, plus the Grad-CAM verdict stops being hardcoded | **yes** | numbers unchanged, statuses sharper |
 | **5** | Report re-laid out to the slot map; findings strip on the tiering from step 4; info box **36** from the four `explain` keys that exist today; every other slot a placeholder | no | yes |
@@ -691,7 +691,29 @@ entry leading to an empty page is a promise the app cannot keep.
     404s on the explicit path, so naming one breaks the very link a reader is most likely to
     type.
 
-!!! warning "Two things that will bite"
+### What step 2 landed
+
+`verifai/export/model_registry.py` reads the scenarios and writes
+`showcase/artifacts/model_registry.json`: **15 models, 23 configurations, 1 project**. The
+showcase reads that file through `showcase/registry.py` and derives each model's status from
+which artifact folders exist; it still parses no YAML.
+
+- **Identity is the checkpoint's content hash** (58), hashed like the evaluation manifest. All
+  fourteen local checkpoints hash; the one Hub model is `@unpinned`, which the page will say
+  rather than hide.
+- **The trainer is the scenario named after the checkpoint.** Several configurations carry a
+  copied `training:` block while evaluating another scenario's weights — `skin_cancer_cost_highsens`
+  trains nothing — so the presence of a block cannot decide it.
+- **Provenance comes from the trainer's own record** (`<name>_training.json`), which is why it
+  reports that `curve_ft_n100` trained on 120 images: the manifest is named for its target, not
+  its size. Validation scores are deliberately left out — without an interval, on a model page,
+  they would read as the model's result.
+- **Every scenario declares `project:`** (60).
+- **Stale is still not computable.** A report does not record the checkpoint hash it was scored
+  against, so "this evaluation predates a retrain" cannot be detected yet. The fix is one field
+  in `report.json`'s meta, written by the runner; it is the next engine change this plan needs.
+
+
     `showcase/app.py` executes top to bottom on import, and the contract tests depend on it
     (`sys.path.insert(...)` then `import app`). Two of them additionally assert on the file's
     **raw source text**, which a module split silently breaks — hence step 0.

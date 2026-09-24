@@ -1451,3 +1451,153 @@ def test_the_showcase_package_stays_free_of_heavy_imports():
     for heavy in ("import torch", "import torchvision", "from torch",
                   "import transformers"):
         assert heavy not in source, f"the showcase must not need {heavy!r}"
+
+
+# --- the model registry: which models exist, whether or not they have run -----
+def _write_scenario(dir_, name, weights=None, project="P", training=False, **extra):
+    """A minimal scenario file, enough for the registry builder to read."""
+    import yaml as _yaml
+    sc = {"name": name, "label": name.replace("_", " "), "project": project,
+          "model": {"weights_path": weights} if weights else {},
+          "dataset": {"manifest": "m.csv", "id": "d"}, "metrics": ["x.y"], **extra}
+    if training:
+        sc["training"] = {"arch": "resnet18"}
+    (dir_ / f"{name}.yaml").write_text(_yaml.safe_dump(sc), encoding="utf-8")
+
+
+def test_every_scenario_declares_a_project():
+    """The overview groups models by project, and a model without one lands in
+    'Unassigned' — a bucket that grows quietly until it is the whole page."""
+    yaml = pytest.importorskip("yaml")
+    missing = [p.name for p in sorted((REPO / "scenarios").glob("*.yaml"))
+               if not yaml.safe_load(p.read_text(encoding="utf-8")).get("project")]
+    assert not missing, f"scenarios without a project: {missing}"
+
+
+def test_the_committed_model_registry_is_in_step_with_the_scenarios():
+    """Rebuilding must reproduce the committed file exactly.
+
+    Checkpoints are gitignored, so where they are absent the builder carries
+    hashes and provenance forward from the committed file — and equality then
+    means the *scenarios* have not moved on without it. Where they are present,
+    it also means no checkpoint was retrained without the registry noticing.
+    Fix: `python scripts/build_model_registry.py`.
+    """
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import REGISTRY_PATH, build_registry
+    committed = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    rebuilt = build_registry(REPO / "scenarios", root=REPO, previous=committed)
+    assert rebuilt == committed, (
+        "showcase/artifacts/model_registry.json is out of date — "
+        "run scripts/build_model_registry.py")
+
+
+def test_a_model_is_its_checkpoint_not_its_model_id():
+    """`model.id` names three checkpoints in one direction and one checkpoint
+    answers to five ids in the other, so grouping on it would merge different
+    models and split one. Every configuration of a model must point at the same
+    weights, and no two models may share them."""
+    from verifai.export.model_registry import REGISTRY_PATH
+    reg = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    yaml = pytest.importorskip("yaml")
+    weights_of = {}
+    for p in (REPO / "scenarios").glob("*.yaml"):
+        sc = yaml.safe_load(p.read_text(encoding="utf-8"))
+        m = sc.get("model") or {}
+        weights_of[sc["name"]] = m.get("weights_path") or m.get("repo_id")
+    seen = {}
+    for model in reg["models"]:
+        refs = {weights_of[c["scenario"]] for c in model["configurations"]}
+        assert len(refs) == 1, f"{model['key']} mixes weights: {refs}"
+        ref = refs.pop()
+        assert ref not in seen, f"{model['key']} and {seen.get(ref)} share {ref}"
+        seen[ref] = model["key"]
+    # and the configurations are all accounted for, once
+    listed = [c["scenario"] for m in reg["models"] for c in m["configurations"]]
+    assert sorted(listed) == sorted(weights_of), "every scenario is one configuration"
+
+
+def test_only_the_scenario_named_after_a_checkpoint_trained_it(tmp_path):
+    """Several configurations carry a copied `training:` block while evaluating
+    someone else's weights. `train_model.py` writes `<out_dir>/<name>.pt`, so
+    that name — not the presence of a block — says who trained it."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "base", weights="ck/base.pt", training=True)
+    _write_scenario(sc, "base_tuned", weights="ck/base.pt", training=True,
+                    )   # a copied block, and not the trainer
+    reg = build_registry(sc, root=tmp_path)
+    (model,) = reg["models"]
+    assert model["trained_by"] == "base"
+    assert [c["scenario"] for c in model["configurations"]] == ["base", "base_tuned"]
+
+
+def test_model_provenance_never_carries_a_score(tmp_path):
+    """A validation accuracy on the model page would read as the model's result,
+    with no interval, beside the test-set report that carries one."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    ck = tmp_path / "ck"; ck.mkdir()
+    (ck / "m.pt").write_bytes(b"weights")
+    (ck / "m_training.json").write_text(json.dumps({
+        "arch": "resnet18", "train_images": 10, "best_val_balanced_accuracy": 0.72,
+        "history": [{"epoch": 1, "val_accuracy": 0.6}]}), encoding="utf-8")
+    _write_scenario(sc, "m", weights="ck/m.pt", training=True)
+    prov = build_registry(sc, root=tmp_path)["models"][0]["provenance"]
+    assert prov == {"arch": "resnet18", "train_images": 10}
+
+
+def test_a_model_belongs_to_one_project(tmp_path):
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "a", weights="ck/a.pt", project="Skin")
+    _write_scenario(sc, "a_other", weights="ck/a.pt", project="Chest")
+    with pytest.raises(ValueError, match="2 projects"):
+        build_registry(sc, root=tmp_path)
+
+
+def test_models_without_declared_weights_are_never_merged(tmp_path):
+    """Two scenarios that name no weights are not therefore the same model.
+    An invented shared identity would let a comparison treat them as one."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "x"); _write_scenario(sc, "y")
+    models = build_registry(sc, root=tmp_path)["models"]
+    assert len(models) == 2 and not any(m["identified"] for m in models)
+
+
+def test_a_missing_checkpoint_keeps_the_identity_it_had(tmp_path):
+    """Checkpoints are gitignored. Rebuilding on a machine without them must not
+    erase what is known about them — it would silently turn every model's
+    content hash back into a path."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    ck = tmp_path / "ck"; ck.mkdir()
+    (ck / "m.pt").write_bytes(b"weights")
+    (ck / "m_training.json").write_text('{"arch": "resnet18"}', encoding="utf-8")
+    _write_scenario(sc, "m", weights="ck/m.pt", training=True)
+    first = build_registry(sc, root=tmp_path)
+    (ck / "m.pt").unlink(); (ck / "m_training.json").unlink()
+    assert build_registry(sc, root=tmp_path, previous=first) == first
+    orphaned = build_registry(sc, root=tmp_path)["models"][0]
+    assert orphaned["identity"] == "path:ck/m.pt" and orphaned["sha256"] is None
+
+
+def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
+    """Status is counted from which reports exist, never stored; and an
+    evaluation no model claims is returned, not dropped."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import registry as reg_mod
+    model = {"configurations": [{"scenario": "a"}, {"scenario": "b"}]}
+    assert reg_mod.model_status(model, {"a", "b"})["state"] == "evaluated"
+    assert reg_mod.model_status(model, {"a"}) == {"evaluated": 1, "total": 2, "state": "partly"}
+    assert reg_mod.model_status(model, set())["state"] == "not_evaluated"
+    fake = {"models": [{"key": "k", "configurations": [{"scenario": "a"}]}]}
+    left = reg_mod.unclaimed([{"id": "a"}, {"id": "fixture"}], fake)
+    assert [c["id"] for c in left] == ["fixture"]
