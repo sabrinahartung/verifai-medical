@@ -1,4 +1,4 @@
-"""VERIFAI Showcase — Streamlit entry point.
+"""VERIFAI Medical — Streamlit entry point.
 
 UX: an overview of everything evaluated -> click a model -> a Responsible-AI
 report that a non-specialist can actually read: every metric states what it
@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-st.set_page_config(page_title="VERIFAI Showcase — Responsible AI", layout="wide")
+st.set_page_config(page_title="VERIFAI Medical — Responsible AI", layout="wide")
 
 # Re-exported so `import app` keeps working for anything outside this package.
 # noqa: F401 throughout — these are the module's public surface, not dead code.
