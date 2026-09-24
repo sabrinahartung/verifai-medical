@@ -758,6 +758,50 @@ bigger than a ResNet18:
   report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
   opt-in per metric, before the catalogue lands.
 
+## Tooling — planned: move to uv
+
+**Planned, on its own branch — not on `feat/user-interface`.** Noted 2026-09-24, after the global
+`streamlit` trap below cost a debugging session.
+
+**Why.** The dependencies are declared in four places — `pyproject.toml`,
+`requirements-engine.txt`, `requirements-dev.txt`, `showcase/requirements.txt` — and **none of
+them pins a version**. `pyproject.toml` has drifted (it still says "four RAI pillars" and lists
+neither Streamlit nor Plotly). The local venv runs Python 3.13.5 while CI runs 3.12, and CI
+installs whatever torch is newest on the day. For a project whose results are meant to be
+recomputable, the environment is the least reproducible part of it.
+
+uv answers all of it at once:
+
+- **one `pyproject.toml`** and a committed **`uv.lock`** — every machine and CI resolve the same
+  versions;
+- **`uv run …` needs no activated environment.** `uv run streamlit run showcase/app.py` always
+  uses the project's environment, creating or syncing it first — which removes the
+  global-`streamlit` trap by construction rather than by remembering `.venv/bin/`;
+- the same tool as the author's other projects, and much faster installs and CI.
+
+**Shape of the change.**
+
+- Dependency groups (PEP 735) rather than four files: `engine` (torch, torchvision, numpy,
+  matplotlib, huggingface-hub, pyyaml), `showcase` (streamlit, plotly, pillow), `dev` (pytest,
+  mkdocs-material). Locally `uv sync --all-groups`.
+- **The showcase deploy must stay torch-free** — the invariant that keeps Streamlit Community
+  Cloud free. Keep `showcase/requirements.txt` next to the entrypoint, where Cloud looks first,
+  but *generate* it from the lock (`uv export` restricted to the `showcase` group, no hashes), so
+  the deploy gets pinned versions too. The existing test that it carries no torch keeps guarding
+  it. Whether Cloud can read `uv.lock` directly is worth checking at the time — only useful if it
+  can install the `showcase` group alone.
+- A `.python-version` so local and CI run the same interpreter.
+- torch on CI: the CPU wheel index via `[[tool.uv.index]]`, replacing today's separate
+  `pip install torch --index-url …` step. macOS keeps the PyPI wheels, which carry MPS.
+- CI: `astral-sh/setup-uv`, `uv sync --locked`, `uv run pytest`, `uv run mkdocs build --strict`.
+- Update `docs/development.md`, the Commands block in `CLAUDE.md`, and the README to `uv run …`.
+
+**Until then**, run the repo's own interpreter explicitly — `.venv/bin/streamlit`,
+`.venv/bin/python -m pytest` — or `source .venv/bin/activate` once per terminal. Auto-activation
+on `cd` (direnv) would also work, but it is machine configuration to fix a problem uv removes.
+
+---
+
 ## Operational notes that have cost time
 
 - **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
