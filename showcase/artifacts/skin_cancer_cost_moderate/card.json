@@ -6,6 +6,6 @@
   "dataset": "ham10000-clean-test",
   "description": "Same weights as the baseline, different decision rule: melanoma's probability is scaled x5, tuned on validation for ~0.75 melanoma sensitivity.",
   "sample": false,
-  "group": "Skin lesion — HAM10000 (verified split)",
+  "group": "Internal test — HAM10000 (verified split)",
   "lineage": "ResNet18 · clean split"
 }

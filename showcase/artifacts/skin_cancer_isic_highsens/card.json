@@ -6,6 +6,6 @@
   "dataset": "ham10000-clean-test",
   "description": "The ISIC 2019 model read with a melanoma-weighted decision rule (x30, tuned on validation), evaluated on the same 1,493 images as every other configuration.",
   "sample": false,
-  "group": "Skin lesion — HAM10000 (verified split)",
+  "group": "Internal test — HAM10000 (verified split)",
   "lineage": "ResNet18 · ISIC 2019 · melanoma ×30"
 }

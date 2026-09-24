@@ -6,6 +6,6 @@
   "dataset": "ham10000-clean-test",
   "description": "Skin-lesion classification over 7 classes, trained on ISIC 2019 with every validation and test lesion held back, and evaluated on the same 1,493 images as the HAM10000-trained configurations.",
   "sample": false,
-  "group": "Skin lesion — HAM10000 (verified split)",
+  "group": "Internal test — HAM10000 (verified split)",
   "lineage": "ResNet18 · ISIC 2019 training set"
 }

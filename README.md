@@ -119,9 +119,9 @@ That is a deliberate design decision, not obfuscation:
   (the GPU notebook is included).
 - **Real run on video:** see the portfolio.
 
-> `showcase/artifacts/_sample_skin_resnet/` is a **dev fixture with SAMPLE data** (clearly marked
-> as such) so the UI can be viewed immediately, before the first real run exists. After
-> `run_scenario.py`, the real tile `skin_cancer/` appears next to it.
+> Every artifact in `showcase/artifacts/` is a real evaluation. An artifact with placeholder
+> numbers would carry `"sample": true` in its `card.json` and be shown with a warning banner;
+> the one such fixture was removed once the real runs had replaced it.
 
 ---
 
@@ -131,7 +131,7 @@ That is a deliberate design decision, not obfuscation:
 - [x] Image metrics implemented across **all pillars** (performance, fairness, robustness, explainability; privacy honestly marked as "needs the full run")
 - [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible
 - [x] Reproducible example sample (7 real HAM10000 images + manifest)
-- [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one
+- [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one (fixture removed 2026-09-24)
 - [x] Larger subset on a free GPU (solid fairness/privacy numbers)
 - [x] Deploy to Streamlit Community Cloud + short video
 - [x] Lesion-grouped split, leakage guard, uncertainty intervals, cost-sensitive decisions

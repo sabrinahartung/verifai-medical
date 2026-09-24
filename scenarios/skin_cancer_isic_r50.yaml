@@ -106,7 +106,7 @@ dataset:
 card:
   # Same group as the clean split: same problem, same test set, so these belong
   # side by side. The lineage is what distinguishes the configurations.
-  group: "Skin lesion — HAM10000 (verified split)"
+  group: "Internal test — HAM10000 (verified split)"
   lineage: "ResNet50 · ISIC 2019 training set"
   name: "Skin-Lesion ResNet50 (ISIC 2019)"
   emoji: "🔬"

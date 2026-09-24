@@ -64,7 +64,7 @@ dataset:
   source: "HAM10000"
 
 card:
-  group: "Skin lesion — HAM10000 (verified split)"
+  group: "Internal test — HAM10000 (verified split)"
   lineage: "ResNet18 · clean split"
   name: "Focal loss (γ=2)"
   emoji: "🔬"

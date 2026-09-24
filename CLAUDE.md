@@ -231,9 +231,11 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
 - State `n` in the `summary` and say plainly when it is only a plausibility check.
 - A metric that cannot be computed reports *why* and returns `None`, never an invented number —
   see `privacy/mia.py`, which requires a train/holdout split that the example set does not have.
-- `showcase/artifacts/_sample_skin_resnet/` is a dev fixture with fake numbers, flagged by
-  `"sample": true` in its `card.json`; the app shows a warning banner for it. Never set
-  `sample: false` on placeholder data.
+- An artifact with placeholder numbers must carry `"sample": true` in its `card.json`; the app
+  shows a warning banner for it. Never set `sample: false` on placeholder data. The one such
+  fixture, `_sample_skin_resnet`, was removed on 2026-09-24 once real runs had long replaced
+  it — on a public page, a tile of fake numbers confused more readers than its banner warned.
+  The banner stays, for the next placeholder.
 - **Never aggregate the pillars into one score, and never do arithmetic across metrics.** Not a "responsibility score", not a
   weighted RAI index, not a five-star rating — the same argument as the retired accuracy
   threshold, one level up. The weights would be the value judgement the reader came to

@@ -221,7 +221,6 @@ showing a value is honest, calling it "best" without knowing which way is good i
 flowchart TB
     A["showcase/artifacts/"]
     A --> R["model_registry.json<br/><i>every declared model</i>"]
-    A --> B["_sample_skin_resnet/<br/><i>dev fixture, sample: true</i>"]
     A --> C["skin_cancer/<br/><i>7 examples, integrity unverified</i>"]
     A --> D["skin_cancer_clean/<br/><i>1,493 held-out images</i>"]
     D --> D1["card.json<br/><i>tile metadata</i>"]

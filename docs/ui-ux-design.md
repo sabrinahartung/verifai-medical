@@ -401,7 +401,7 @@ Seventeen components, all in one 917-line `showcase/app.py`, across three views.
 | 6 | `_tile` | emoji, name, domain · dataset, description, button | keep, gains a headline number |
 | 7 | `_lineage_card` | collapses configurations, leads with **Compare** | keep |
 | 8 | Report header | domain · model · dataset, optional HF link | **absorbed** into the provenance strip |
-| 9 | SAMPLE banner | `card.sample` | keep — the precedent for honest placeholders |
+| 9 | SAMPLE banner | `card.sample` | keep the mechanism — the fixture it was built for was removed 2026-09-24 |
 | 10 | At-a-glance pillar row | six `st.metric`, verdict emoji as the value | keep the slot, rebuild |
 | 11 | `What do the icons mean?` | verdict vocabulary | keep |
 | 12 | Pillar section header + question | `PILLAR_QUESTION` | keep |
@@ -735,6 +735,13 @@ tiles.
   set it (the sidebar reopens Compare with it applied), so it is always stated and one click from
   **Show all runs**.
 - **Breadcrumbs** on every drill-down page; the sidebar lists only where a reader can start.
+- **Renamed on review:** the group *"Skin lesion — HAM10000 (verified split)"* was a top-level
+  heading before projects existed; as a filter inside *Skin lesion classification* it shortened to
+  "Skin lesion", which said nothing. It is now *"Internal test — HAM10000 (verified split)"*, in
+  the nine scenarios and their `card.json`.
+- **The demo fixture is gone.** `_sample_skin_resnet` had placeholder numbers under a warning
+  banner, kept "until the first real run lands" — which it did, twenty-three runs ago. On the
+  overview it confused more than it warned. The `sample: true` banner stays for the next one.
 - Along the way: excluded runs in Compare were named by raw model id with no date, and read as
   though the charted configuration had been thrown out. They were earlier, unverified snapshots
   of it; they are now named, dated, and marked as superseded by a later verified run.
@@ -776,11 +783,6 @@ it.**
 - **Is the case view or the coverage map the better next build?** Both answer *"what am I
   actually looking at"*. Coverage is cheaper and blocked on Phase A; the case view is expensive
   and blocked on `per_example` surviving the [scaling gap](ROADMAP.md#known-scaling-gaps).
-- **The investigation names were written for a page without projects.** `card.group`
-  *"Skin lesion — HAM10000 (verified split)"* was a top-level heading; as a filter inside the
-  project *Skin lesion classification* it shortens to "Skin lesion", which says nothing. It is
-  the author's data, so it is flagged here rather than renamed — something like *"Internal test
-  — HAM10000 (verified split)"* would read correctly in both places.
 - **Who declares a project?** The entity model needs one above the model, and today it would be
   derived from the evaluation set — which conflates *the problem* with *the data used to check
   it*. That works for one project and probably not for thirty.
