@@ -420,8 +420,8 @@ generalises:
 ## What would implement these
 
 **Planned, with the audit already done.** Nothing here is a dependency of this repository
-today; `requirements-engine.txt` is still torch, torchvision, pillow, numpy, matplotlib,
-huggingface-hub and pyyaml. What the table below records is which of these *could* be adopted,
+today; the `engine` dependency group is still torch, torchvision, pillow, numpy, matplotlib,
+huggingface-hub, pyyaml and certifi. What the table below records is which of these *could* be adopted,
 verified against the real stack rather than assumed.
 
 The catalogue is not starting from nothing — but a toolkit named in a plan is a claim with a

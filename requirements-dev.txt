@@ -1,3 +1,0 @@
-# Dev-only. The engine and showcase do not need these.
-pytest
-mkdocs-material          # docs site: mkdocs serve / mkdocs build

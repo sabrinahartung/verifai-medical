@@ -23,27 +23,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
 
-      # CPU wheels on purpose: the default torch wheel pulls ~2.5 GB of CUDA for
-      # a runner with no GPU. Installed before requirements-engine.txt so its
-      # plain `torch` line is already satisfied.
-      #
-      # showcase/requirements.txt too: every showcase test starts with
-      # importorskip("streamlit"), and without it twenty of them — the lineage
-      # filter that must not widen a comparison among them — were skipped here
-      # on every run while passing locally.
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements-engine.txt -r requirements-dev.txt -r showcase/requirements.txt
+      # uv installs the interpreter from .python-version (3.13, the one every
+      # artifact was produced with) and the exact versions from uv.lock. On
+      # Linux the lock resolves torch to PyTorch's CPU wheels — pyproject.toml
+      # says why — so there is no separate torch step any more.
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.12.1"
+
+      # --locked fails when uv.lock no longer matches pyproject.toml, instead
+      # of quietly resolving something new. All four groups install, the
+      # showcase's included, so no test is skipped for a missing import.
+      - name: Install the locked environment
+        run: uv sync --locked
 
       - name: Run the contract tests
-        run: pytest tests/ -q
+        run: uv run --locked pytest -q
+
+      # --strict fails on a broken internal link; checked on every PR now, not
+      # only on the push to main that deploys.
+      - name: Build the docs
+        run: uv run --locked mkdocs build --strict
+
+      # Streamlit Cloud installs showcase/requirements.txt, which is exported
+      # from the lock. An export nobody re-ran is a deploy that silently differs
+      # from what was tested, so it is regenerated here and must not change.
+      - name: Check the showcase requirements match the lock
+        run: |
+          uv export --locked --only-group showcase --no-hashes --no-emit-project \
+            --format requirements-txt -o showcase/requirements.txt
+          git diff --exit-code showcase/requirements.txt
 
   docs:
     needs: test               # never publish docs describing code that fails
@@ -58,15 +68,14 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -r requirements-dev.txt
+          version: "0.12.1"
+      - run: uv sync --locked --only-group dev
 
       # --strict fails on a broken internal link, so a bad cross-reference
       # breaks the build instead of shipping a dead link.
-      - run: mkdocs build --strict
+      - run: uv run --no-sync mkdocs build --strict
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

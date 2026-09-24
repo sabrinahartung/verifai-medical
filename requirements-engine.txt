@@ -1,10 +1,17 @@
-# The ENGINE (offline run: scripts/run_scenario.py). Heavier — runs once,
-# on your laptop CPU (tiny sample) or a free GPU (bigger subset).
-# On your Mac these are ALREADY in your ML_Training_Dojo/.venv.
+# For scripts/run_on_free_gpu.ipynb only — Colab and Kaggle, where uv is absent
+# and torch comes preinstalled as the platform's own CUDA build.
+#
+# Unpinned ON PURPOSE. A pinned `torch==…` here would make pip replace that GPU
+# build with a different one. Everywhere else — this machine and CI — the exact
+# versions come from uv.lock via `uv sync`; this file is not how you install.
+#
+# The names must match pyproject.toml's `engine` group; a contract test fails
+# when they drift.
 torch
 torchvision
-pillow
 numpy
+pillow
+pyyaml
 matplotlib
 huggingface-hub
-pyyaml
+certifi
