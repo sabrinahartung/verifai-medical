@@ -1,4 +1,4 @@
-# VERIFAI Showcase — Responsible-AI Evaluation
+# VERIFAI Medical — Responsible-AI Evaluation
 
 [![tests & docs](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml)
 
@@ -24,12 +24,17 @@ pipeline, the full metric catalogue across the pillars, and the split-integrity 
 
 ## Quickstart
 
-**Engine — produce a real run** (in an environment with `torch` — e.g. your
-`ML_Training_Dojo/.venv`, where everything is already installed):
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). One command installs the exact
+versions every result here was produced with:
 
 ```bash
-pip install -r requirements-engine.txt          # only if torch is missing
-python scripts/run_scenario.py scenarios/skin_cancer.yaml
+uv sync
+```
+
+**Engine — produce a real run:**
+
+```bash
+uv run python scripts/run_scenario.py scenarios/skin_cancer.yaml
 ```
 
 This uses the **7 real, labeled HAM10000 example images** in `data/examples/` and your
@@ -39,11 +44,10 @@ card.json, plots/ with Grad-CAM overlays). Runs on a laptop in seconds.
 > Tip: point `weights_path:` in `scenarios/skin_cancer.yaml` at your local `.pt` and even the
 > Hugging Face download goes away.
 
-**Showcase — take a look:**
+**The app — take a look:**
 
 ```bash
-pip install -r showcase/requirements.txt
-streamlit run showcase/app.py
+uv run streamlit run showcase/app.py
 ```
 
 **Big run without GPU worries:** `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) — exactly so your
@@ -58,8 +62,8 @@ verifai/            ← ENGINE (offline: local / Kaggle / Colab)
   core/             findings data model + runner + metric registry
   models/           domain adapters (image: ResNet18 from Hugging Face)
   datasets/         small, pinned subsets via manifests (reproducible)
-  metrics/          the pillars: performance / fairness / robustness / explainability / privacy
-  export/           findings -> static artifacts (JSON + plots)
+  metrics/          the pillars: integrity / performance / fairness / robustness / explainability / privacy
+  export/           findings -> static artifacts (JSON + plots), and the model registry
 
 data/
   examples/         7 real, labeled HAM10000 images (MVP sample)
@@ -69,9 +73,11 @@ scenarios/          one run = one YAML (e.g. skin_cancer.yaml)
 scripts/            run_scenario.py (CLI) + run_on_free_gpu.ipynb
 
 showcase/           SHOP WINDOW (deploys for free on Streamlit Community Cloud)
-  app.py            tile gallery -> click a model -> Plotly dashboard
-  artifacts/<id>/   one folder = one tile (card.json + report.json + plots/)
-  requirements.txt  deliberately LIGHT (free-tier friendly)
+  app.py            navigation: projects -> models -> a configuration's report; compare runs
+  views/            one module per page (overview, project, model, report, compare)
+  artifacts/model_registry.json   every declared model, evaluated or not
+  artifacts/<id>/   one folder = one evaluated configuration (card.json + report.json + plots/)
+  requirements.txt  exported from uv.lock, deliberately LIGHT (free-tier friendly)
 ```
 
 ## What the `skin_cancer` run measures (all really computed)
@@ -119,9 +125,9 @@ That is a deliberate design decision, not obfuscation:
   (the GPU notebook is included).
 - **Real run on video:** see the portfolio.
 
-> `showcase/artifacts/_sample_skin_resnet/` is a **dev fixture with SAMPLE data** (clearly marked
-> as such) so the UI can be viewed immediately, before the first real run exists. After
-> `run_scenario.py`, the real tile `skin_cancer/` appears next to it.
+> Every artifact in `showcase/artifacts/` is a real evaluation. An artifact with placeholder
+> numbers would carry `"sample": true` in its `card.json` and be shown with a warning banner;
+> the one such fixture was removed once the real runs had replaced it.
 
 ---
 
@@ -129,13 +135,15 @@ That is a deliberate design decision, not obfuscation:
 
 - [x] Engine + findings data model + runner + registry
 - [x] Image metrics implemented across **all pillars** (performance, fairness, robustness, explainability; privacy honestly marked as "needs the full run")
-- [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible
+- [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible (since replaced by the navigation below)
 - [x] Reproducible example sample (7 real HAM10000 images + manifest)
-- [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one
+- [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one (fixture removed 2026-09-24)
 - [x] Larger subset on a free GPU (solid fairness/privacy numbers)
 - [x] Deploy to Streamlit Community Cloud + short video
 - [x] Lesion-grouped split, leakage guard, uncertainty intervals, cost-sensitive decisions
 - [x] External validation on a second archive (Derm7pt) — the internal ranking inverts
+- [x] An interface a first-time reader can follow: projects → models → reports, every finding explained in the open, the comparison with runs as rows
+- [x] A reproducible environment: uv with a lock matching the one every result was produced in; CI on every pull request
 - [ ] Adapter contract + capability gating, so a metric skips with a reason instead of assuming pixels
 - [ ] Provenance & label-space preflight, for models whose training data we cannot inspect
 - [ ] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapters

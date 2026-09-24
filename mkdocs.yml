@@ -1,4 +1,4 @@
-site_name: VERIFAI Showcase
+site_name: VERIFAI Medical
 site_description: File-based Responsible-AI evaluation of medical AI across seven pillars
 site_url: https://sabrinahartung.github.io/verifai-medical/
 repo_url: https://github.com/sabrinahartung/verifai-medical
@@ -57,6 +57,7 @@ nav:
   - Where this is going:
       - Direction: direction.md
       - A worked example: case-view.md
+      - UI/UX design: ui-ux-design.md
       - Roadmap: ROADMAP.md
   - Working on it:
       - Extending: extending.md

@@ -36,6 +36,7 @@
 #   4. python scripts/run_scenario.py scenarios/skin_cancer_isic.yaml
 name: skin_cancer_isic_highsens
 label: "ISIC · melanoma ×30"
+project: "Skin lesion classification"
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)
@@ -105,7 +106,7 @@ dataset:
 card:
   # Same group as the clean split: same problem, same test set, so these belong
   # side by side. The lineage is what distinguishes the configurations.
-  group: "Skin lesion — HAM10000 (verified split)"
+  group: "Internal test — HAM10000 (verified split)"
   lineage: "ResNet18 · ISIC 2019 · melanoma ×30"
   name: "Skin-Lesion ResNet18 (ISIC 2019, high sensitivity)"
   emoji: "🔬"

@@ -63,5 +63,6 @@ model:
   weights_path: artifacts_training/skin_cancer_isic.pt
 name: external_derm7pt_isic
 label: "ISIC corpus — as deployed"
+project: "Skin lesion classification"
 sample_size: null
 seed: 42

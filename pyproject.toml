@@ -1,18 +1,67 @@
 [project]
 name = "verifai"
 version = "0.1.0"
-description = "Responsible-AI evaluation across domains and the four RAI pillars (lean, file-based)."
-requires-python = ">=3.10"
-dependencies = [
-  "torch",
-  "torchvision",
-  "pillow",
-  "numpy",
-  "pyyaml",
-  "huggingface-hub",
-  "matplotlib",          # Grad-CAM overlays (ported by hand — no grad-cam pkg needed)
-  # add per pillar/domain as needed: scikit-learn (privacy AUC), transformers (text/LLM), ...
+description = "File-based Responsible-AI evaluation of medical AI models across six pillars."
+readme = "README.md"
+requires-python = ">=3.12"
+# Nothing is needed by every use of this repository, so nothing lives here.
+# The groups below are what the offline engine, the dataset scripts, the
+# showcase and development each need; `uv sync` installs all of them locally.
+dependencies = []
+
+# Lower bounds are the versions every artifact in showcase/artifacts was
+# produced with; uv.lock pins the exact versions. The lock is what makes a run
+# reproducible — these bounds only say what the code is known to work with.
+[dependency-groups]
+engine = [
+  "torch>=2.14",
+  "torchvision>=0.29",
+  "numpy>=2.5",
+  "pillow>=12.3",
+  "pyyaml>=6.0",
+  "matplotlib>=3.11",          # Grad-CAM overlays
+  "huggingface-hub>=1.30",
+  "certifi>=2026.7",           # imported by train_model.py for the macOS CA bundle
+]
+# Dataset preparation only: build_splits.py and materialize_images.py query
+# the Hugging Face parquet metadata with DuckDB.
+data = [
+  "duckdb>=1.5",
+]
+# What Streamlit Community Cloud installs, via showcase/requirements.txt, which
+# is exported from this group. Never torch — the public demo stays on the free
+# tier because this list stays light, and a contract test asserts it.
+showcase = [
+  "streamlit>=1.63",           # st.navigation, hidden pages, st.pills
+  "plotly>=7.0",
+  "pandas>=3.0",               # the comparison table
+  "pillow>=12.3",
+]
+dev = [
+  "pytest>=9.1",
+  "mkdocs-material>=9.7",
 ]
 
-[tool.setuptools.packages.find]
-include = ["verifai*"]
+[tool.uv]
+# The repository is run from source, never installed as a package: scripts and
+# the showcase put the repo root on sys.path themselves.
+package = false
+default-groups = ["engine", "data", "showcase", "dev"]
+
+# CI runs on Linux with no GPU, where PyPI's torch wheel drags in ~2.5 GB of
+# CUDA libraries. The CPU wheels come from PyTorch's own index — on Linux only;
+# macOS keeps PyPI's wheels, which carry the MPS backend the evaluations use.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[tool.pytest.ini_options]
+# `uv run pytest` starts pytest through its console script, which — unlike
+# `python -m pytest` — does not put the working directory on sys.path.
+pythonpath = ["."]
+testpaths = ["tests"]

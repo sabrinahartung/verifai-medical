@@ -20,8 +20,8 @@ larger target. The history that motivates all of it is compressed into
 ## Where this is going
 
 Today VERIFAI evaluates **one problem** (skin lesions), with **one model adapter**
-(a torchvision `state_dict`), against **one modality** (images). Twenty-four artifact
-folders, all dermatology.
+(a torchvision `state_dict`), against **one modality** (images). Fifteen models in
+twenty-three configurations, all dermatology.
 
 The target is a **model-agnostic, domain-agnostic evaluation service for medical AI**:
 
@@ -37,8 +37,9 @@ Four things have to become true for that:
    metric catalogue expanded far beyond the six metrics that exist today.
 3. **Two honest entry states.** *The model is trained and ready to load*, or *the
    model must be trained first and the data is here.* Both end in the same report.
-4. **An interface a reader can follow.** Today's gallery shows all twenty-four runs
-   at once and expects you to know what a lineage is.
+4. **An interface a reader can follow.** Built on `dev` (2026-09-24) — projects, models
+   and their configurations in place of twenty-four tiles that expected a reader to know
+   what a lineage was — and public once it is released to `main` ([M1](#milestones)).
 
 What does **not** change: the engine runs offline and writes static artifacts, the
 Streamlit app reads them, the public deploy stays free and always-on, and no number
@@ -46,10 +47,12 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 
 ---
 
-## Where things stand (2026-09-16)
+## Where things stand (2026-09-24)
 
-**24 artifact folders, 82 contract tests, three evaluation sets.**
-[Current results](results.md) has the measurements; this is what they add up to.
+**23 artifact folders — 15 models in 23 configurations — 107 contract tests, three evaluation
+sets.** [Current results](results.md) has the measurements; this is what they add up to. The
+scientific picture below has not moved since 2026-09-16; what changed since is the interface
+and the tooling around it, recorded in [What has been built](#what-has-been-built).
 
 ### The four things that have been learned
 
@@ -91,6 +94,27 @@ It flags 82% of every lesion it sees and does not reach the sensitivity of answe
 collapses (0.657 → 0.385 here), the model has not preserved its skill — it has moved
 its operating point. A metric improving against the trend of every other metric is
 almost always an artefact. Read sensitivity next to specificity or PPV, never alone.
+
+---
+
+## Milestones
+
+The order the work is done in. The [platform plan](#the-platform-plan) describes *what* each
+phase is; this says *when*, and why in that order. Set 2026-09-24.
+
+| | Milestone | Delivers | Why in this position |
+|---|---|---|---|
+| ✅ | **Interface** · 2026-09-19 → 24 | Projects → models → a configuration's report; the report laid out for a first-time reader; the comparison turned around; the model registry. [UI/UX design](ui-ux-design.md) has the detail | Phase E ahead of Phase A, deliberately: every later phase ends on screen, and the screen could not yet say what a model was |
+| ✅ | **Reproducible tooling** · 2026-09-24 | uv, a lock reproducing the environment every artifact came from, CI on every pull request into `dev` | results meant to be recomputable were produced in the least reproducible part of the repository — see [Tooling](#tooling-moved-to-uv-done-2026-09-24) |
+| **M1** | **Release 1** — `dev` → `main` | the public showcase gets both of the above | the public demo still shows the old twenty-four-tile gallery and the sample fixture. No code. **Owed first:** confirm Streamlit Community Cloud runs Python ≥ 3.12, which the now-pinned `showcase/requirements.txt` needs |
+| **M2** | **The findings strip** | `details["baseline"]` on the six metrics; the Grad-CAM verdict no longer hardcoded; the strip on the report, ordered by strength of evidence; the 23 reports backfilled from their stored values where that is honest, re-run where it is not; each report recording the checkpoint hash it was scored against, so a stale evaluation becomes detectable | fully designed ([the settled ordering](ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is)), its slot already placed, and the last large piece of the report. Nothing in it waits on Phase A |
+| **M3** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
+| **M4** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
+| M5+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
+
+**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). One item
+sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
+the full run are nevi — because M2 is where Explainability's status on the report changes.
 
 ---
 
@@ -136,6 +160,9 @@ product, not a gap in it.
 | **6** Snapshots + comparison | 2026-09-10 | every run recorded with the evaluation manifest's **content hash**; the view *refuses* to plot runs scored on different rows or on a contaminated split | `verifai/export/artifacts.py` |
 | **7** Grouped gallery | 2026-09-10 | `card.group` / `card.lineage`; seven tiles became three cards. Presentation never widens comparability — asserted in tests | `showcase/app.py` |
 | **8** External validation | 2026-09-16 | Derm7pt, 1,003 cases, no retraining: **the internal ranking inverts** | [Experiment 7](results.md#experiment-7-the-first-numbers-not-measured-on-ham10000) |
+| **9** A model registry | 2026-09-24 | a model is its **checkpoint, identified by content hash** — `model.id` named three checkpoints in one direction and one checkpoint answered to five ids in the other. 15 models, 23 configurations; status derived from which reports exist, never stored | `verifai/export/model_registry.py` |
+| **10** The interface | 2026-09-24 | project → model → configuration's report in place of twenty-four tiles; each finding's explanation open, in a fixed order; an unverified split holding the whole report; the comparison with runs as rows; one name per configuration on every page | [UI/UX design](ui-ux-design.md) · PR #1 |
+| **11** Reproducible tooling | 2026-09-24 | uv with a lock reproducing the artifacts' environment version for version; three undeclared imports declared; CI on pull requests into `dev`, with twenty showcase tests that had always been skipped now run | [Tooling](#tooling-moved-to-uv-done-2026-09-24) · PR #2 |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -165,6 +192,13 @@ Unfinished, and still ranked by what it would establish:
       every manifest row and feed no model. The one untested lever that adds *signal*
       rather than parameters — and it makes subgroup behaviour a design choice rather
       than an artefact, which is worth stating up front.
+- [ ] **Give Grad-CAM a sample worth averaging.** `explainability/gradcam.py` scores
+      `list(dataset)[:gradcam_max_images]` with a default of 7 that no scenario overrides, on
+      a manifest the loader sorts — so on the 1,493-image run the published faithfulness is a
+      mean over the first seven filenames, six of them nevi. Stratify by class, raise *n* to
+      what the compute allows, and add the random-attribution control
+      [[42]](references.md#ref-42): faithfulness 0.3 means nothing until it is set against
+      what a random highlight scores under identical conditions.
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97
@@ -176,7 +210,8 @@ modelling one.
 
 ## The platform plan
 
-Eight phases. Phase A is the seam everything else plugs into and is built first.
+Nine phases, A to I. Phase A is the seam Phases B–D plug into; the order they are built in is
+set by [Milestones](#milestones) — which put Phase E first, for the reason given there.
 
 ### Phase A — the two contracts, and capability gating
 
@@ -258,7 +293,7 @@ of one half. Which is exactly the open item at the top of this page.
        preprocessing. This is where "paste a link and it works" is genuinely true.
     3. **`hf_text`** — `AutoModelForSequenceClassification` + `AutoTokenizer`;
        `dataset.load()` returns a string and `predict_probs` is unchanged.
-- `transformers` goes in `requirements-engine.txt` only, never in the showcase list.
+- `transformers` goes in the `engine` dependency group only, never in the `showcase` group.
 - Deliberately **not** first: ONNX, sklearn/joblib, generative checkpoints. Each is a
   different loading story and none of them is on the path to the next result.
 
@@ -278,23 +313,27 @@ checkpoint is missing, then evaluates and exports.
 
 ### Phase E — the interface
 
-The current app is one 915-line file routed through `st.session_state` and
-`st.rerun()`, and its front page is twenty-four runs deep.
+!!! success "Largely done, 2026-09-24 — status per item below"
+    Built on `dev` and released with [M1](#milestones). The detailed record, and the steps
+    still open, are in [UI/UX design → Build order](ui-ux-design.md#build-order).
 
-- **Navigation that matches the mental model:** use case → model → run, on
+*As planned:* the app was one 915-line file routed through `st.session_state` and
+`st.rerun()`, and its front page was twenty-four runs deep.
+
+- ✅ **Navigation that matches the mental model:** use case → model → run, on
   `st.navigation` / `st.Page` (Streamlit 1.63 is installed), which also gives URLs
   and a working back button.
-- Split `showcase/app.py` into `catalog.py`, `render.py` and
+- ✅ Split `showcase/app.py` into `catalog.py`, `render.py` and
   `views/{gallery,report,compare}.py`, keeping the public names importable from
   `showcase.app` so the existing tests keep passing.
-- **Archive.** `card.status: active | archived`, default `active`. Today that leaves
+- ↪ *Replaced by the model registry and supersession.* **Archive.** `card.status: active | archived`, default `active`. Today that leaves
   the ISIC model and its decision-rule siblings on the front page and files the eight
   learning-curve runs, focal, oversample and the ResNet50 probe behind an expander.
   Archiving is **presentation**: the comparison view still sees them, and an archived
   run scored on the same manifest must be *disclosed*, exactly as the lineage filter
   already must. New metrics get tested against the archived runs without
   recomputing the active one.
-- **A real explanation component, not an expander.** Every finding needs one consistent,
+- ✅ *except `explain.impact`, which no metric ships yet.* **A real explanation component, not an expander.** Every finding needs one consistent,
   visible info box answering five questions in the same order every time: **what was measured**,
   **what came out**, **why it matters**, **how to read the chart**, and **what this does not
   tell you**. Those map to `explain.what`, the finding's own `summary`, `explain.impact`,
@@ -302,10 +341,10 @@ The current app is one 915-line file routed through `st.session_state` and
   stays a renderer. Today the first two are inline and the rest are behind "How to read this
   chart", which buries the two that a non-specialist most needs. The reader this is aimed at has
   never seen a Responsible-AI report; a number with no box is a number they cannot use.
-- **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
+- ◐ *Holds for all six metrics; not yet enforced for a seventh.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
   a reader sees whether it is a *good* number rather than only what it is. A metric that returns
   a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
-- **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
+- ◐ *Placeholder pages only; filled by [M4](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
   for review → pick a test set → preflight → run → link to the new report — that
   appears only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`,
   imported lazily so the public path never touches it. `showcase/requirements.txt`
@@ -410,7 +449,7 @@ will assume the wrong one.
 
 **Write it when it is short.** FGSM, PGD, additive noise and occlusion are tens of lines each
 in numpy/torch, and the wording has to be ours anyway. Take a dependency only where
-re-implementing is genuinely error-prone, and only in `requirements-engine.txt`.
+re-implementing is genuinely error-prone, and only in the `engine` dependency group.
 
 **And check that the dependency still exists.** A toolkit named in a plan is a claim with a
 shelf life. The shortlist this catalogue was built from [[34]](references.md#ref-34) was sixteen months old when it was
@@ -426,8 +465,8 @@ version, months since the last commit, and whether it actually resolves against 
 XAI evaluation is the case the lean-dependency rule carves out: MPRT, ROAD and the relative
 stability estimators are subtle enough that re-implementing them means re-deriving a JMLR paper.
 **Quantus [[27]](references.md#ref-27) is adopted** — verified to resolve against this stack (Python 3.13, numpy 2.5,
-torch 2.14), adding `quantus[captum]` plus eleven transitive packages, engine-only, never in
-`showcase/requirements.txt`. It covers five of the eight explainability rows and brings a sixth
+torch 2.14), adding `quantus[captum]` plus eleven transitive packages, engine group only, never
+in the `showcase` group. It covers five of the eight explainability rows and brings a sixth
 sub-aspect, `axiomatic`, that the catalogue did not have.
 
 It arrives behind **one adapter module**. No metric imports `quantus` directly, so the library
@@ -751,6 +790,67 @@ bigger than a ResNet18:
   report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
   opt-in per metric, before the catalogue lands.
 
+## Tooling — moved to uv (done 2026-09-24)
+
+**Done, on `chore/uv`.** Planned here on 2026-09-24 after the global-`streamlit` trap below cost
+a debugging session; the plan is kept below the line as it was written, with what actually
+landed recorded first. Day-to-day use is in [Development](development.md#environment).
+
+**What landed.**
+
+- **One `pyproject.toml`**, four dependency groups — `engine`, `data`, `showcase`, `dev` — and
+  `[project] dependencies` left empty, because nothing is needed by every use of the repository.
+- **`uv.lock`, written to reproduce the environment every published artifact came from**, version
+  for version: all 78 packages match the `.venv` they were produced in. A fresh lock would have
+  upgraded 22 of them — Streamlit 1.63 → 1.64, and two major versions — so each was pinned back.
+  A migration that is also an upgrade makes any later difference in a number unattributable.
+  `uv sync --dry-run` against that `.venv` reports *"Would make no changes"*.
+- **`.python-version` = 3.13**, the interpreter the artifacts were produced with. CI ran 3.12
+  until now.
+- **Three undeclared imports declared.** `duckdb` (the dataset scripts), `certifi`
+  (`train_model.py`'s macOS CA fix) and `pandas` (the comparison table) were each imported
+  directly and installed only by accident — the first by hand, the other two as someone else's
+  dependency. A strict `uv sync` would have removed `duckdb` and broken both dataset scripts.
+- **CI on uv** (`astral-sh/setup-uv`, pinned to v10.2.0 and uv 0.12.1): `uv sync --locked`, all
+  107 tests, `mkdocs build --strict` on every pull request, and a check that
+  `showcase/requirements.txt` still matches the lock. torch's CPU wheels now come from the lock on
+  Linux, replacing the separate `pip install torch --index-url …` step.
+- **`requirements-dev.txt` is gone**; the `dev` group replaces it.
+
+**Where it departs from the plan.**
+
+- **`requirements-engine.txt` stays, unpinned.** The plan assumed it could go. It cannot: the GPU
+  notebook installs it on Colab and Kaggle, where uv is absent and torch comes preinstalled as the
+  platform's CUDA build — a pinned `torch==…` there would make pip replace it. It is now
+  documented as the notebook's list, and a test keeps its package names equal to the `engine`
+  group's while versions float.
+- **"A test asserts the showcase is torch-free" was not true.** `CLAUDE.md` said so; the two tests
+  it pointed at check the showcase's *imports*, not `showcase/requirements.txt`. One now reads the
+  file and the group both.
+
+**Still to check, before the first release to `main`.** `showcase/requirements.txt` is now
+pinned — Streamlit 1.63.0, pandas 3.0.5, numpy 2.5.2 among them — where it used to let pip pick.
+Those pins were resolved for Python ≥ 3.12 (`requires-python`), and on Streamlit Community Cloud
+the Python version is chosen in the app's settings at deploy time — not visible from this
+repository. Confirm it before `dev`
+reaches `main`, which is what deploys.
+
+??? note "The plan as written"
+    **Why.** The dependencies were declared in four places — `pyproject.toml`,
+    `requirements-engine.txt`, `requirements-dev.txt`, `showcase/requirements.txt` — and **none of
+    them pinned a version**. `pyproject.toml` had drifted (it still said "four RAI pillars" and
+    listed neither Streamlit nor Plotly). The local venv ran Python 3.13.5 while CI ran 3.12, and CI
+    installed whatever torch was newest on the day. For a project whose results are meant to be
+    recomputable, the environment was the least reproducible part of it.
+
+    **Shape of the change.** Dependency groups rather than four files; the showcase deploy kept
+    torch-free by exporting `showcase/requirements.txt` from the lock; a `.python-version`; torch's
+    CPU index on CI via `[[tool.uv.index]]`; CI on `setup-uv`, `uv sync --locked`, `uv run pytest`,
+    `uv run mkdocs build --strict`; and `docs/development.md`, `CLAUDE.md` and the README moved to
+    `uv run …`.
+
+---
+
 ## Operational notes that have cost time
 
 - **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
@@ -761,9 +861,21 @@ bigger than a ResNet18:
   without a CA bundle; `train_model.py` sets `SSL_CERT_FILE` from certifi on import.
 - **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named
   `master` in three places after the default moved to `main`; nothing errored, the
-  workflow simply stopped matching.
+  workflow simply stopped matching. It happened again with the *feat → dev → main* flow:
+  only `main` was listed, so no feature PR into `dev` was tested (fixed 2026-09-24). And CI
+  never installed `showcase/requirements.txt`, so the twenty showcase tests guarded by
+  `importorskip("streamlit")` were skipped on every run while passing locally. Check both
+  whenever a branch is added to the flow or a test file gains a new optional import.
 - The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
   directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+- **Bare `streamlit` is not the repo's.** Without an activated venv it resolves to the global
+  python.org install (`/Library/Frameworks/Python.framework/.../bin/streamlit`), which has
+  Streamlit 1.63 and nothing else, so the app dies on `ModuleNotFoundError: No module named
+  'plotly'`. Since the move to uv, `uv run streamlit run showcase/app.py` cannot hit this. Installing
+  plotly globally only moves the failure to the next missing package.
+- **A running Streamlit server did not pick up edits to `showcase/views/*.py`**, even on a fresh
+  page load; the old module stayed in memory. Restart the server after editing anything below
+  `showcase/app.py` rather than trusting the reload.
 - Results are bit-identical **per device**, not across devices: expect third-decimal
   drift between CPU and MPS, which is why `report.json` records `meta.device`.
 

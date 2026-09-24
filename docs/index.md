@@ -1,4 +1,4 @@
-# VERIFAI Showcase
+# VERIFAI Medical
 
 **Systematic, reproducible Responsible-AI evaluation of medical AI models** across the pillars —
 integrity, performance, fairness, robustness, explainability and privacy.

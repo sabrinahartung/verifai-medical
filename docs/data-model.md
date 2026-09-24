@@ -220,7 +220,7 @@ showing a value is honest, calling it "best" without knowing which way is good i
 ```mermaid
 flowchart TB
     A["showcase/artifacts/"]
-    A --> B["_sample_skin_resnet/<br/><i>dev fixture, sample: true</i>"]
+    A --> R["model_registry.json<br/><i>every declared model</i>"]
     A --> C["skin_cancer/<br/><i>7 examples, integrity unverified</i>"]
     A --> D["skin_cancer_clean/<br/><i>1,493 held-out images</i>"]
     D --> D1["card.json<br/><i>tile metadata</i>"]
@@ -228,6 +228,12 @@ flowchart TB
     D --> D3["plots/<br/><i>Grad-CAM overlays</i>"]
     style D fill:#E3F2E7,stroke:#2E9E5B,color:#1a1a2e
 ```
+
+`model_registry.json` is the one file at the top level. It lists every **model** the scenarios
+declare — a checkpoint, identified by its content hash — with its provenance from the trainer's
+record and its configurations, whether or not any of them has run. It stores no evaluation
+status and no score: whether a configuration is evaluated is decided by whether its folder
+below exists. Written by `verifai/export/model_registry.py`.
 
 The app lists any directory containing **both** `card.json` and `report.json`. `card.json`
 carries the tile metadata (`name`, `emoji`, `domain`, `dataset`, `description`, `hf_url`,

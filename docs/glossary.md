@@ -271,6 +271,35 @@ Comparability
     both had a verified split. Otherwise the tool refuses and says why, rather than drawing a
     chart of a difference it cannot support.
 
+Project
+:   The problem a set of models is trying to solve — here, *Skin lesion classification*: seven
+    classes of dermoscopy image. Every scenario names its project, and the overview groups models
+    by it. It is a way of finding things, never a licence to compare them: two models in one
+    project are only compared when they were scored on the same images.
+
+Model
+:   One trained checkpoint — a specific file of weights — identified by a hash of its contents
+    rather than by its name. This repository has 15. `skin_cancer_clean.pt` is one model even
+    though it appears in four evaluations, and `focal loss` and `balanced oversampling` are two
+    different models even though an earlier version of the gallery filed them under one heading.
+
+Configuration
+:   One model, read one way, scored on one set of images: the model plus its decision rule and
+    its evaluation set. The same `skin_cancer_clean.pt` weights read with `argmax` catch 104 of
+    163 melanomas; read with `melanoma ×50` they catch 154. Two configurations, one model, no
+    retraining — which is why the difference belongs to the rule and not the weights.
+
+Investigation
+:   A question several runs were made to answer together — the *learning curve* (how much data is
+    enough?) or the *external validation* (does it hold up at an unseen clinic?). It is a filter
+    on a project's models, not a folder: the ISIC model has configurations in both the internal
+    test and the external validation, so it belongs to both.
+
+Model registry
+:   The list of every declared model and its configurations, whether or not any of them has been
+    evaluated yet, written from the scenarios into `model_registry.json`. It records what each
+    checkpoint *is* — architecture, training data, loss — and deliberately no score of any kind.
+
 ---
 
 ## Planned — terms the expanded catalogue introduces

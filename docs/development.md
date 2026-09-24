@@ -2,32 +2,53 @@
 
 ## Environment
 
-The repo `.venv` holds both engine and showcase dependencies.
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml` declares them
+in four groups, `uv.lock` pins every version, and `.python-version` pins the interpreter (3.13):
 
 ```bash
-pip install -r requirements-engine.txt      # torch, torchvision, pillow, numpy, ...
-pip install -r showcase/requirements.txt    # streamlit, pillow, plotly
-pip install -r requirements-dev.txt         # pytest, mkdocs-material
-pip install duckdb                          # only scripts/build_splits.py needs it
+uv sync          # install all four groups into .venv, exactly as locked
 ```
 
-!!! warning "The two requirements files are separate on purpose"
-    `showcase/requirements.txt` must stay light — Streamlit Community Cloud installs it, and
-    it resolves the dependency file in the **entrypoint's directory** ahead of the repo root.
-    That precedence is the only thing preventing the torch dependencies in the root
-    `pyproject.toml` from being installed on the free tier.
+`uv run …` always uses that environment, so there is nothing to activate — and nothing to forget.
+
+| Group | Holds | Used by |
+|---|---|---|
+| `engine` | torch, torchvision, numpy, pillow, pyyaml, matplotlib, huggingface-hub, certifi | evaluation and training |
+| `data` | duckdb | `build_splits.py`, `materialize_images.py` |
+| `showcase` | streamlit, plotly, pandas, pillow | the Streamlit app |
+| `dev` | pytest, mkdocs-material | tests and this site |
+
+Add a dependency with `uv add --group <group> <package>`, which updates both files. The lock was
+first written to reproduce the environment every published artifact came from, version for
+version; an upgrade is a deliberate `uv lock --upgrade-package <name>`, never a side effect.
+
+!!! warning "Two files are exported from the lock — edit the groups, not the files"
+    **`showcase/requirements.txt`** is the `showcase` group, pinned. Streamlit Community Cloud
+    installs it, and it resolves the dependency file in the **entrypoint's directory** ahead of
+    the repo root — which keeps the root `uv.lock`, with its torch, off the free tier. The root
+    `pyproject.toml` declares no project dependencies at all, so even a fallback to it installs
+    nothing heavy. After changing the `showcase` group, re-export it; CI fails if you forget:
+
+    ```bash
+    uv export --locked --only-group showcase --no-hashes --no-emit-project \
+  --format requirements-txt -o showcase/requirements.txt
+    ```
+
+    **`requirements-engine.txt`** is the GPU notebook's list and is **unpinned on purpose**: on
+    Colab and Kaggle torch comes preinstalled as the platform's CUDA build, and a pinned version
+    would make pip replace it. A test keeps its names equal to the `engine` group's.
 
 ## Commands
 
 ```bash
 # evaluate a scenario -> showcase/artifacts/<name>/
-.venv/bin/python scripts/run_scenario.py scenarios/skin_cancer.yaml
+uv run python scripts/run_scenario.py scenarios/skin_cancer.yaml
 
 # view the showcase (reads precomputed artifacts only)
-.venv/bin/streamlit run showcase/app.py
+uv run streamlit run showcase/app.py
 
-# tests: no network, no checkpoint, ~1.4s
-.venv/bin/python -m pytest tests/ -q
+# tests: no network, no checkpoint, a few seconds
+uv run pytest -q
 .venv/bin/python -m pytest tests/test_engine_contracts.py::test_our_committed_manifests_are_leak_free -q
 
 # these docs
@@ -77,7 +98,7 @@ a workflow keyed to `main` would silently never fire):
 
 ```mermaid
 flowchart LR
-    P["push to main"] --> T["tests<br/><i>CPU torch + 82 contract tests</i>"]
+    P["push to main"] --> T["tests<br/><i>uv sync --locked · 107 contract tests<br/>docs build · export check</i>"]
     T -->|pass| D["mkdocs build --strict"]
     T -->|fail| X["✋ nothing published"]
     D --> G["GitHub Pages"]
@@ -87,9 +108,12 @@ flowchart LR
 
 Two deliberate choices:
 
-- **CPU torch wheels.** The default `pip install torch` pulls ~2.5 GB of CUDA onto a runner
-  with no GPU. It is installed before `requirements-engine.txt` so that file's plain `torch`
-  line is already satisfied.
+- **CPU torch wheels, from the lock.** PyPI's torch pulls ~2.5 GB of CUDA onto a runner with no
+  GPU, so `pyproject.toml` sends torch and torchvision to PyTorch's CPU index **on Linux only**;
+  macOS keeps PyPI's wheels, which carry MPS. The same lock serves both.
+- **Pull requests into `dev` and `main` are tested**, with every group installed, so no test is
+  skipped for a missing import. The same job builds the docs with `--strict` and checks that
+  `showcase/requirements.txt` still matches the lock.
 - **Docs depend on tests.** A build describing code that fails its own contracts should not
   publish, so the `docs` job has `needs: test`.
 
