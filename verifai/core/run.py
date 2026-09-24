@@ -17,6 +17,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 from verifai.core.findings import Report, Finding
 from verifai.core.integrity import audit_split, train_manifests_from_scenario
+from verifai.core.suite import suite_for
+from verifai.metrics._baseline import attach as attach_baseline
 
 
 class SplitLeakageError(RuntimeError):
@@ -107,6 +109,18 @@ def _enforce_split_integrity(scenario: dict[str, Any], dataset) -> None:
         )
 
 
+def _checkpoint_fingerprint(model_cfg: dict) -> dict:
+    """The weights a report was scored with, hashed as the model registry hashes them."""
+    path = model_cfg.get("weights_path")
+    if path and Path(path).is_file():
+        from verifai.export.model_registry import _sha256
+        return {"path": path, "sha256": _sha256(Path(path))}
+    if model_cfg.get("repo_id"):
+        return {"repo_id": model_cfg["repo_id"], "filename": model_cfg.get("filename"),
+                "revision": model_cfg.get("revision")}
+    return {}
+
+
 def run_scenario(scenario: dict[str, Any]) -> Report:
     seed = scenario.get("seed", 42)
     random.seed(seed)
@@ -130,7 +144,12 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
               "sample_size": scenario.get("sample_size") or _safe_len(dataset),
               "device": str(getattr(model, "device", "cpu")),
               "eval_set": _eval_set_fingerprint(dataset),
-              "label": scenario.get("label") or scenario["model"].get("id", scenario["name"])},
+              "label": scenario.get("label") or scenario["model"].get("id", scenario["name"]),
+              # Which metric versions and which weights produced this report —
+              # what lets the showcase tell a current report from one produced
+              # before a metric changed or the checkpoint was retrained.
+              "metric_versions": suite_for(scenario["metrics"]),
+              "checkpoint": _checkpoint_fingerprint(scenario["model"])},
     )
 
     ctx = {"scenario": scenario, "seed": seed, "plot_dir": scenario.get("_plot_dir", "plots")}
@@ -138,5 +157,6 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
         fn = _load(METRIC_REGISTRY[metric_id])
         result = fn(model, dataset, ctx)
         for f in (result if isinstance(result, list) else [result]):
+            attach_baseline(f)
             report.add(f)
     return report

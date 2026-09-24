@@ -43,9 +43,12 @@ from typing import Any
 
 import yaml
 
+from verifai.core.suite import METRIC_VERSIONS
+
 REGISTRY_PATH = Path("showcase/artifacts/model_registry.json")
 SCHEMA = 1
 UNASSIGNED = "Unassigned"
+STATUSES = ("active", "archived")
 
 # Copied from `<name>_training.json`. What a checkpoint *is*, never how well it
 # did: `best_val_balanced_accuracy` and the per-epoch `history` are left out on
@@ -133,9 +136,15 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
         if ck["kind"] == "local" and Path(ck["path"]).stem == name and sc.get("training"):
             g["_trainer"] = sc
         g["_projects"][name] = sc.get("project") or UNASSIGNED
+        status = sc.get("status", "archived")
+        if status not in STATUSES:
+            raise ValueError(f"{name}: status must be one of {STATUSES}, not {status!r}")
         g["configurations"].append({
             "scenario": name,
             "label": sc.get("label") or name,
+            # Active configurations are re-run when a metric changes; archived
+            # ones are kept as the record of what was measured, when.
+            "status": status,
             "decision_weights": model.get("decision_weights") or None,
             "eval_manifest": (sc.get("dataset") or {}).get("manifest"),
             "dataset_id": (sc.get("dataset") or {}).get("id"),
@@ -158,6 +167,7 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
         g["name"] = (trainer.get("label") if trainer else None) or g["configurations"][0]["label"]
         g["provenance"] = _provenance(g["checkpoint"], root, prev_models.get(g["key"]))
         g["identified"] = not g["identity"].startswith("unidentified:")
+        g["active"] = any(c["status"] == "active" for c in g["configurations"])
         models.append(g)
 
     # Two checkpoints can share a filename in different folders; the key must
@@ -174,6 +184,9 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
         projects.setdefault(m["project"], []).append(m["key"])
     return {
         "schema": SCHEMA,
+        # The current version of every metric, so the showcase — which never
+        # imports the engine — can tell a report produced by an older one.
+        "metric_versions": dict(sorted(METRIC_VERSIONS.items())),
         "projects": [{"name": n, "models": ks} for n, ks in sorted(projects.items())],
         "models": models,
     }

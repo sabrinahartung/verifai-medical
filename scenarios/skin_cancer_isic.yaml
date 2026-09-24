@@ -29,6 +29,7 @@
 name: skin_cancer_isic
 label: "ISIC corpus"
 project: "Skin lesion classification"
+status: active
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

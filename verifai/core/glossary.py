@@ -386,6 +386,35 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "has tested is a claim, not evidence, and a convincing-looking "
                    "heatmap is exactly how that goes unnoticed.",
     }),
+    ("explainability.faithfulness_gain", {
+        "term": "Faithfulness beyond chance",
+        "measures": "How much more confidence is lost when the explanation's highlighted region "
+                    "is hidden than when a region of the same size, placed at random, is hidden "
+                    "in the same image.",
+        "ideal": "Higher is better; 0 means the highlight matters no more than a random patch.",
+        "reading": "This, not the raw drop, is the claim: hiding any part of an image can lower "
+                   "confidence, so a highlight only earns trust by beating a random one under "
+                   "identical conditions. Read it with its interval — above 0 means the model "
+                   "does rely on the region shown, not that relying on it is right.",
+        "tension": "A faithful explanation of a wrong decision is still faithful.",
+    }),
+    ("explainability.mean_random_control", {
+        "term": "Random-region control",
+        "measures": "The confidence lost when a region of the same size and shape as the "
+                    "highlight, moved to a random place, is hidden — the reference the "
+                    "explanation is measured against.",
+        "ideal": "No ideal value; it is the baseline, not a result.",
+        "reading": "Measured in the same run, on the same images, so it carries every side "
+                   "effect of masking itself. What the highlighted region loses beyond it is "
+                   "what the explanation can take credit for.",
+    }),
+    ("explainability.n", {
+        "term": "Sample size (explainability)",
+        "measures": "How many test images the explanation was scored on.",
+        "ideal": "No ideal value; larger means more reliable statements.",
+        "reading": "Since version 2 this is every test image with a non-flat map; earlier "
+                   "reports scored the first seven only.",
+    }),
     ("explainability.faithfulness", {
         "term": "Explanation faithfulness",
         "measures": "How well the explanation matches what the model actually did.",

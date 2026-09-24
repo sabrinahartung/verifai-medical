@@ -1,5 +1,13 @@
 {
   "schema": 1,
+  "metric_versions": {
+    "explainability.gradcam": 2,
+    "fairness.skin_tone": 2,
+    "integrity.split_leakage": 2,
+    "performance.classification": 2,
+    "privacy.mia": 2,
+    "robustness.corruption": 2
+  },
   "projects": [
     {
       "name": "Skin lesion classification",
@@ -35,6 +43,7 @@
         {
           "scenario": "curve_ft_n100",
           "label": "fine-tuned, n=100",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -75,7 +84,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:c3e526f590532e5c",
@@ -89,6 +99,7 @@
         {
           "scenario": "curve_ft_n2000",
           "label": "fine-tuned, n=2,000",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -129,7 +140,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:8b2c2d2bfa367b6d",
@@ -143,6 +155,7 @@
         {
           "scenario": "curve_ft_n500",
           "label": "fine-tuned, n=500",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -183,7 +196,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:0a42400661062a0d",
@@ -197,6 +211,7 @@
         {
           "scenario": "curve_ft_n7014",
           "label": "fine-tuned, n=7,014",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -237,7 +252,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:2f302b80776f5250",
@@ -251,6 +267,7 @@
         {
           "scenario": "curve_probe_n100",
           "label": "linear probe, n=100",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -291,7 +308,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:8f8a1dd223ba5a23",
@@ -305,6 +323,7 @@
         {
           "scenario": "curve_probe_n2000",
           "label": "linear probe, n=2,000",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -345,7 +364,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:e0dadc3f3d4e9315",
@@ -359,6 +379,7 @@
         {
           "scenario": "curve_probe_n500",
           "label": "linear probe, n=500",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -399,7 +420,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:881affebbdda27b7",
@@ -413,6 +435,7 @@
         {
           "scenario": "curve_probe_n7014",
           "label": "linear probe, n=7,014",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -453,7 +476,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@unpinned",
@@ -469,6 +493,7 @@
         {
           "scenario": "skin_cancer",
           "label": "Original checkpoint (split unverified)",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_examples.csv",
           "dataset_id": "ham10000-examples",
@@ -486,7 +511,8 @@
       "trained_by": null,
       "name": "Original checkpoint (split unverified)",
       "provenance": null,
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:68c29910a0c197b0",
@@ -500,6 +526,7 @@
         {
           "scenario": "external_derm7pt_clean",
           "label": "HAM10000 corpus only",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/derm7pt_test.csv",
           "dataset_id": "derm7pt-external",
@@ -513,6 +540,7 @@
         {
           "scenario": "skin_cancer_clean",
           "label": "HAM10000 corpus (clean split)",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -528,6 +556,7 @@
         {
           "scenario": "skin_cancer_cost_highsens",
           "label": "High-sensitivity (w=50)",
+          "status": "archived",
           "decision_weights": {
             "melanoma": 50
           },
@@ -545,6 +574,7 @@
         {
           "scenario": "skin_cancer_cost_moderate",
           "label": "Melanoma-weighted (w=5)",
+          "status": "archived",
           "decision_weights": {
             "melanoma": 5
           },
@@ -587,7 +617,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:5a83a49f70520e68",
@@ -601,6 +632,7 @@
         {
           "scenario": "skin_cancer_focal",
           "label": "Focal loss (γ=2)",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -644,7 +676,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:12fbb0335ce803a5",
@@ -658,6 +691,7 @@
         {
           "scenario": "external_derm7pt_isic",
           "label": "ISIC corpus — as deployed",
+          "status": "active",
           "decision_weights": null,
           "eval_manifest": "data/manifests/derm7pt_test.csv",
           "dataset_id": "derm7pt-external",
@@ -671,6 +705,7 @@
         {
           "scenario": "external_derm7pt_isic_highsens",
           "label": "ISIC · melanoma ×30 (tuned on HAM10000)",
+          "status": "archived",
           "decision_weights": {
             "melanoma": 30
           },
@@ -686,6 +721,7 @@
         {
           "scenario": "external_derm7pt_isic_masked",
           "label": "ISIC corpus — absent class masked",
+          "status": "archived",
           "decision_weights": {
             "actinic_keratoses": 0
           },
@@ -701,6 +737,7 @@
         {
           "scenario": "skin_cancer_isic",
           "label": "ISIC corpus",
+          "status": "active",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -716,6 +753,7 @@
         {
           "scenario": "skin_cancer_isic_highsens",
           "label": "ISIC · melanoma ×30",
+          "status": "archived",
           "decision_weights": {
             "melanoma": 30
           },
@@ -761,7 +799,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": true
     },
     {
       "identity": "sha256:aadaf104e83c138a",
@@ -775,6 +814,7 @@
         {
           "scenario": "external_derm7pt_probe",
           "label": "Linear probe (frozen features)",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/derm7pt_test.csv",
           "dataset_id": "derm7pt-external",
@@ -788,6 +828,7 @@
         {
           "scenario": "skin_cancer_isic_probe",
           "label": "Linear probe (frozen features)",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -832,7 +873,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:60e91eb08e0bcd32",
@@ -846,6 +888,7 @@
         {
           "scenario": "skin_cancer_isic_r50",
           "label": "ResNet50 · ISIC corpus",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -889,7 +932,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     },
     {
       "identity": "sha256:e625343add8ccf7d",
@@ -903,6 +947,7 @@
         {
           "scenario": "skin_cancer_oversample",
           "label": "Balanced oversampling",
+          "status": "archived",
           "decision_weights": null,
           "eval_manifest": "data/manifests/ham10000_test.csv",
           "dataset_id": "ham10000-clean-test",
@@ -946,7 +991,8 @@
         "val_images": 1508,
         "note": "test manifest was not read during training"
       },
-      "identified": true
+      "identified": true,
+      "active": false
     }
   ]
 }

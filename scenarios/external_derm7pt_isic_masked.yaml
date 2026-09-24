@@ -67,5 +67,6 @@ model:
 name: external_derm7pt_isic_masked
 label: "ISIC corpus — absent class masked"
 project: "Skin lesion classification"
+status: archived
 sample_size: null
 seed: 42

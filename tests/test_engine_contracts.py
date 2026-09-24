@@ -1814,3 +1814,175 @@ def test_the_notebooks_engine_list_names_what_the_engine_group_names():
     would replace the platform's GPU build — so versions may float, but which
     packages it installs may not drift from pyproject.toml."""
     assert sorted(_requirement_names(REPO / "requirements-engine.txt")) == _group("engine")
+
+
+# --- active and archived: re-run what is current, keep the rest as the record --
+def test_every_scenario_declares_whether_it_is_active():
+    """Active scenarios are re-run when a metric changes; archived ones never are.
+    A scenario that says neither would be silently one or the other."""
+    yaml = pytest.importorskip("yaml")
+    bad = {p.name: yaml.safe_load(p.read_text(encoding="utf-8")).get("status")
+           for p in sorted((REPO / "scenarios").glob("*.yaml"))}
+    bad = {k: v for k, v in bad.items() if v not in ("active", "archived")}
+    assert not bad, f"scenarios without status: active|archived: {bad}"
+
+
+def test_every_registered_metric_has_a_version():
+    """A report records the version of each metric that produced it. A metric
+    with no version could change without any report ever looking behind."""
+    from verifai.core.run import METRIC_REGISTRY
+    from verifai.core.suite import METRIC_VERSIONS
+    assert set(METRIC_REGISTRY) == set(METRIC_VERSIONS)
+    assert all(isinstance(v, int) and v >= 1 for v in METRIC_VERSIONS.values())
+
+
+def test_the_registry_tells_the_showcase_the_current_metric_versions():
+    from verifai.core.suite import METRIC_VERSIONS
+    from verifai.export.model_registry import REGISTRY_PATH
+    reg = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    assert reg["metric_versions"] == METRIC_VERSIONS
+    for m in reg["models"]:
+        assert m["active"] == any(c["status"] == "active" for c in m["configurations"])
+
+
+def test_an_active_report_says_why_it_is_behind():
+    """Only three things make an active report out of date: it predates
+    versioning, a metric it ran has a newer version, or its weights changed."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from registry import out_of_date
+    reg = {"metric_versions": {"a.metric": 2, "b.metric": 1}}
+    model = {"sha256": "abc"}
+    current = {"metric_versions": {"a.metric": 2, "b.metric": 1}, "checkpoint": {"sha256": "abc"}}
+    assert out_of_date(current, reg, model) == []
+    older = {**current, "metric_versions": {"a.metric": 1, "b.metric": 1}}
+    assert len(out_of_date(older, reg, model)) == 1 and "version 1 here, 2 now" in out_of_date(older, reg, model)[0]
+    retrained = {**current, "checkpoint": {"sha256": "def"}}
+    assert out_of_date(retrained, reg, model) == ["the checkpoint has been retrained since"]
+    assert len(out_of_date({}, reg, model)) == 1, "a report predating versioning is behind, once"
+
+
+def test_archived_models_are_one_switch_away_never_gone():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.project import visible_models
+    models = [{"key": "a", "active": True}, {"key": "b", "active": False}]
+    assert [m["key"] for m in visible_models(models, False)] == ["a"]
+    assert [m["key"] for m in visible_models(models, True)] == ["a", "b"]
+
+
+def test_run_active_runs_exactly_the_active_scenarios():
+    pytest.importorskip("yaml")
+    sys.path.insert(0, str(REPO / "scripts"))
+    from run_active import active_scenarios
+    import yaml as _yaml
+    expected = sorted(p.name for p in (REPO / "scenarios").glob("*.yaml")
+                      if _yaml.safe_load(p.read_text(encoding="utf-8")).get("status") == "active")
+    assert sorted(p.name for p in active_scenarios(REPO / "scenarios")) == expected
+    assert expected, "at least one scenario must stay active"
+
+
+# --- every page renders -------------------------------------------------------
+def _render_page(params):
+    """Run one page function the way st.navigation would, with its route set."""
+    import sys as _sys
+    import importlib as _il
+    import streamlit as _st
+    _sys.path.insert(0, "showcase")
+    page = params.pop("_page")
+    for key, value in params.items():
+        _st.session_state[key] = value
+    _il.import_module(f"views.{page}").page()
+
+
+@pytest.mark.parametrize("params", [
+    {"_page": "overview"},
+    {"_page": "project", "project": "Skin lesion classification"},
+    {"_page": "model", "model": "skin_cancer_isic"},
+    {"_page": "model", "model": "skin_cancer_focal"},
+    {"_page": "report", "run": "skin_cancer_isic"},
+    {"_page": "report", "run": "skin_cancer"},
+    {"_page": "compare"},
+    {"_page": "compare", "model": "skin_cancer_isic"},
+    {"_page": "compare", "lineage": "ResNet18 · clean split"},
+], ids=lambda p: "-".join(str(v) for v in p.values()))
+def test_every_page_renders_without_an_exception(params, monkeypatch):
+    """The unit tests cover the helpers; this covers the pages that call them.
+    A broken call inside a page — an argument slipped into the wrong bracket —
+    passed every other test and crashed the whole comparison page."""
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    monkeypatch.chdir(REPO)
+    at = AppTest.from_function(_render_page, args=(dict(params),), default_timeout=120)
+    at.run()
+    assert not at.exception, [e.value for e in at.exception]
+
+
+# --- M2: baselines and the findings strip ---------------------------------------
+def test_a_claim_is_made_in_whichever_direction_the_interval_excludes_the_reference():
+    """Symmetric in good and bad news: below chance is as established as above it."""
+    from verifai.metrics import _baseline as B
+    above = B.membership_inference({"mia_auc": 0.6, "mia_auc_ci": [0.55, 0.65]})
+    below = B.membership_inference({"mia_auc": 0.4, "mia_auc_ci": [0.35, 0.45]})
+    spans = B.membership_inference({"mia_auc": 0.52, "mia_auc_ci": [0.48, 0.56]})
+    assert above["cleared"] and "above chance" in above["claim"]
+    assert below["cleared"] and "below chance" in below["claim"]
+    assert not spans["cleared"] and spans["claim"] is None, "an interval spanning 0.5 claims nothing"
+
+
+def test_accuracy_is_compared_with_always_answering_the_most_common_class():
+    from verifai.metrics import _baseline as B
+    value = {"accuracy": 0.8, "accuracy_ci": [0.78, 0.82], "n": 100,
+             "per_class": {"common": {"support": 70}, "rare": {"support": 30}}}
+    b = B.classification(value)
+    assert b["kind"] == "chance" and b["value"] == 0.7 and b["cleared"]
+    assert "common" in b["basis"]
+
+
+def test_an_unreached_ideal_is_published_as_a_gap_never_as_a_claim():
+    """Every model changes some answers under noise; 'less than perfect' would be
+    established for all of them and say nothing."""
+    from verifai.metrics import _baseline as B
+    b = B.corruption({"mean_stability": 0.76})
+    assert not b["cleared"] and b["claim"] is None and b["gap"] == 0.24
+
+
+def test_the_strip_holds_only_measured_findings_that_clear_in_pillar_order():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import established
+
+    def f(pillar, verdict, cleared):
+        return {"pillar": pillar, "verdict": verdict,
+                "details": {"baseline": {"cleared": cleared, "claim": "x", "kind": "chance", "basis": "b"}}}
+    findings = [f("privacy", "measured", True), f("integrity", "measured", True),
+                f("fairness", "insufficient", True), f("robustness", "measured", False)]
+    assert [x["pillar"] for x in established(findings, "measured")] == ["integrity", "privacy"]
+    assert established(findings, "invalid") == [], "nothing is established on a contaminated split"
+    assert established([{"pillar": "performance", "verdict": "measured", "details": {}}], "measured") is None, \
+        "a report predating baselines has no strip, rather than an empty one"
+
+
+def test_every_finding_in_a_current_active_report_carries_a_baseline():
+    """The runner attaches one to every finding; a current active report without
+    one means a metric is missing from BY_FINDING."""
+    from verifai.core.suite import METRIC_VERSIONS
+    from verifai.metrics._baseline import BY_FINDING
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text("utf-8"))
+    active = [c["scenario"] for m in reg["models"] for c in m["configurations"] if c["status"] == "active"]
+    for scen in active:
+        report = json.loads((REPO / "showcase/artifacts" / scen / "report.json").read_text("utf-8"))
+        if report["meta"].get("metric_versions") != {k: METRIC_VERSIONS[k] for k in report["meta"].get("metric_versions", {})}:
+            continue                     # behind the current metrics: the app says so
+        for finding in report["findings"]:
+            assert finding["metric"] in BY_FINDING, f"{scen}: no baseline function for {finding['metric']}"
+            assert "baseline" in finding["details"], f"{scen}: {finding['metric']} has no baseline"
+
+
+def test_the_random_control_moves_the_region_without_changing_it():
+    """The control may differ from the highlight in where it is and nothing else."""
+    np = pytest.importorskip("numpy")
+    from verifai.metrics.explainability.gradcam import _shifted
+    mask = np.zeros((40, 60), dtype=bool); mask[5:15, 10:30] = True
+    moved = _shifted(mask, np.random.default_rng(0))
+    assert moved.shape == mask.shape and moved.sum() == mask.sum()

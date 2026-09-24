@@ -233,7 +233,14 @@ flowchart TB
 declare — a checkpoint, identified by its content hash — with its provenance from the trainer's
 record and its configurations, whether or not any of them has run. It stores no evaluation
 status and no score: whether a configuration is evaluated is decided by whether its folder
-below exists. Written by `verifai/export/model_registry.py`.
+below exists. Written by `verifai/export/model_registry.py`. Each configuration carries its
+`status` (`active` or `archived`), each model whether any configuration is active, and the file
+carries the current version of every metric.
+
+Every `report.json` records, in `meta`, the `metric_versions` and the `checkpoint` (path and
+content hash) it was produced with. Set against the registry, that is how the app tells a current
+report from one a metric change or a retrain has overtaken. Reports from before 2026-09-24 record
+neither, and say so.
 
 The app lists any directory containing **both** `card.json` and `report.json`. `card.json`
 carries the tile metadata (`name`, `emoji`, `domain`, `dataset`, `description`, `hf_url`,

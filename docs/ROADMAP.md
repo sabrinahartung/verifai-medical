@@ -39,7 +39,8 @@ Four things have to become true for that:
    model must be trained first and the data is here.* Both end in the same report.
 4. **An interface a reader can follow.** Built on `dev` (2026-09-24) — projects, models
    and their configurations in place of twenty-four tiles that expected a reader to know
-   what a lineage was — and public once it is released to `main` ([M1](#milestones)).
+   what a lineage was — public since [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0)
+   at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/).
 
 What does **not** change: the engine runs offline and writes static artifacts, the
 Streamlit app reads them, the public deploy stays free and always-on, and no number
@@ -106,11 +107,12 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 |---|---|---|---|
 | ✅ | **Interface** · 2026-09-19 → 24 | Projects → models → a configuration's report; the report laid out for a first-time reader; the comparison turned around; the model registry. [UI/UX design](ui-ux-design.md) has the detail | Phase E ahead of Phase A, deliberately: every later phase ends on screen, and the screen could not yet say what a model was |
 | ✅ | **Reproducible tooling** · 2026-09-24 | uv, a lock reproducing the environment every artifact came from, CI on every pull request into `dev` | results meant to be recomputable were produced in the least reproducible part of the repository — see [Tooling](#tooling-moved-to-uv-done-2026-09-24) |
-| **M1** | **Release 1** — `dev` → `main` | the public showcase gets both of the above | the public demo still shows the old twenty-four-tile gallery and the sample fixture. No code. **Owed first:** confirm Streamlit Community Cloud runs Python ≥ 3.12, which the now-pinned `showcase/requirements.txt` needs |
-| **M2** | **The findings strip** | `details["baseline"]` on the six metrics; the Grad-CAM verdict no longer hardcoded; the strip on the report, ordered by strength of evidence; the 23 reports backfilled from their stored values where that is honest, re-run where it is not; each report recording the checkpoint hash it was scored against, so a stale evaluation becomes detectable | fully designed ([the settled ordering](ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is)), its slot already placed, and the last large piece of the report. Nothing in it waits on Phase A |
-| **M3** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
-| **M4** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
-| M5+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
+| ✅ | **M1 — Release 1** · 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): both of the above, public at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/) and on the docs site | the public demo still showed the old twenty-four-tile gallery and the sample fixture. Streamlit Cloud's Python version was confirmed ≥ 3.12 before the merge, as the pinned `showcase/requirements.txt` needs |
+| ✅ | **M2 — The findings strip** · 2026-09-25 | Every finding carries `details["baseline"]` — an ideal, chance, or a control measured in the same run — and the report opens with what cleared it, in pillar order. Grad-CAM scores every test image against a random-region control. Scenarios are **active** (re-run when a metric changes, `scripts/run_active.py`) or **archived** (the record, frozen); metrics carry versions and reports record them and their checkpoint, so a report left behind says so | a backfill of all 23 reports was planned; archiving made it unnecessary — only the two active configurations were re-run, and they reproduced every other published value exactly |
+| **M3** | **A usability pass** | the interface reworked from a reader's point of view, starting with the report: *What this evaluation established* and *At a glance* both list every pillar, which reads as repetition — they become one card per pillar, in fixed order, carrying its status, its result and, where it applies, what it established and against which reference. Then whatever else a walkthrough finds unintuitive | raised on review of M2 (2026-09-25). Before Phase A because M4 and M5 put new things on screen — a coverage map, access badges, *not applicable* states, the integrity-gate checks, the run pages — and they should land in the reworked layout rather than be built into this one and reworked after. A view change only: the references and the reports stay as they are |
+| **M4** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
+| **M5** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
+| M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
 **Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). One item
 sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
@@ -163,6 +165,8 @@ product, not a gap in it.
 | **9** A model registry | 2026-09-24 | a model is its **checkpoint, identified by content hash** — `model.id` named three checkpoints in one direction and one checkpoint answered to five ids in the other. 15 models, 23 configurations; status derived from which reports exist, never stored | `verifai/export/model_registry.py` |
 | **10** The interface | 2026-09-24 | project → model → configuration's report in place of twenty-four tiles; each finding's explanation open, in a fixed order; an unverified split holding the whole report; the comparison with runs as rows; one name per configuration on every page | [UI/UX design](ui-ux-design.md) · PR #1 |
 | **11** Reproducible tooling | 2026-09-24 | uv with a lock reproducing the artifacts' environment version for version; three undeclared imports declared; CI on pull requests into `dev`, with twenty showcase tests that had always been skipped now run | [Tooling](#tooling-moved-to-uv-done-2026-09-24) · PR #2 |
+| **12** First release | 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): the interface and the tooling, public — the app at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/), the docs on GitHub Pages | PR #4 |
+| **13** The findings strip | 2026-09-25 | every finding compared with a stated reference; the report opens with what cleared it, in pillar order. Scenarios are active or archived, metrics versioned, and re-running the two active ones reproduced all 274 other published values exactly | `verifai/metrics/_baseline.py` · `verifai/core/suite.py` |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -192,13 +196,10 @@ Unfinished, and still ranked by what it would establish:
       every manifest row and feed no model. The one untested lever that adds *signal*
       rather than parameters — and it makes subgroup behaviour a design choice rather
       than an artefact, which is worth stating up front.
-- [ ] **Give Grad-CAM a sample worth averaging.** `explainability/gradcam.py` scores
-      `list(dataset)[:gradcam_max_images]` with a default of 7 that no scenario overrides, on
-      a manifest the loader sorts — so on the 1,493-image run the published faithfulness is a
-      mean over the first seven filenames, six of them nevi. Stratify by class, raise *n* to
-      what the compute allows, and add the random-attribution control
-      [[42]](references.md#ref-42): faithfulness 0.3 means nothing until it is set against
-      what a random highlight scores under identical conditions.
+- [x] **Give Grad-CAM a sample worth averaging** — done 2026-09-25 (metric version 2). It scored
+      the first seven filenames of a sorted manifest, six of them nevi. It now scores every test
+      image against a random-region control [[42]](references.md#ref-42): on the ISIC model the
+      highlight costs 0.192 [0.178–0.205] more confidence than a random region of the same size.
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97
@@ -314,8 +315,8 @@ checkpoint is missing, then evaluates and exports.
 ### Phase E — the interface
 
 !!! success "Largely done, 2026-09-24 — status per item below"
-    Built on `dev` and released with [M1](#milestones). The detailed record, and the steps
-    still open, are in [UI/UX design → Build order](ui-ux-design.md#build-order).
+    Released in v0.1.0 ([M1](#milestones)). The detailed record, and the steps still open,
+    are in [UI/UX design → Build order](ui-ux-design.md#build-order).
 
 *As planned:* the app was one 915-line file routed through `st.session_state` and
 `st.rerun()`, and its front page was twenty-four runs deep.
@@ -344,7 +345,7 @@ checkpoint is missing, then evaluates and exports.
 - ◐ *Holds for all six metrics; not yet enforced for a seventh.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
   a reader sees whether it is a *good* number rather than only what it is. A metric that returns
   a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
-- ◐ *Placeholder pages only; filled by [M4](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
+- ◐ *Placeholder pages only; filled by [M5](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
   for review → pick a test set → preflight → run → link to the new report — that
   appears only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`,
   imported lazily so the public path never touches it. `showcase/requirements.txt`
@@ -828,12 +829,10 @@ landed recorded first. Day-to-day use is in [Development](development.md#environ
   it pointed at check the showcase's *imports*, not `showcase/requirements.txt`. One now reads the
   file and the group both.
 
-**Still to check, before the first release to `main`.** `showcase/requirements.txt` is now
-pinned — Streamlit 1.63.0, pandas 3.0.5, numpy 2.5.2 among them — where it used to let pip pick.
-Those pins were resolved for Python ≥ 3.12 (`requires-python`), and on Streamlit Community Cloud
-the Python version is chosen in the app's settings at deploy time — not visible from this
-repository. Confirm it before `dev`
-reaches `main`, which is what deploys.
+**Checked before the first release.** `showcase/requirements.txt` became pinned — Streamlit
+1.63.0, pandas 3.0.5, numpy 2.5.2 among them — where it used to let pip choose, and those
+pins were resolved for Python ≥ 3.12. Streamlit Community Cloud's Python version, set in the
+app's settings rather than the repository, was confirmed before v0.1.0 was merged.
 
 ??? note "The plan as written"
     **Why.** The dependencies were declared in four places — `pyproject.toml`,

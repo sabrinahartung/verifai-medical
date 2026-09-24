@@ -113,10 +113,18 @@ ones — a real but small separation, landing in the "low risk" band.
 
 ## Explainability
 
-Mean deletion faithfulness **0.45** over 7 Grad-CAM overlays: masking the highlighted region
-costs the predicted class 45 percentage points of confidence on average, which puts it in
-the "partly faithful" band. Reported without a threshold — there is no defensible universal
-value for "faithful enough" — and 7 overlays is an illustration rather than a measurement.
+**Since metric version 2 (2026-09-25), on the active ISIC 2019 model over all 1,493 test
+images:** hiding the region Grad-CAM highlights lowers the model's confidence by **0.316** on
+average; hiding a region of the same size and shape placed at random lowers it by **0.124**.
+The difference, **0.192 [0.178–0.205]**, lies well above zero: the model relies on the
+region the explanation shows, rather than on anything a random patch would also have removed.
+That says where the model looked, not whether it looked for the right reason.
+
+*The record of the first clean-split run, kept as it was measured:* mean deletion faithfulness
+**0.45** over 7 Grad-CAM overlays — masking the highlighted region cost the predicted class 45
+percentage points of confidence on average, then read against a "partly faithful" band. Seven
+overlays, chosen as the first seven filenames, were an illustration rather than a measurement,
+and the bands were cut-offs nobody could justify; both are why version 2 exists.
 
 ## Experiment 1 — a cost-sensitive decision rule
 

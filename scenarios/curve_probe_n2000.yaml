@@ -43,6 +43,7 @@ model:
 name: curve_probe_n2000
 label: "linear probe, n=2,000"
 project: "Skin lesion classification"
+status: archived
 sample_size: null
 seed: 42
 training:

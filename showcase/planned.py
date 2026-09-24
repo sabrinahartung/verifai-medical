@@ -18,15 +18,6 @@ Filling one in means deleting its entry here and adding the real component.
 from __future__ import annotations
 
 PLANNED: dict[str, dict[str, str]] = {
-    # ---- model page ---------------------------------------------------------
-    "stale_status": {
-        "title": "Evaluated on an older checkpoint",
-        "shows": "which reports were scored against weights that have since been "
-                 "retrained — evaluated, but no longer of this model",
-        "blocked_by": "a report does not record the checkpoint hash it was scored "
-                      "against; one field in report.json's meta, written by the runner",
-        "phase": "ui-ux-design.md#what-step-2-landed",
-    },
     # ---- report -------------------------------------------------------------
     "provenance_strip": {
         "title": "Provenance strip",
@@ -53,14 +44,6 @@ PLANNED: dict[str, dict[str, str]] = {
                       "modalities and access are declared, so the denominator "
                       "would have to be invented",
         "phase": "ROADMAP.md#what-takes-its-place",
-    },
-    "findings_strip": {
-        "title": "What this evaluation established",
-        "shows": "the findings whose interval clears a stated reference, ordered "
-                 "by strength of evidence and never by how good the number is",
-        "blocked_by": "details[\"baseline\"] on each metric — `measured` currently "
-                      "means three different things across the six",
-        "phase": "ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is",
     },
     "impact": {
         "title": "Why it matters",

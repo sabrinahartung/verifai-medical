@@ -295,6 +295,30 @@ Investigation
     on a project's models, not a folder: the ISIC model has configurations in both the internal
     test and the external validation, so it belongs to both.
 
+Active and archived
+:   An **active** configuration is kept current: when a metric changes it is evaluated again. An
+    **archived** one is the record of an experiment — kept, still readable, never re-run. Archived
+    does not mean wrong: its numbers were measured correctly with the metrics of their day; it
+    only lacks what was added since. Here, the ISIC model is active on its internal test and on
+    Derm7pt; the learning curve, focal loss and the other experiments are archived.
+
+Reference (baseline)
+:   What a number is compared with, so a reader can tell whether it says anything: an **ideal**
+    (nothing shared between the splits), **chance** (what always answering "nevus" would score —
+    0.676 on the internal test), or a **control** measured in the same run (a random region the
+    size of Grad-CAM's highlight). Never an authored "good enough" threshold.
+
+Established
+:   A result whose metric had enough data *and* whose interval clears its reference — in either
+    direction. On the ISIC model's internal test, five of six pillars establish something; its
+    stability of 76% does not, because it has an ideal (100%) that no model reaches, not a claim.
+    The report's first section lists only these, in pillar order.
+
+Metric version
+:   A number each metric carries, raised whenever what it reports changes. Every report records
+    the versions that produced it, so an active report produced by an older version can say it is
+    behind — without anyone re-running the twenty-one archived experiments.
+
 Model registry
 :   The list of every declared model and its configurations, whether or not any of them has been
     evaluated yet, written from the scenarios into `model_registry.json`. It records what each

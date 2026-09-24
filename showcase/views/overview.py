@@ -135,7 +135,9 @@ def _project_card(project: dict, registry: dict, evaluated: set[str], cards_by_i
     emoji = max(set(emojis), key=emojis.count) if emojis else "🧠"
     with st.container(border=True):
         st.markdown(f"#### {emoji} {project['name']}")
-        st.caption(f"{len(models)} models · {configs} configurations")
+        n_active = sum(1 for m in models if m.get("active"))
+        st.caption(f"{n_active} active and {len(models) - n_active} archived models · "
+                   f"{configs} configurations")
         # Counts, not a colour: this says what exists, never whether it is good.
         counts = [f"**{states.count(s)}** {STATUS_LABEL[s].lower()}"
                   for s in ("evaluated", "partly", "not_evaluated") if states.count(s)]

@@ -26,12 +26,15 @@ uv run python scripts/run_scenario.py scenarios/skin_cancer.yaml
 
 # view the showcase (reads only precomputed artifacts)
 uv run streamlit run showcase/app.py
+
+# after a metric changes: re-run only the active scenarios (minutes, not all 23)
+uv run python scripts/run_active.py
 ```
 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (107 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (128 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -161,8 +164,10 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   **project → model → configuration's report**: the overview lists projects from the model
   registry, a project lists its models with their status, a model page lists its configurations
   grouped by evaluation set. The sidebar holds only Overview and Compare runs; the drill-down
-  pages are hidden and located by a breadcrumb. Reports no registered model claims (the demo
-  fixture) are listed separately, never dropped. Planned-but-unbuilt components live in
+  pages are hidden and located by a breadcrumb. Reports no registered model claims (a
+  placeholder fixture, or a scenario since deleted) are listed separately, never dropped. Archived models sit behind a switch on the
+  project page; a report says when it is archived, or when it is active but behind the current
+  metrics or weights. Planned-but-unbuilt components live in
   `planned.py` and render only under `VERIFAI_SKELETON=1` — never on the public deploy; a test
   asserts each is placed on some page. Without a registry the overview falls back to the
   earlier gallery, which is sectioned
@@ -188,6 +193,13 @@ them: `"Skin lesion classification"`). The overview groups models by it. All con
 one checkpoint must agree on it; the registry builder raises if they do not. Like `card.group`
 it is presentation: it never widens what may be compared.
 
+Every scenario also declares `status: active | archived`. **Active** configurations are kept
+current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
+experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
+day. Archived is not *wrong*; it lacks what was added since. Today two are active — the ISIC
+model on its internal test and on Derm7pt "as deployed" — and twenty-one archived. Re-running
+those two reproduced all 274 published values exactly, which is what makes freezing the rest safe.
+
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed
 straight through to `card.json`.
@@ -195,7 +207,13 @@ To list a model *before* evaluating it, run `scripts/build_model_registry.py`; i
 not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
-`METRIC_REGISTRY`, list its id under `metrics:` in the scenario. To be rendered, return a chart
+`METRIC_REGISTRY`, give it a version in `verifai/core/suite.py` (a test fails without one) and a
+reference function in `verifai/metrics/_baseline.py::BY_FINDING` — what its number is compared
+with, and the claim when the interval clears it; the report's first section lists only those. List its
+id under `metrics:` in the scenario. **Bump that version whenever what the metric reports
+changes** — a new sample, a field, a fixed bug, a verdict's wording — then run
+`scripts/run_active.py`. Each report records the versions and the checkpoint hash that produced it,
+so an active report left behind says so; an unbumped version makes a stale report look current. To be rendered, return a chart
 spec in `Finding.details["chart"]` (optionally `["chart2"]`); `showcase/app.py::render_chart`
 supports `kind` of `bar` | `line` | `heatmap` | `scale` | `images` and falls back to `st.json`.
 Adding a new chart kind means touching `render_chart` — prefer reusing an existing kind.
@@ -243,7 +261,8 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
   the one missing 82 of them a *pass*, because under-calling a rare class raises accuracy.
 - Use `insufficient` until the sample supports a claim (see the `n >= 30` gate in
   `performance/classification.py`, the `min(populated) >= 10` per-bin gate in
-  `fairness/skin_tone_ita.py`), `unavailable` when the metric cannot be computed at all, and
+  `fairness/skin_tone_ita.py`, the same `n >= 30` for Grad-CAM), `unavailable` when the metric
+  cannot be computed at all, and
   `invalid` only for a broken precondition — today just a contaminated split, which makes the
   *measurement* unusable rather than the model bad. `showcase/app.py::normalise_verdict` maps the
   retired pass/warn/fail words so artifacts written before the change still render.

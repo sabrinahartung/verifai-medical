@@ -66,3 +66,21 @@ def fmt(value: float | None, ci: tuple[float, float] | None) -> str:
     if value is None:
         return "n/a"
     return f"{value:.3f}" + (f" [{ci[0]:.2f}–{ci[1]:.2f}]" if ci else "")
+
+
+def mean_ci(values: list[float], z: float = Z95) -> tuple[float, float] | None:
+    """Normal-approximation interval for a mean — for the paired differences
+    Grad-CAM's faithfulness is compared on. Each image is scored against itself
+    (its highlight masked, then a same-sized random region of it masked), so the
+    per-image differences are what vary, and their mean is what is claimed.
+
+    The approximation is sound at the n it is used on (hundreds of images) and
+    is not claimed below 30 anyway: the metric's verdict is `insufficient` there.
+    """
+    n = len(values)
+    if n < 2:
+        return None
+    mean = sum(values) / n
+    var = sum((v - mean) ** 2 for v in values) / (n - 1)
+    half = z * (var / n) ** 0.5
+    return (round(mean - half, 4), round(mean + half, 4))

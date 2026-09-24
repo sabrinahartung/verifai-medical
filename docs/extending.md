@@ -20,6 +20,7 @@ flowchart LR
 name: my_model
 label: "My model"                # heads its column in the comparison table
 project: "Skin lesion classification"   # which problem; groups models in the overview
+status: active                   # active: re-run as metrics change · archived: kept as the record
 domain: image
 seed: 42
 
@@ -90,8 +91,9 @@ flowchart TB
     B["2 · register in METRIC_REGISTRY"]
     C["3 · list the id under metrics: in a scenario"]
     D["4 · return details['explain'] + details['chart']"]
-    A --> B --> C --> D
-    D --> E["renders in the dashboard<br/><b>no app code changed</b>"]
+    V["5 · give it a version in verifai/core/suite.py<br/>and bump it whenever its output changes"]
+    A --> B --> C --> D --> V
+    V --> E["renders in the dashboard<br/><b>no app code changed</b>"]
     style E fill:#CDE8D5,stroke:#2E9E5B,color:#1a1a2e
 ```
 
@@ -205,6 +207,7 @@ of them instead, so a new metric will be *done* when every line below is true:
 | record the **method and configuration** that produced its number | the `Finding.value` | an attribution method, an attack, a perturbation budget, a normalisation flag — each changes the result, so each is part of it. Two runs are only comparable when these match |
 | declare a `version` | its registry entry | a changed definition must not silently produce false deltas against older snapshots — the comparison view refuses across versions, exactly as it does across evaluation manifests |
 | declare a `cost` | its registry entry | forward passes per sample, so `preflight` can estimate a run before it starts rather than after |
+| compute its **reference** — `details["baseline"]` | a function in `verifai/metrics/_baseline.py`, listed in `BY_FINDING` | the report's first section lists only what clears its reference; a metric with no function publishes `None` and can establish nothing. The runner attaches it, so no metric can forget it or claim what its own numbers do not carry |
 | return `details["better"]` | the `Finding` | the comparison view ranks only on declared directions, and never infers one from a name — `mia_auc` is lower-is-better while an AUC normally is not |
 | return `details["explain"]` with `what`, `how`, `limits`, `impact` | the `Finding` | the dashboard's wording ships with the metric, not with the app |
 | return a chart spec in `details["chart"]` | the `Finding` | a bare number tells a non-specialist nothing. A single scalar gets `kind: "scale"` so the reader sees whether it is a *good* number, not only what it is |

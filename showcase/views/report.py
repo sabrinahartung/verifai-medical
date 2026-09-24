@@ -6,8 +6,8 @@ from that (docs/ui-ux-design.md, "Two settled decisions"):
 
 * **The first screen says what was found.** The "At a glance" list is every
   pillar's result in the engine's own words, in fixed pillar order, each a link
-  down to its section. Fixed order, not ranked: ordering by strength of evidence
-  is the findings strip's job, and it needs a baseline field no metric emits yet.
+  down to its section. Above it, *What this evaluation established* lists only
+  the findings whose interval clears a stated reference, also in pillar order.
 * **Depth by scrolling, never by clicking.** Each finding's five-question box is
   rendered open; only the reference definitions sit behind a click.
 
@@ -22,7 +22,7 @@ import json
 import streamlit as st
 
 from catalog import PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER, normalise_verdict
-from registry import decision_rule, load_registry, model_of_scenario
+from registry import decision_rule, is_archived, load_registry, model_of_scenario, out_of_date
 from render import breadcrumb, placeholder, render_finding
 from routing import go_to_model, go_to_overview, go_to_project
 
@@ -59,6 +59,28 @@ def _integrity_banner(state: str, finding: dict | None):
         st.warning(f"**Read everything below as provisional.** {said}", icon=icon)
 
 
+def _status_banner(card: dict, report: dict, registry: dict | None, model: dict | None):
+    """Say whether this report is current, before the reader reads a number.
+
+    Archived is not a warning — the numbers were measured correctly with the
+    metrics of their day — so it gets a neutral note, said once. An *active*
+    report that a metric or a retrain has overtaken gets a warning, with the
+    reasons, because it claims to be current and no longer is.
+    """
+    when = (report.get("created_at") or "")[:10] or "an earlier date"
+    if is_archived(registry, card["id"]):
+        st.info(f"**Archived.** Evaluated on {when} with the metrics of that time and kept as "
+                f"the record of what was measured then. It is not re-run as the metrics change, "
+                f"so it may lack metrics added or improved since.", icon="📦")
+        return
+    reasons = out_of_date(report.get("meta") or {}, registry, model) if model else []
+    if reasons:
+        st.warning(f"**Behind the current metrics** — evaluated on {when}, and "
+                   + "; ".join(reasons)
+                   + ". Re-run the active configurations to bring it up to date: "
+                     "`uv run python scripts/run_active.py`.", icon="🔄")
+
+
 def _identity(card: dict, report: dict, model: dict | None, config: dict | None):
     meta = report.get("meta") or {}
     ev = meta.get("eval_set") or {}
@@ -77,6 +99,53 @@ def _identity(card: dict, report: dict, model: dict | None, config: dict | None)
                     + (f" ({n:,} images)" if n else ""))
     if card.get("hf_url"):
         st.markdown(f"[🤗 Model on Hugging Face]({card['hf_url']})")
+
+
+def established(findings: list[dict], integrity: str) -> list[dict] | None:
+    """The findings this evaluation established, in fixed pillar order.
+
+    Established means two things at once: the metric's own verdict is
+    `measured` — the sample supports reporting it — and its baseline's interval
+    clears the stated reference. Ordered by pillar, never by how good or bad
+    the number is: a clean split and a 33-point fairness gap stand side by side
+    because both are supported, not because one is worse.
+
+    `None` when no finding carries a baseline at all — a report from before
+    baselines existed, which has nothing to say here rather than nothing
+    established. And nothing is established on a contaminated split.
+    """
+    if integrity == "invalid":
+        return []
+    if not any("baseline" in (f.get("details") or {}) for f in findings):
+        return None
+    order = {p: i for i, p in enumerate(PILLARS)}
+    hits = [f for f in findings
+            if normalise_verdict(f.get("verdict"), f.get("pillar")) == "measured"
+            and ((f.get("details") or {}).get("baseline") or {}).get("cleared")]
+    return sorted(hits, key=lambda f: order.get(f.get("pillar"), len(order)))
+
+
+REFERENCE_KIND = {"ideal": "against its ideal", "chance": "against chance",
+                  "control": "against a control measured in the same run"}
+
+
+def _findings_strip(findings: list[dict], integrity: str):
+    hits = established(findings, integrity)
+    if hits is None:
+        return                 # predates baselines; the archived banner already says so
+    st.subheader("What this evaluation established")
+    st.caption("Only results whose interval clears a stated reference — an ideal, chance, or a "
+               "control measured in the same run. Ordered by pillar, never by how good or bad "
+               "the number is.")
+    if not hits:
+        st.markdown(":gray[Nothing in this report clears its reference at this sample size.]")
+        return
+    with st.container(border=True):
+        for f in hits:
+            b = f["details"]["baseline"]
+            p = f["pillar"]
+            st.markdown(f"**[{p.capitalize()}](#{p})** — {b['claim']}")
+            st.caption(f"Compared {REFERENCE_KIND.get(b['kind'], '')}: {b['basis']}.")
 
 
 def _at_a_glance(by_pillar: dict[str, list]):
@@ -124,6 +193,7 @@ def dashboard(card: dict):
     # the comparison table, the breadcrumb just above — so it is the title too.
     st.title(f"{card.get('emoji', '🧠')} {config['label'] if config else card['name']}")
     _identity(card, report, model, config)
+    _status_banner(card, report, registry, model)
     if card.get("sample"):
         st.warning("This view shows SAMPLE data — placeholder numbers, not an evaluation.")
     placeholder("export_card", compact=True)
@@ -141,7 +211,7 @@ def dashboard(card: dict):
                    f"intervals are reported, and what counts as good enough is your call.")
 
     placeholder("coverage_map")
-    placeholder("findings_strip")
+    _findings_strip(findings, state)
 
     by_pillar: dict[str, list] = {p: [] for p in PILLARS}
     for f in findings:
