@@ -628,7 +628,13 @@ Four rules:
 
 ## Build order
 
-!!! note "Steps 0–3, 5a and 6 are done and on `dev`; what remains moved into the milestones"
+!!! note "Steps 0–6 are done; what remains moved into the milestones"
+    Steps **4** and **5b** — the reference on every finding and the findings strip — landed with
+    milestone M2 on 2026-09-25. Grad-CAM's verdict was not made "insufficient" as planned here:
+    it now scores every test image against a random-region control, which removed the problem
+    instead of labelling it.
+
+!!! note "How the open steps were reassigned"
     Steps **4** and **5b** — the baseline field and the findings strip — are milestone
     [M2](ROADMAP.md#milestones). Step **7**'s studio pages are filled by
     [M4](ROADMAP.md#milestones), and **8+** by the phases after it. This table is kept as the

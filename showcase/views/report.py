@@ -6,8 +6,8 @@ from that (docs/ui-ux-design.md, "Two settled decisions"):
 
 * **The first screen says what was found.** The "At a glance" list is every
   pillar's result in the engine's own words, in fixed pillar order, each a link
-  down to its section. Fixed order, not ranked: ordering by strength of evidence
-  is the findings strip's job, and it needs a baseline field no metric emits yet.
+  down to its section. Above it, *What this evaluation established* lists only
+  the findings whose interval clears a stated reference, also in pillar order.
 * **Depth by scrolling, never by clicking.** Each finding's five-question box is
   rendered open; only the reference definitions sit behind a click.
 

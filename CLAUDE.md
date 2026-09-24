@@ -34,7 +34,7 @@ uv run python scripts/run_active.py
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (113 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (128 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -207,7 +207,9 @@ To list a model *before* evaluating it, run `scripts/build_model_registry.py`; i
 not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
-`METRIC_REGISTRY`, give it a version in `verifai/core/suite.py` (a test fails without one), list its
+`METRIC_REGISTRY`, give it a version in `verifai/core/suite.py` (a test fails without one) and a
+reference function in `verifai/metrics/_baseline.py::BY_FINDING` — what its number is compared
+with, and the claim when the interval clears it; the report's first section lists only those. List its
 id under `metrics:` in the scenario. **Bump that version whenever what the metric reports
 changes** — a new sample, a field, a fixed bug, a verdict's wording — then run
 `scripts/run_active.py`. Each report records the versions and the checkpoint hash that produced it,
@@ -259,7 +261,8 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
   the one missing 82 of them a *pass*, because under-calling a rare class raises accuracy.
 - Use `insufficient` until the sample supports a claim (see the `n >= 30` gate in
   `performance/classification.py`, the `min(populated) >= 10` per-bin gate in
-  `fairness/skin_tone_ita.py`), `unavailable` when the metric cannot be computed at all, and
+  `fairness/skin_tone_ita.py`, the same `n >= 30` for Grad-CAM), `unavailable` when the metric
+  cannot be computed at all, and
   `invalid` only for a broken precondition — today just a contaminated split, which makes the
   *measurement* unusable rather than the model bad. `showcase/app.py::normalise_verdict` maps the
   retired pass/warn/fail words so artifacts written before the change still render.
