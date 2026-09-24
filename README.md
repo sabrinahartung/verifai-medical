@@ -44,7 +44,7 @@ card.json, plots/ with Grad-CAM overlays). Runs on a laptop in seconds.
 > Tip: point `weights_path:` in `scenarios/skin_cancer.yaml` at your local `.pt` and even the
 > Hugging Face download goes away.
 
-**Showcase — take a look:**
+**The app — take a look:**
 
 ```bash
 uv run streamlit run showcase/app.py
@@ -62,8 +62,8 @@ verifai/            ← ENGINE (offline: local / Kaggle / Colab)
   core/             findings data model + runner + metric registry
   models/           domain adapters (image: ResNet18 from Hugging Face)
   datasets/         small, pinned subsets via manifests (reproducible)
-  metrics/          the pillars: performance / fairness / robustness / explainability / privacy
-  export/           findings -> static artifacts (JSON + plots)
+  metrics/          the pillars: integrity / performance / fairness / robustness / explainability / privacy
+  export/           findings -> static artifacts (JSON + plots), and the model registry
 
 data/
   examples/         7 real, labeled HAM10000 images (MVP sample)
@@ -73,8 +73,10 @@ scenarios/          one run = one YAML (e.g. skin_cancer.yaml)
 scripts/            run_scenario.py (CLI) + run_on_free_gpu.ipynb
 
 showcase/           SHOP WINDOW (deploys for free on Streamlit Community Cloud)
-  app.py            tile gallery -> click a model -> Plotly dashboard
-  artifacts/<id>/   one folder = one tile (card.json + report.json + plots/)
+  app.py            navigation: projects -> models -> a configuration's report; compare runs
+  views/            one module per page (overview, project, model, report, compare)
+  artifacts/model_registry.json   every declared model, evaluated or not
+  artifacts/<id>/   one folder = one evaluated configuration (card.json + report.json + plots/)
   requirements.txt  exported from uv.lock, deliberately LIGHT (free-tier friendly)
 ```
 
@@ -133,13 +135,15 @@ That is a deliberate design decision, not obfuscation:
 
 - [x] Engine + findings data model + runner + registry
 - [x] Image metrics implemented across **all pillars** (performance, fairness, robustness, explainability; privacy honestly marked as "needs the full run")
-- [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible
+- [x] Streamlit showcase: tile gallery → Plotly dashboard, auto-extensible (since replaced by the navigation below)
 - [x] Reproducible example sample (7 real HAM10000 images + manifest)
 - [x] **First real run** executed (`run_scenario.py`) → replace the SAMPLE tile with the real one (fixture removed 2026-09-24)
 - [x] Larger subset on a free GPU (solid fairness/privacy numbers)
 - [x] Deploy to Streamlit Community Cloud + short video
 - [x] Lesion-grouped split, leakage guard, uncertainty intervals, cost-sensitive decisions
 - [x] External validation on a second archive (Derm7pt) — the internal ranking inverts
+- [x] An interface a first-time reader can follow: projects → models → reports, every finding explained in the open, the comparison with runs as rows
+- [x] A reproducible environment: uv with a lock matching the one every result was produced in; CI on every pull request
 - [ ] Adapter contract + capability gating, so a metric skips with a reason instead of assuming pixels
 - [ ] Provenance & label-space preflight, for models whose training data we cannot inspect
 - [ ] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapters
