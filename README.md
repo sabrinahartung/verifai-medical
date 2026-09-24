@@ -1,6 +1,12 @@
 # VERIFAI Medical — Responsible-AI Evaluation
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://verifai-medical.streamlit.app/)
 [![tests & docs](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml)
+
+**Try it:** [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/) — every model evaluated so far, its reports
+and the comparison between them, in the browser. The app runs on Streamlit's free tier and sleeps
+when nobody has used it for a while; if it greets you with *"This app has gone to sleep"*, wake it
+and give it a minute.
 
 **Systematic, reproducible evaluation of medical AI models along the Responsible-AI pillars** —
 integrity, performance, fairness, robustness, explainability, privacy — with every number
@@ -15,10 +21,11 @@ arrives as a scenario file rather than a code change; making that true for *any*
 > This version turns the larger VERIFAI framework into a **file-based, reproducible, free-to-run**
 > form: the (potentially heavy) evaluation runs *once* — locally on CPU for small samples, or on a
 > free GPU for large ones — and produces static **artifacts** (JSON + plots). A small Streamlit app
-> shows them interactively: **tiles → click → dashboard**. No server, no database, no running costs.
+> shows them interactively: **projects → models → reports**. No server, no database, no running costs.
 
-**Full documentation:** `mkdocs serve` (or `docs/`) — architecture, the data model, the
-pipeline, the full metric catalogue across the pillars, and the split-integrity story.
+**Full documentation:** [sabrinahartung.github.io/verifai-medical](https://sabrinahartung.github.io/verifai-medical/) — architecture, the
+data model, the pipeline, the full metric catalogue across the pillars, and the split-integrity
+story. Locally: `uv run mkdocs serve`.
 
 ---
 
