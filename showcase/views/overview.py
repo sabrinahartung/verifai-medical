@@ -55,7 +55,7 @@ def _lineage_card(lineage: str, members: list[dict], key: str):
 
 
 def gallery(cards: list[dict]):
-    st.title("VERIFAI — Responsible-AI Showcase")
+    st.title("VERIFAI Medical — Responsible-AI Evaluation")
     # Derived from PILLARS rather than written out: this line claimed "five pillars"
     # and then listed five of the six for as long as integrity had existed.
     st.caption("Pick a model — and see its analysis across every pillar: "
@@ -145,7 +145,7 @@ def _project_card(project: dict, registry: dict, evaluated: set[str], cards_by_i
 
 
 def projects_overview(registry: dict, cards: list[dict]):
-    st.title("VERIFAI — Responsible-AI Showcase")
+    st.title("VERIFAI Medical — Responsible-AI Evaluation")
     st.caption("Your models, grouped by the problem they solve. Open a project to see which "
                "models exist, which have been evaluated, and what each evaluation found.")
     _what_am_i_looking_at()

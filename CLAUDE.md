@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-VERIFAI Showcase: file-based Responsible-AI evaluation of medical AI models across six pillars
+VERIFAI Medical: file-based Responsible-AI evaluation of medical AI models across six pillars
 (integrity, performance, fairness, robustness, explainability, privacy), with a seventh — safety —
 planned for generative models. `docs/pillars.md` is the metric catalogue. Deliberately **no server, no DB**:
 a heavy offline *engine* run produces static artifacts (JSON + PNGs), and a light Streamlit

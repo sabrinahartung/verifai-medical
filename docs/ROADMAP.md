@@ -20,8 +20,8 @@ larger target. The history that motivates all of it is compressed into
 ## Where this is going
 
 Today VERIFAI evaluates **one problem** (skin lesions), with **one model adapter**
-(a torchvision `state_dict`), against **one modality** (images). Twenty-four artifact
-folders, all dermatology.
+(a torchvision `state_dict`), against **one modality** (images). Fifteen models in
+twenty-three configurations, all dermatology.
 
 The target is a **model-agnostic, domain-agnostic evaluation service for medical AI**:
 
@@ -37,8 +37,9 @@ Four things have to become true for that:
    metric catalogue expanded far beyond the six metrics that exist today.
 3. **Two honest entry states.** *The model is trained and ready to load*, or *the
    model must be trained first and the data is here.* Both end in the same report.
-4. **An interface a reader can follow.** Today's gallery shows all twenty-four runs
-   at once and expects you to know what a lineage is.
+4. **An interface a reader can follow.** Built on `dev` (2026-09-24) — projects, models
+   and their configurations in place of twenty-four tiles that expected a reader to know
+   what a lineage was — and public once it is released to `main` ([M1](#milestones)).
 
 What does **not** change: the engine runs offline and writes static artifacts, the
 Streamlit app reads them, the public deploy stays free and always-on, and no number
@@ -46,10 +47,12 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 
 ---
 
-## Where things stand (2026-09-16)
+## Where things stand (2026-09-24)
 
-**24 artifact folders, 82 contract tests, three evaluation sets.**
-[Current results](results.md) has the measurements; this is what they add up to.
+**23 artifact folders — 15 models in 23 configurations — 107 contract tests, three evaluation
+sets.** [Current results](results.md) has the measurements; this is what they add up to. The
+scientific picture below has not moved since 2026-09-16; what changed since is the interface
+and the tooling around it, recorded in [What has been built](#what-has-been-built).
 
 ### The four things that have been learned
 
@@ -91,6 +94,27 @@ It flags 82% of every lesion it sees and does not reach the sensitivity of answe
 collapses (0.657 → 0.385 here), the model has not preserved its skill — it has moved
 its operating point. A metric improving against the trend of every other metric is
 almost always an artefact. Read sensitivity next to specificity or PPV, never alone.
+
+---
+
+## Milestones
+
+The order the work is done in. The [platform plan](#the-platform-plan) describes *what* each
+phase is; this says *when*, and why in that order. Set 2026-09-24.
+
+| | Milestone | Delivers | Why in this position |
+|---|---|---|---|
+| ✅ | **Interface** · 2026-09-19 → 24 | Projects → models → a configuration's report; the report laid out for a first-time reader; the comparison turned around; the model registry. [UI/UX design](ui-ux-design.md) has the detail | Phase E ahead of Phase A, deliberately: every later phase ends on screen, and the screen could not yet say what a model was |
+| ✅ | **Reproducible tooling** · 2026-09-24 | uv, a lock reproducing the environment every artifact came from, CI on every pull request into `dev` | results meant to be recomputable were produced in the least reproducible part of the repository — see [Tooling](#tooling-moved-to-uv-done-2026-09-24) |
+| **M1** | **Release 1** — `dev` → `main` | the public showcase gets both of the above | the public demo still shows the old twenty-four-tile gallery and the sample fixture. No code. **Owed first:** confirm Streamlit Community Cloud runs Python ≥ 3.12, which the now-pinned `showcase/requirements.txt` needs |
+| **M2** | **The findings strip** | `details["baseline"]` on the six metrics; the Grad-CAM verdict no longer hardcoded; the strip on the report, ordered by strength of evidence; the 23 reports backfilled from their stored values where that is honest, re-run where it is not; each report recording the checkpoint hash it was scored against, so a stale evaluation becomes detectable | fully designed ([the settled ordering](ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is)), its slot already placed, and the last large piece of the report. Nothing in it waits on Phase A |
+| **M3** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
+| **M4** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
+| M5+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
+
+**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). One item
+sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
+the full run are nevi — because M2 is where Explainability's status on the report changes.
 
 ---
 
@@ -136,6 +160,9 @@ product, not a gap in it.
 | **6** Snapshots + comparison | 2026-09-10 | every run recorded with the evaluation manifest's **content hash**; the view *refuses* to plot runs scored on different rows or on a contaminated split | `verifai/export/artifacts.py` |
 | **7** Grouped gallery | 2026-09-10 | `card.group` / `card.lineage`; seven tiles became three cards. Presentation never widens comparability — asserted in tests | `showcase/app.py` |
 | **8** External validation | 2026-09-16 | Derm7pt, 1,003 cases, no retraining: **the internal ranking inverts** | [Experiment 7](results.md#experiment-7-the-first-numbers-not-measured-on-ham10000) |
+| **9** A model registry | 2026-09-24 | a model is its **checkpoint, identified by content hash** — `model.id` named three checkpoints in one direction and one checkpoint answered to five ids in the other. 15 models, 23 configurations; status derived from which reports exist, never stored | `verifai/export/model_registry.py` |
+| **10** The interface | 2026-09-24 | project → model → configuration's report in place of twenty-four tiles; each finding's explanation open, in a fixed order; an unverified split holding the whole report; the comparison with runs as rows; one name per configuration on every page | [UI/UX design](ui-ux-design.md) · PR #1 |
+| **11** Reproducible tooling | 2026-09-24 | uv with a lock reproducing the artifacts' environment version for version; three undeclared imports declared; CI on pull requests into `dev`, with twenty showcase tests that had always been skipped now run | [Tooling](#tooling-moved-to-uv-done-2026-09-24) · PR #2 |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -183,7 +210,8 @@ modelling one.
 
 ## The platform plan
 
-Eight phases. Phase A is the seam everything else plugs into and is built first.
+Nine phases, A to I. Phase A is the seam Phases B–D plug into; the order they are built in is
+set by [Milestones](#milestones) — which put Phase E first, for the reason given there.
 
 ### Phase A — the two contracts, and capability gating
 
@@ -285,23 +313,27 @@ checkpoint is missing, then evaluates and exports.
 
 ### Phase E — the interface
 
-The current app is one 915-line file routed through `st.session_state` and
-`st.rerun()`, and its front page is twenty-four runs deep.
+!!! success "Largely done, 2026-09-24 — status per item below"
+    Built on `dev` and released with [M1](#milestones). The detailed record, and the steps
+    still open, are in [UI/UX design → Build order](ui-ux-design.md#build-order).
 
-- **Navigation that matches the mental model:** use case → model → run, on
+*As planned:* the app was one 915-line file routed through `st.session_state` and
+`st.rerun()`, and its front page was twenty-four runs deep.
+
+- ✅ **Navigation that matches the mental model:** use case → model → run, on
   `st.navigation` / `st.Page` (Streamlit 1.63 is installed), which also gives URLs
   and a working back button.
-- Split `showcase/app.py` into `catalog.py`, `render.py` and
+- ✅ Split `showcase/app.py` into `catalog.py`, `render.py` and
   `views/{gallery,report,compare}.py`, keeping the public names importable from
   `showcase.app` so the existing tests keep passing.
-- **Archive.** `card.status: active | archived`, default `active`. Today that leaves
+- ↪ *Replaced by the model registry and supersession.* **Archive.** `card.status: active | archived`, default `active`. Today that leaves
   the ISIC model and its decision-rule siblings on the front page and files the eight
   learning-curve runs, focal, oversample and the ResNet50 probe behind an expander.
   Archiving is **presentation**: the comparison view still sees them, and an archived
   run scored on the same manifest must be *disclosed*, exactly as the lineage filter
   already must. New metrics get tested against the archived runs without
   recomputing the active one.
-- **A real explanation component, not an expander.** Every finding needs one consistent,
+- ✅ *except `explain.impact`, which no metric ships yet.* **A real explanation component, not an expander.** Every finding needs one consistent,
   visible info box answering five questions in the same order every time: **what was measured**,
   **what came out**, **why it matters**, **how to read the chart**, and **what this does not
   tell you**. Those map to `explain.what`, the finding's own `summary`, `explain.impact`,
@@ -309,10 +341,10 @@ The current app is one 915-line file routed through `st.session_state` and
   stays a renderer. Today the first two are inline and the rest are behind "How to read this
   chart", which buries the two that a non-specialist most needs. The reader this is aimed at has
   never seen a Responsible-AI report; a number with no box is a number they cannot use.
-- **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
+- ◐ *Holds for all six metrics; not yet enforced for a seventh.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
   a reader sees whether it is a *good* number rather than only what it is. A metric that returns
   a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
-- **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
+- ◐ *Placeholder pages only; filled by [M4](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
   for review → pick a test set → preflight → run → link to the new report — that
   appears only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`,
   imported lazily so the public path never touches it. `showcase/requirements.txt`
