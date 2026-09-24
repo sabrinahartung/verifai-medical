@@ -40,8 +40,8 @@ from catalog import (ART, PILLARS, PILLAR_QUESTION, VERDICT,  # noqa: F401,E402
                      normalise_verdict, run_label)
 from render import (PILLAR_COLOR, SKELETON, entries_for,  # noqa: F401,E402
                     explain_metric, explanation_markdown, metric_keys,
-                    pillar_of, placeholder, render_caveats, render_chart,
-                    render_explain, render_metric_explanations,
+                    pillar_of, placeholder, render_chart, render_finding,
+                    render_metric_explanations,
                     render_metric_legend)
 from views.compare import comparison  # noqa: F401,E402
 from views.overview import gallery  # noqa: F401,E402

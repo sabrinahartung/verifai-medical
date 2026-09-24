@@ -164,7 +164,7 @@ def projects_overview(registry: dict, cards: list[dict]):
         go_to_compare()
 
     # Evaluations no declared model accounts for are shown, never dropped: the
-    # demo fixture today, and any report whose scenario was since deleted.
+    # a report whose scenario was since deleted, or a placeholder fixture.
     others = unclaimed(cards, registry)
     if others:
         st.divider()

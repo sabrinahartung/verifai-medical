@@ -182,33 +182,77 @@ def render_chart(spec: dict, base: Path):
         st.json(spec)
 
 
-# ---------- explanatory text that ships with the finding ----------
-def render_explain(finding: dict):
-    """Render details["explain"] = {what, how, limits} — all keys optional.
+# ---------- the info box: five questions, open, in the same order every time ----------
+# The order is the contract (docs/extending.md, "the info box a metric must be
+# able to fill"): what was measured, what came out, why it matters, how to read
+# the chart, what it does not tell you. The chart sits between the fourth and the
+# fifth, so the reading instructions come right before the thing they explain.
+#
+# Everything is rendered open. The reader this is written for has never seen a
+# Responsible-AI report, and the settled rule is progressive disclosure by depth
+# on the page, never by click: an expander is a decision the reader has to make
+# before knowing what is inside, and it hid exactly the two answers — how to
+# read it, what it cannot tell you — a non-specialist most needs.
+INFO_BOX_ORDER = ("what", "summary", "impact", "how", "limits")
+INFO_BOX_LABEL = {
+    "what": "What was measured",
+    "summary": "What came out",
+    "impact": "Why it matters",
+    "how": "How to read the chart",
+    "limits": "What it does not tell you",
+}
 
-    `what` is set in italics and the result carries the finding's own verdict
-    icon rather than a generic info glyph, so the two read as different things:
-    one is standing description of the metric, the other is what this run
-    actually produced.
-    """
+
+def _label(key: str):
+    st.markdown(f"**:gray[{INFO_BOX_LABEL[key]}]**")
+
+
+def render_finding(finding: dict, base: Path):
+    """One finding: its status, its five-question box, its charts, its definitions."""
+    verdict = normalise_verdict(finding.get("verdict"), finding.get("pillar"))
+    icon, label, meaning = VERDICT[verdict]
+    st.markdown(f"##### {icon} `{finding['metric']}` · {label}", help=meaning)
+
     ex = (finding.get("details") or {}).get("explain") or {}
+    details = finding.get("details") or {}
+
     if ex.get("what"):
-        st.markdown(f"_{ex['what']}_")
+        _label("what")
+        st.markdown(ex["what"])
     if finding.get("summary"):
-        icon, _, _ = VERDICT[normalise_verdict(finding.get("verdict"),
-                                              finding.get("pillar"))]
-        st.info(f"**Result:** {finding['summary']}", icon=icon)
-    return ex
+        _label("summary")
+        # The result carries the finding's own status icon rather than a generic
+        # info glyph: standing description above, what this run produced here.
+        st.info(finding["summary"], icon=icon)
+    if ex.get("impact"):
+        _label("impact")
+        st.markdown(ex["impact"])
+    else:
+        placeholder("impact", compact=True)
+    if ex.get("how"):
+        _label("how")
+        st.markdown(ex["how"])
 
+    chart = details.get("chart")
+    if chart:
+        render_chart(chart, base)
+    elif finding.get("plots"):
+        render_chart({"kind": "images", "paths": finding["plots"]}, base)
+    if details.get("chart2"):      # e.g. a faithfulness scale or a subgroup gap
+        render_chart(details["chart2"], base)
 
-def render_caveats(ex: dict):
-    if not (ex.get("how") or ex.get("limits")):
-        return
-    with st.expander("How to read this chart"):
-        if ex.get("how"):
-            st.markdown(f"**Reading the chart**  \n{ex['how']}")
-        if ex.get("limits"):
-            st.markdown(f"**What it does _not_ tell you**  \n{ex['limits']}")
+    if ex.get("limits"):
+        _label("limits")
+        st.markdown(ex["limits"])
+
+    # Definitions stay one click away, and only these. They are reference — what
+    # a quantity *is*, the same for any model — where the box above is what
+    # *this* run found. Keys are derived the way the comparison view derives
+    # them, so both views define a metric with the same words.
+    keys = metric_keys(finding.get("value"), finding["pillar"])
+    if entries_for(keys):
+        with st.expander("Definitions of the terms above"):
+            render_metric_explanations(keys, compact=True)
 
 
 # ---------- metric explanations ----------

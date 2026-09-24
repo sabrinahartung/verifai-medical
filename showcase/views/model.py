@@ -10,16 +10,10 @@ from __future__ import annotations
 import streamlit as st
 
 from render import breadcrumb, placeholder
-from registry import describe, evaluated_ids, find_model, load_registry
+from registry import (decision_rule, describe, evaluated_ids, find_model,
+                      load_registry)
 from routing import (current, go_to_compare, go_to_overview, go_to_project,
                      go_to_report)
-
-
-def decision_rule(weights: dict | None) -> str:
-    """A configuration's decision rule in words — `argmax` unless weights say otherwise."""
-    if not weights:
-        return "argmax — the most probable class"
-    return "weighted — " + ", ".join(f"{cls} ×{w:g}" for cls, w in weights.items())
 
 
 def by_evaluation_set(model: dict) -> list[tuple[str | None, list[dict]]]:

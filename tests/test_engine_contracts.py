@@ -1659,3 +1659,47 @@ def test_model_names_sort_their_numbers_as_numbers():
     from views.project import natural_key
     names = ["n=2,000", "n=100", "n=7,014", "n=500"]
     assert sorted(names, key=natural_key) == ["n=100", "n=500", "n=2,000", "n=7,014"]
+
+
+# --- step 5: the report layout ------------------------------------------------
+def test_the_info_box_asks_its_five_questions_in_the_documented_order():
+    """'Same order every time' is the contract docs/extending.md states. A
+    reader who has learned where 'what it does not tell you' sits must find it
+    there on every finding."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import render
+    assert render.INFO_BOX_ORDER == ("what", "summary", "impact", "how", "limits")
+    doc = (REPO / "docs" / "extending.md").read_text(encoding="utf-8")
+    table = doc[doc.index("| The reader asks |"):]
+    positions = [table.index(k) for k in ("explain.what", "`summary`", "explain.impact",
+                                           "explain.how", "explain.limits")]
+    assert positions == sorted(positions), "the documented order and the rendered one differ"
+
+
+def test_a_findings_explanation_is_never_behind_a_click():
+    """Progressive disclosure by depth on the page, never by click — the
+    settled rule for the primary reader. The expander that hid 'how to read
+    this chart' and 'what it does not tell you' must not come back; only the
+    reference definitions may sit behind one."""
+    source = _showcase_source()
+    for label in ("How to read this chart", "What it does not tell you",
+                  "What was measured", "What came out"):
+        assert f'expander("{label}' not in source, f"{label!r} is behind a click again"
+
+
+def test_the_report_holds_its_page_when_integrity_is_not_verified():
+    """Every other number is conditional on the split. A report whose split was
+    never checked — or has no integrity finding at all — must say so above
+    everything, not as one sixth of a row."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import integrity_state
+    clean = {"pillar": "integrity", "verdict": "measured", "summary": "clean"}
+    unverified = {"pillar": "integrity", "verdict": "unavailable", "summary": "not checked"}
+    leaked = {"pillar": "integrity", "verdict": "fail", "summary": "leaked"}   # retired word
+    other = {"pillar": "performance", "verdict": "measured"}
+    assert integrity_state([clean, other])[0] == "measured"
+    assert integrity_state([unverified, other]) == ("unavailable", unverified)
+    assert integrity_state([leaked])[0] == "invalid", "a retired `fail` still gates the page"
+    assert integrity_state([other]) == ("unavailable", None), "no check is not a clean check"

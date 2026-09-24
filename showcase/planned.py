@@ -37,11 +37,12 @@ PLANNED: dict[str, dict[str, str]] = {
         "phase": "ROADMAP.md#phase-a-the-two-contracts-and-capability-gating",
     },
     "integrity_gate": {
-        "title": "The integrity gate",
-        "shows": "split leakage, provenance, corpus ancestry and label-space "
-                 "compatibility together — and blocks the report when the "
-                 "measurement is unusable, instead of occupying one sixth of a row",
-        "blocked_by": "Phase B: only split leakage exists today",
+        "title": "The rest of the integrity gate",
+        "shows": "provenance, corpus ancestry and label-space compatibility beside the "
+                 "split-leakage check — the parts of the gate that need more than a "
+                 "training manifest to run",
+        "blocked_by": "Phase B. Split leakage exists, and the banner that holds the page "
+                      "when it fails is built; the other three checks are not",
         "phase": "ROADMAP.md#phase-b-what-you-can-and-cannot-verify-about-someone-elses-model",
     },
     "coverage_map": {
@@ -61,13 +62,13 @@ PLANNED: dict[str, dict[str, str]] = {
                       "means three different things across the six",
         "phase": "ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is",
     },
-    "info_box": {
-        "title": "The five-question info box",
-        "shows": "what was measured, what came out, why it matters, how to read "
-                 "the chart, what it does not tell you — in that order, open, "
-                 "every time",
-        "blocked_by": "explain.impact, the one key of the five the engine does "
-                      "not ship yet",
+    "impact": {
+        "title": "Why it matters",
+        "shows": "who is affected by this number being what it is, in this clinical "
+                 "context — the third of the info box's five questions, and the only one "
+                 "it cannot answer yet",
+        "blocked_by": "no metric ships explain.impact; it is the fourth key beside "
+                      "what, how and limits",
         "phase": "extending.md#planned-the-info-box-a-metric-must-be-able-to-fill",
     },
     "criterion_card": {

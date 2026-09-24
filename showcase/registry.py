@@ -8,8 +8,8 @@ an evaluation cannot claim to exist without its report.
 
 Pure data, no Streamlit call, like `catalog.py`: the contract tests import it.
 
-Artifacts that no registered configuration claims — the demo fixture, or an
-evaluation whose scenario was since deleted — are returned separately rather
+Artifacts that no registered configuration claims — an evaluation whose
+scenario was since deleted, or a placeholder fixture — are returned separately rather
 than dropped. Old shapes keep rendering; that is the rule the verdict
 vocabulary already follows.
 """
@@ -82,6 +82,13 @@ def unclaimed(cards: list[dict], registry: dict | None) -> list[dict]:
     claimed = {c["scenario"] for m in (registry or {}).get("models", [])
                for c in m["configurations"]}
     return [c for c in cards if c["id"] not in claimed]
+
+
+def decision_rule(weights: dict | None) -> str:
+    """A configuration's decision rule in words — `argmax` unless weights say otherwise."""
+    if not weights:
+        return "argmax — the most probable class"
+    return "weighted — " + ", ".join(f"{cls} ×{w:g}" for cls, w in weights.items())
 
 
 def describe(provenance: dict | None) -> str:

@@ -193,8 +193,12 @@ that renders as a scale, so older artifacts don't break.
 
 **Every metric must also ship its own explanation** in `Finding.details["explain"]`, with three
 keys: `what` (what is being measured and why it matters), `how` (how to read this chart), and
-`limits` (what this number does *not* tell you). The app renders `what` + the summary inline and
-puts `how`/`limits` in a "How to read this chart" expander. This lives in the engine, not the app,
+`limits` (what this number does *not* tell you). The report renders them **open, in one fixed
+order** — what was measured, what came out (the summary), why it matters (`impact`, planned), how
+to read the chart, the chart, what it does not tell you — and never behind a click: the primary
+reader has never seen such a report, and an expander hid exactly the answers they most needed. A
+test asserts the order matches `docs/extending.md` and that none of these returns to an expander;
+only the glossary definitions sit behind one. This lives in the engine, not the app,
 so a new metric brings its own wording and still needs no app changes. Write it for a reader who
 has never seen a Responsible-AI report — plots alone do not communicate.
 

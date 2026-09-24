@@ -641,7 +641,8 @@ evaluated, and how does one compare to its predecessor*.
 | ~~**2**~~ | ~~**Registry** **58 59 62**~~ — **done 2026-09-24**, see below | an exporter, no model code | not yet — step 3 reads it |
 | ~~**3**~~ | ~~**Projects and the model page**~~ — **done 2026-09-24**, see below | no | yes — the largest change |
 | **4** | **`details["baseline"]`** on all six metrics, plus the Grad-CAM verdict stops being hardcoded | **yes** | numbers unchanged, statuses sharper |
-| **5** | Report re-laid out to the slot map; findings strip on the tiering from step 4; info box **36** from the four `explain` keys that exist today; every other slot a placeholder | no | yes |
+| ~~**5a**~~ | ~~Report re-laid out to the slot map~~ — **done 2026-09-24**, see below | no | yes |
+| **5b** | The findings strip on the tiering from step 4 — its slot is placed and waiting | no | yes |
 | **6** | Compare: transpose **47**, placeholders for **44**/**45** | no | yes |
 | **7** | Studio **54**–**56** **67 68 69** as placeholders behind the torch gate | no | no |
 | **8+** | Each engine phase fills its own placeholders: A → **22 23 31 32 33 69**, B → **24 27 28 29**, F → **48**, G → **25 34 38 39 40 44 45 49**, case-view → **50**–**53** | yes | incremental |
@@ -749,6 +750,39 @@ tiles.
 Not built, and deliberately so: **63** (supersession) has nothing to show until a scenario
 declares `supersedes:`, and **66** (the delta view) depends on it. **Stale** stays a placeholder
 until a report records its checkpoint hash.
+
+### What step 5a landed
+
+The report layout, without the one part that needs the engine. Step 4 and the findings strip
+(5b) come after, likely on their own branch, because every existing report has to be re-run or
+backfilled before a tier can be shown.
+
+- **The first screen says what was found.** *At a glance* is every pillar's result in the
+  engine's own words, in fixed pillar order, each pillar a link to its section and each section a
+  link back. At 1280×900 the Focal-loss report shows the 31-point skin-tone gap — *"their 95%
+  intervals do not overlap"* — without scrolling; before, it was four screens down. Fixed order,
+  not ranked: ranking by strength of evidence is the strip's job.
+- **The integrity gate holds the page** (**30**). An unverified split puts a banner above
+  everything — *read everything below as provisional* — in the integrity finding's own words; a
+  contaminated one says the numbers are shown for the record only. A report with no integrity
+  finding at all is treated as unverified, never as clean.
+- **The five-question info box, open** (**36**): what was measured, what came out, *why it
+  matters* (a placeholder until a metric ships `explain.impact`), how to read the chart, the
+  chart, what it does not tell you. Expanders went from 13 to 6, and the six left are the
+  reference definitions.
+- **Identity in words.** The title is the configuration's label, as on the model page and in
+  the comparison table; beneath it the scenario's own description, then *"a configuration of
+  Focal loss (γ=2) · decision rule: argmax · scored on ham10000_test.csv (1,493 images)"* in
+  place of `skin-lesion-resnet18-clean` and `ham10000-clean-test`.
+
+**The cost, measured:** with every explanation open the page grew from 8.5 to 11.3 screens.
+The glance list and the back-links are what make that navigable. If it still reads as long,
+the next lever is setting *how to read* beside its chart rather than above it — narrower charts,
+roughly two screens back.
+
+**Visible now, fixed in step 4:** on the 7-image run, Explainability is the one pillar reading
+*Measured* — the hardcoded Grad-CAM verdict, which the old six-icon row made easy to miss and
+the glance list does not.
 
 !!! warning "Two things that will bite"
     `showcase/app.py` executes top to bottom on import, and the contract tests depend on it
