@@ -637,7 +637,7 @@ Four rules:
 !!! note "How the open steps were reassigned"
     Steps **4** and **5b** — the baseline field and the findings strip — are milestone
     [M2](ROADMAP.md#milestones). Step **7**'s studio pages are filled by
-    [M4](ROADMAP.md#milestones), and **8+** by the phases after it. This table is kept as the
+    [M5](ROADMAP.md#milestones), and **8+** by the phases after it. This table is kept as the
     record of how the interface was built.
 
 Revised 2026-09-24. The **registry and model page now come first** and the baseline field moves
