@@ -93,6 +93,8 @@
         "n": 1493,
         "correct": 1204,
         "balanced_accuracy": 0.7127,
+        "balanced_accuracy_n_classes": 7,
+        "classes_absent_from_test": 0,
         "top3_accuracy": 0.9766,
         "top3_accuracy_ci": [
           0.9676,
@@ -24721,7 +24723,19 @@
       "sha256": "469669d0f340a335",
       "n": 1493
     },
-    "label": "skin-lesion-resnet18-isic"
+    "label": "ISIC corpus",
+    "metric_versions": {
+      "integrity.split_leakage": 1,
+      "performance.classification": 1,
+      "explainability.gradcam": 1,
+      "robustness.corruption": 1,
+      "fairness.skin_tone": 1,
+      "privacy.mia": 1
+    },
+    "checkpoint": {
+      "path": "artifacts_training/skin_cancer_isic.pt",
+      "sha256": "12fbb0335ce803a5"
+    }
   },
-  "created_at": "2026-09-14T13:28:58.354592+00:00"
+  "created_at": "2026-09-24T21:31:07.792405+00:00"
 }

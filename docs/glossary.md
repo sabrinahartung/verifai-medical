@@ -295,6 +295,18 @@ Investigation
     on a project's models, not a folder: the ISIC model has configurations in both the internal
     test and the external validation, so it belongs to both.
 
+Active and archived
+:   An **active** configuration is kept current: when a metric changes it is evaluated again. An
+    **archived** one is the record of an experiment — kept, still readable, never re-run. Archived
+    does not mean wrong: its numbers were measured correctly with the metrics of their day; it
+    only lacks what was added since. Here, the ISIC model is active on its internal test and on
+    Derm7pt; the learning curve, focal loss and the other experiments are archived.
+
+Metric version
+:   A number each metric carries, raised whenever what it reports changes. Every report records
+    the versions that produced it, so an active report produced by an older version can say it is
+    behind — without anyone re-running the twenty-one archived experiments.
+
 Model registry
 :   The list of every declared model and its configurations, whether or not any of them has been
     evaluated yet, written from the scenarios into `model_registry.json`. It records what each

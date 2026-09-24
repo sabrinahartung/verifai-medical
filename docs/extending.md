@@ -20,6 +20,7 @@ flowchart LR
 name: my_model
 label: "My model"                # heads its column in the comparison table
 project: "Skin lesion classification"   # which problem; groups models in the overview
+status: active                   # active: re-run as metrics change · archived: kept as the record
 domain: image
 seed: 42
 
@@ -90,8 +91,9 @@ flowchart TB
     B["2 · register in METRIC_REGISTRY"]
     C["3 · list the id under metrics: in a scenario"]
     D["4 · return details['explain'] + details['chart']"]
-    A --> B --> C --> D
-    D --> E["renders in the dashboard<br/><b>no app code changed</b>"]
+    V["5 · give it a version in verifai/core/suite.py<br/>and bump it whenever its output changes"]
+    A --> B --> C --> D --> V
+    V --> E["renders in the dashboard<br/><b>no app code changed</b>"]
     style E fill:#CDE8D5,stroke:#2E9E5B,color:#1a1a2e
 ```
 

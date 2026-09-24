@@ -83,7 +83,9 @@ def _configuration_row(c: dict, done: bool, key: str):
         left, right = st.columns([5, 1.6], vertical_alignment="center")
         with left:
             st.markdown(f"**{c['label']}**")
-            st.caption(f"Decision rule: {decision_rule(c['decision_weights'])}")
+            st.caption(f"Decision rule: {decision_rule(c['decision_weights'])}"
+                       + ("  \n:gray[Archived — kept as the record, not re-run]"
+                          if c.get("status") == "archived" else "  \nActive — re-run as the metrics change"))
         with right:
             if done:
                 if st.button("Open report →", key=key):
@@ -110,6 +112,9 @@ def page():
                here=model["name"])
     st.title(model["name"])
     _identity(model)
+    if not model.get("active"):
+        st.info("**Archived model.** None of its configurations is re-run as the metrics change; "
+                "its reports are the record of what was measured when they were made.", icon="📦")
 
     st.subheader("What it is")
     _training_record(model)
@@ -135,5 +140,4 @@ def page():
         if st.button(f"Compare its {len(done)} evaluated configurations →"):
             go_to_compare(model=model["key"])
 
-    placeholder("stale_status")
     placeholder("delta_view")

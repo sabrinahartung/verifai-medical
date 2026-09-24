@@ -16716,7 +16716,17 @@
       "sha256": "9b603f3a1650e5f3",
       "n": 1003
     },
-    "label": "external-derm7pt-isic"
+    "label": "ISIC corpus — as deployed",
+    "metric_versions": {
+      "integrity.split_leakage": 1,
+      "performance.classification": 1,
+      "robustness.corruption": 1,
+      "fairness.skin_tone": 1
+    },
+    "checkpoint": {
+      "path": "artifacts_training/skin_cancer_isic.pt",
+      "sha256": "12fbb0335ce803a5"
+    }
   },
-  "created_at": "2026-09-16T06:49:39.447370+00:00"
+  "created_at": "2026-09-24T21:29:31.350772+00:00"
 }

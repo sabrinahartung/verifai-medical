@@ -116,3 +116,59 @@ def describe(provenance: dict | None) -> str:
     if provenance.get("class_weights"):
         bits.append("class-weighted")
     return " · ".join(b for b in bits if b)
+
+
+# ---------- active and archived ----------
+# A configuration is *active* when it is re-run as the metrics change, and
+# *archived* when it is kept as the record of what was measured, when. Archived
+# is not wrong: its numbers were measured correctly with the metrics of their
+# day. What it lacks is coverage — metrics added or changed since.
+
+METRIC_NAMES = {
+    "integrity.split_leakage": "split leakage",
+    "performance.classification": "classification performance",
+    "explainability.gradcam": "Grad-CAM faithfulness",
+    "robustness.corruption": "corruption stability",
+    "fairness.skin_tone": "skin-tone fairness",
+    "privacy.mia": "membership inference",
+}
+
+
+def config_of(registry: dict | None, scenario: str) -> dict | None:
+    model = model_of_scenario(registry, scenario)
+    return next((c for c in model["configurations"] if c["scenario"] == scenario),
+                None) if model else None
+
+
+def is_archived(registry: dict | None, scenario: str) -> bool:
+    config = config_of(registry, scenario)
+    return bool(config) and config.get("status") == "archived"
+
+
+def out_of_date(meta: dict, registry: dict | None, model: dict | None) -> list[str]:
+    """Why a report no longer reflects the current metrics or weights; empty if current.
+
+    Asked of *active* reports — an archived one is out of date by definition,
+    and says so once rather than listing every metric that has moved on.
+    """
+    current = (registry or {}).get("metric_versions") or {}
+    recorded = meta.get("metric_versions")
+    checkpoint = meta.get("checkpoint")
+    if recorded is None and not checkpoint:
+        return ["it was produced before reports recorded which metric versions and which "
+                "weights produced them"]
+    reasons = []
+    if recorded is None:
+        reasons.append("it does not record which metric versions produced it")
+    else:
+        for metric, version in sorted(recorded.items()):
+            if metric in current and current[metric] != version:
+                reasons.append(f"{METRIC_NAMES.get(metric, metric)} has changed since "
+                               f"(version {version} here, {current[metric]} now)")
+    sha = (model or {}).get("sha256")
+    if sha:
+        if not (checkpoint or {}).get("sha256"):
+            reasons.append("it does not record which weights it was scored with")
+        elif checkpoint["sha256"] != sha:
+            reasons.append("the checkpoint has been retrained since")
+    return reasons

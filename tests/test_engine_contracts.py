@@ -1814,3 +1814,69 @@ def test_the_notebooks_engine_list_names_what_the_engine_group_names():
     would replace the platform's GPU build — so versions may float, but which
     packages it installs may not drift from pyproject.toml."""
     assert sorted(_requirement_names(REPO / "requirements-engine.txt")) == _group("engine")
+
+
+# --- active and archived: re-run what is current, keep the rest as the record --
+def test_every_scenario_declares_whether_it_is_active():
+    """Active scenarios are re-run when a metric changes; archived ones never are.
+    A scenario that says neither would be silently one or the other."""
+    yaml = pytest.importorskip("yaml")
+    bad = {p.name: yaml.safe_load(p.read_text(encoding="utf-8")).get("status")
+           for p in sorted((REPO / "scenarios").glob("*.yaml"))}
+    bad = {k: v for k, v in bad.items() if v not in ("active", "archived")}
+    assert not bad, f"scenarios without status: active|archived: {bad}"
+
+
+def test_every_registered_metric_has_a_version():
+    """A report records the version of each metric that produced it. A metric
+    with no version could change without any report ever looking behind."""
+    from verifai.core.run import METRIC_REGISTRY
+    from verifai.core.suite import METRIC_VERSIONS
+    assert set(METRIC_REGISTRY) == set(METRIC_VERSIONS)
+    assert all(isinstance(v, int) and v >= 1 for v in METRIC_VERSIONS.values())
+
+
+def test_the_registry_tells_the_showcase_the_current_metric_versions():
+    from verifai.core.suite import METRIC_VERSIONS
+    from verifai.export.model_registry import REGISTRY_PATH
+    reg = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    assert reg["metric_versions"] == METRIC_VERSIONS
+    for m in reg["models"]:
+        assert m["active"] == any(c["status"] == "active" for c in m["configurations"])
+
+
+def test_an_active_report_says_why_it_is_behind():
+    """Only three things make an active report out of date: it predates
+    versioning, a metric it ran has a newer version, or its weights changed."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from registry import out_of_date
+    reg = {"metric_versions": {"a.metric": 2, "b.metric": 1}}
+    model = {"sha256": "abc"}
+    current = {"metric_versions": {"a.metric": 2, "b.metric": 1}, "checkpoint": {"sha256": "abc"}}
+    assert out_of_date(current, reg, model) == []
+    older = {**current, "metric_versions": {"a.metric": 1, "b.metric": 1}}
+    assert len(out_of_date(older, reg, model)) == 1 and "version 1 here, 2 now" in out_of_date(older, reg, model)[0]
+    retrained = {**current, "checkpoint": {"sha256": "def"}}
+    assert out_of_date(retrained, reg, model) == ["the checkpoint has been retrained since"]
+    assert len(out_of_date({}, reg, model)) == 1, "a report predating versioning is behind, once"
+
+
+def test_archived_models_are_one_switch_away_never_gone():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.project import visible_models
+    models = [{"key": "a", "active": True}, {"key": "b", "active": False}]
+    assert [m["key"] for m in visible_models(models, False)] == ["a"]
+    assert [m["key"] for m in visible_models(models, True)] == ["a", "b"]
+
+
+def test_run_active_runs_exactly_the_active_scenarios():
+    pytest.importorskip("yaml")
+    sys.path.insert(0, str(REPO / "scripts"))
+    from run_active import active_scenarios
+    import yaml as _yaml
+    expected = sorted(p.name for p in (REPO / "scenarios").glob("*.yaml")
+                      if _yaml.safe_load(p.read_text(encoding="utf-8")).get("status") == "active")
+    assert sorted(p.name for p in active_scenarios(REPO / "scenarios")) == expected
+    assert expected, "at least one scenario must stay active"

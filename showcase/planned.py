@@ -18,15 +18,6 @@ Filling one in means deleting its entry here and adding the real component.
 from __future__ import annotations
 
 PLANNED: dict[str, dict[str, str]] = {
-    # ---- model page ---------------------------------------------------------
-    "stale_status": {
-        "title": "Evaluated on an older checkpoint",
-        "shows": "which reports were scored against weights that have since been "
-                 "retrained — evaluated, but no longer of this model",
-        "blocked_by": "a report does not record the checkpoint hash it was scored "
-                      "against; one field in report.json's meta, written by the runner",
-        "phase": "ui-ux-design.md#what-step-2-landed",
-    },
     # ---- report -------------------------------------------------------------
     "provenance_strip": {
         "title": "Provenance strip",

@@ -64,5 +64,6 @@ model:
 name: external_derm7pt_isic
 label: "ISIC corpus — as deployed"
 project: "Skin lesion classification"
+status: active
 sample_size: null
 seed: 42

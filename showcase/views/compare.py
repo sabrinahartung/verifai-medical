@@ -32,6 +32,8 @@ def scope_ids(cards: list[dict] | None, registry: dict | None,
 
 def comparison(snaps: list[dict], cards: list[dict] | None = None):
     registry = load_registry()
+    statuses = {c["scenario"]: c.get("status", "archived") for m in (registry or {}).get("models", [])
+                for c in m["configurations"]} if registry else None
     model_key = current("model")
     ids, scope = scope_ids(cards, registry, lineage=current("lineage"), model=model_key)
     model = find_model(registry, model_key) if model_key else None
@@ -217,7 +219,8 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         # pushed the `best` column off the right edge, and the metrics — the axis
         # the reader chooses — became the one that could not scroll.
         table, leaders = comparison_table(usable, chosen, dirs, dom,
-                                          dated=bool(repeats) and len(usable) > len(by_label))
+                                          dated=bool(repeats,
+                                          statuses=statuses) and len(usable) > len(by_label))
         st.dataframe(style_leaders(table, leaders), hide_index=True, width="stretch",
                      column_config=table_columns(chosen, names, dirs))
         st.caption("One row per run. A **bold, tinted** cell leads its column — only where the "
@@ -306,10 +309,15 @@ def metric_labels(keys: list[str]) -> dict[str, str]:
 
 
 def comparison_table(runs: list[dict], keys: list[str], dirs: dict[str, str | None],
-                     dominated: dict[str, str], dated: bool = False):
+                     dominated: dict[str, str], dated: bool = False,
+                     statuses: dict[str, str] | None = None):
     """(DataFrame with one row per run, {key: leading run's label or None})."""
     import pandas as pd
     data: dict[str, list] = {"Run": [run_label(r) for r in runs]}
+    if statuses is not None:
+        # An archived run is measured with the metrics of its day; shown beside
+        # an active one it says so, rather than passing for a current result.
+        data["Status"] = [statuses.get(r.get("scenario"), "—").capitalize() for r in runs]
     if dated:
         data["Recorded"] = [(r.get("created_at") or "")[:10] for r in runs]
     for k in keys:
@@ -331,6 +339,9 @@ def style_leaders(table, leaders: dict[str, str | None]):
 
 def table_columns(keys: list[str], names: dict[str, str], dirs: dict[str, str | None]) -> dict:
     cols = {"Run": st.column_config.TextColumn("Run", pinned=True),
+            "Status": st.column_config.TextColumn(
+                "Status", help="Active: re-run as the metrics change. Archived: the record of an "
+                               "experiment, evaluated with the metrics of its day."),
             BEATEN_BY: st.column_config.TextColumn(
                 BEATEN_BY, help="Another run at least as good on every selected metric and "
                                 "better on one. Empty means this run is part of the trade-off.")}

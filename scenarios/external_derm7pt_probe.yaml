@@ -64,5 +64,6 @@ model:
 name: external_derm7pt_probe
 label: "Linear probe (frozen features)"
 project: "Skin lesion classification"
+status: archived
 sample_size: null
 seed: 42

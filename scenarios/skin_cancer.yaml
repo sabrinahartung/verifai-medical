@@ -8,6 +8,7 @@
 name: skin_cancer
 label: "Original checkpoint (split unverified)"
 project: "Skin lesion classification"
+status: archived
 domain: image
 seed: 42
 sample_size: 7            # small -> runs on CPU in seconds
