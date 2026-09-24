@@ -1916,3 +1916,73 @@ def test_every_page_renders_without_an_exception(params, monkeypatch):
     at = AppTest.from_function(_render_page, args=(dict(params),), default_timeout=120)
     at.run()
     assert not at.exception, [e.value for e in at.exception]
+
+
+# --- M2: baselines and the findings strip ---------------------------------------
+def test_a_claim_is_made_in_whichever_direction_the_interval_excludes_the_reference():
+    """Symmetric in good and bad news: below chance is as established as above it."""
+    from verifai.metrics import _baseline as B
+    above = B.membership_inference({"mia_auc": 0.6, "mia_auc_ci": [0.55, 0.65]})
+    below = B.membership_inference({"mia_auc": 0.4, "mia_auc_ci": [0.35, 0.45]})
+    spans = B.membership_inference({"mia_auc": 0.52, "mia_auc_ci": [0.48, 0.56]})
+    assert above["cleared"] and "above chance" in above["claim"]
+    assert below["cleared"] and "below chance" in below["claim"]
+    assert not spans["cleared"] and spans["claim"] is None, "an interval spanning 0.5 claims nothing"
+
+
+def test_accuracy_is_compared_with_always_answering_the_most_common_class():
+    from verifai.metrics import _baseline as B
+    value = {"accuracy": 0.8, "accuracy_ci": [0.78, 0.82], "n": 100,
+             "per_class": {"common": {"support": 70}, "rare": {"support": 30}}}
+    b = B.classification(value)
+    assert b["kind"] == "chance" and b["value"] == 0.7 and b["cleared"]
+    assert "common" in b["basis"]
+
+
+def test_an_unreached_ideal_is_published_as_a_gap_never_as_a_claim():
+    """Every model changes some answers under noise; 'less than perfect' would be
+    established for all of them and say nothing."""
+    from verifai.metrics import _baseline as B
+    b = B.corruption({"mean_stability": 0.76})
+    assert not b["cleared"] and b["claim"] is None and b["gap"] == 0.24
+
+
+def test_the_strip_holds_only_measured_findings_that_clear_in_pillar_order():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import established
+
+    def f(pillar, verdict, cleared):
+        return {"pillar": pillar, "verdict": verdict,
+                "details": {"baseline": {"cleared": cleared, "claim": "x", "kind": "chance", "basis": "b"}}}
+    findings = [f("privacy", "measured", True), f("integrity", "measured", True),
+                f("fairness", "insufficient", True), f("robustness", "measured", False)]
+    assert [x["pillar"] for x in established(findings, "measured")] == ["integrity", "privacy"]
+    assert established(findings, "invalid") == [], "nothing is established on a contaminated split"
+    assert established([{"pillar": "performance", "verdict": "measured", "details": {}}], "measured") is None, \
+        "a report predating baselines has no strip, rather than an empty one"
+
+
+def test_every_finding_in_a_current_active_report_carries_a_baseline():
+    """The runner attaches one to every finding; a current active report without
+    one means a metric is missing from BY_FINDING."""
+    from verifai.core.suite import METRIC_VERSIONS
+    from verifai.metrics._baseline import BY_FINDING
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text("utf-8"))
+    active = [c["scenario"] for m in reg["models"] for c in m["configurations"] if c["status"] == "active"]
+    for scen in active:
+        report = json.loads((REPO / "showcase/artifacts" / scen / "report.json").read_text("utf-8"))
+        if report["meta"].get("metric_versions") != {k: METRIC_VERSIONS[k] for k in report["meta"].get("metric_versions", {})}:
+            continue                     # behind the current metrics: the app says so
+        for finding in report["findings"]:
+            assert finding["metric"] in BY_FINDING, f"{scen}: no baseline function for {finding['metric']}"
+            assert "baseline" in finding["details"], f"{scen}: {finding['metric']} has no baseline"
+
+
+def test_the_random_control_moves_the_region_without_changing_it():
+    """The control may differ from the highlight in where it is and nothing else."""
+    np = pytest.importorskip("numpy")
+    from verifai.metrics.explainability.gradcam import _shifted
+    mask = np.zeros((40, 60), dtype=bool); mask[5:15, 10:30] = True
+    moved = _shifted(mask, np.random.default_rng(0))
+    assert moved.shape == mask.shape and moved.sum() == mask.sum()

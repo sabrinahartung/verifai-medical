@@ -18,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 from verifai.core.findings import Report, Finding
 from verifai.core.integrity import audit_split, train_manifests_from_scenario
 from verifai.core.suite import suite_for
+from verifai.metrics._baseline import attach as attach_baseline
 
 
 class SplitLeakageError(RuntimeError):
@@ -156,5 +157,6 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
         fn = _load(METRIC_REGISTRY[metric_id])
         result = fn(model, dataset, ctx)
         for f in (result if isinstance(result, list) else [result]):
+            attach_baseline(f)
             report.add(f)
     return report

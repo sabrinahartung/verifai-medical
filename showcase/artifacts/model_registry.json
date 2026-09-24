@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "metric_versions": {
-    "explainability.gradcam": 1,
-    "fairness.skin_tone": 1,
-    "integrity.split_leakage": 1,
-    "performance.classification": 1,
-    "privacy.mia": 1,
-    "robustness.corruption": 1
+    "explainability.gradcam": 2,
+    "fairness.skin_tone": 2,
+    "integrity.split_leakage": 2,
+    "performance.classification": 2,
+    "privacy.mia": 2,
+    "robustness.corruption": 2
   },
   "projects": [
     {

@@ -17,13 +17,16 @@ without loading torch.
 """
 from __future__ import annotations
 
+# Version 2 (2026-09-25): every finding carries `details["baseline"]` — what its
+# number is compared with, and whether the interval clears it. Grad-CAM's 2 is
+# also a new measurement: every test image, against a random-region control.
 METRIC_VERSIONS: dict[str, int] = {
-    "integrity.split_leakage": 1,
-    "performance.classification": 1,
-    "explainability.gradcam": 1,
-    "robustness.corruption": 1,
-    "fairness.skin_tone": 1,
-    "privacy.mia": 1,
+    "integrity.split_leakage": 2,
+    "performance.classification": 2,
+    "explainability.gradcam": 2,        # 2: every test image, against a random control
+    "robustness.corruption": 2,
+    "fairness.skin_tone": 2,
+    "privacy.mia": 2,
 }
 
 

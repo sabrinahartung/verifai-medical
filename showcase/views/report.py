@@ -101,6 +101,53 @@ def _identity(card: dict, report: dict, model: dict | None, config: dict | None)
         st.markdown(f"[🤗 Model on Hugging Face]({card['hf_url']})")
 
 
+def established(findings: list[dict], integrity: str) -> list[dict] | None:
+    """The findings this evaluation established, in fixed pillar order.
+
+    Established means two things at once: the metric's own verdict is
+    `measured` — the sample supports reporting it — and its baseline's interval
+    clears the stated reference. Ordered by pillar, never by how good or bad
+    the number is: a clean split and a 33-point fairness gap stand side by side
+    because both are supported, not because one is worse.
+
+    `None` when no finding carries a baseline at all — a report from before
+    baselines existed, which has nothing to say here rather than nothing
+    established. And nothing is established on a contaminated split.
+    """
+    if integrity == "invalid":
+        return []
+    if not any("baseline" in (f.get("details") or {}) for f in findings):
+        return None
+    order = {p: i for i, p in enumerate(PILLARS)}
+    hits = [f for f in findings
+            if normalise_verdict(f.get("verdict"), f.get("pillar")) == "measured"
+            and ((f.get("details") or {}).get("baseline") or {}).get("cleared")]
+    return sorted(hits, key=lambda f: order.get(f.get("pillar"), len(order)))
+
+
+REFERENCE_KIND = {"ideal": "against its ideal", "chance": "against chance",
+                  "control": "against a control measured in the same run"}
+
+
+def _findings_strip(findings: list[dict], integrity: str):
+    hits = established(findings, integrity)
+    if hits is None:
+        return                 # predates baselines; the archived banner already says so
+    st.subheader("What this evaluation established")
+    st.caption("Only results whose interval clears a stated reference — an ideal, chance, or a "
+               "control measured in the same run. Ordered by pillar, never by how good or bad "
+               "the number is.")
+    if not hits:
+        st.markdown(":gray[Nothing in this report clears its reference at this sample size.]")
+        return
+    with st.container(border=True):
+        for f in hits:
+            b = f["details"]["baseline"]
+            p = f["pillar"]
+            st.markdown(f"**[{p.capitalize()}](#{p})** — {b['claim']}")
+            st.caption(f"Compared {REFERENCE_KIND.get(b['kind'], '')}: {b['basis']}.")
+
+
 def _at_a_glance(by_pillar: dict[str, list]):
     st.subheader("At a glance", anchor="at-a-glance")
     st.caption("Every pillar's result in the engine's own words, in fixed order. A status says "
@@ -164,7 +211,7 @@ def dashboard(card: dict):
                    f"intervals are reported, and what counts as good enough is your call.")
 
     placeholder("coverage_map")
-    placeholder("findings_strip")
+    _findings_strip(findings, state)
 
     by_pillar: dict[str, list] = {p: [] for p in PILLARS}
     for f in findings:

@@ -45,14 +45,6 @@ PLANNED: dict[str, dict[str, str]] = {
                       "would have to be invented",
         "phase": "ROADMAP.md#what-takes-its-place",
     },
-    "findings_strip": {
-        "title": "What this evaluation established",
-        "shows": "the findings whose interval clears a stated reference, ordered "
-                 "by strength of evidence and never by how good the number is",
-        "blocked_by": "details[\"baseline\"] on each metric — `measured` currently "
-                      "means three different things across the six",
-        "phase": "ui-ux-design.md#findings-are-ordered-by-strength-of-evidence-never-by-how-good-the-number-is",
-    },
     "impact": {
         "title": "Why it matters",
         "shows": "who is affected by this number being what it is, in this clinical "

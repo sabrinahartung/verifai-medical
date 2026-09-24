@@ -147,8 +147,9 @@ Evidence gate: `insufficient` below **n = 20**.
 ### Explainability — `gradcam_faithfulness`
 
 Grad-CAM highlights the regions that drove the decision. Faithfulness then checks whether
-those highlights are honest, by masking the most-attended region and measuring the drop in
-the predicted class's probability.
+those highlights are honest, by greying out the most-attended region and measuring how far
+the predicted class's probability drops — **and doing the same with a region of the same size
+and shape moved to a random place in the same image.** The claim is the difference.
 
 ```mermaid
 sequenceDiagram
@@ -160,18 +161,24 @@ sequenceDiagram
     G-->>M: heatmap
     M->>D: p₀ = confidence on the original
     D->>D: grey out the top 20% most-attended pixels
-    D->>M: p₁ = confidence on the masked image
-    D-->>M: faithfulness = p₀ − p₁
+    D->>M: p₁ = confidence with the highlight hidden
+    D->>D: move that same region to a random place
+    D->>M: p₂ = confidence with the random region hidden
+    D-->>M: gain = (p₀ − p₁) − (p₀ − p₂), averaged with a 95% interval
 ```
 
-The target layer comes from `model.cam_layer` (`layer4[-1]` for ResNets), so this is not
-tied to one architecture. Overlays are capped at `gradcam_max_images` (default 7) to keep
-artifacts small.
+Every test image is scored; only the first `gradcam_max_images` (default 7) are drawn as
+overlays, because pictures are what make an artifact heavy. Until metric version 2
+(2026-09-25) the same cap limited the *measurement* too, so the published faithfulness was a
+mean over the first seven filenames of a sorted manifest — six of them nevi.
 
-The faithfulness score is reported without a threshold: there is no defensible universal
-value for "faithful enough", and the planned `randomisation` and `complexity` metrics
-exist because one faithfulness number cannot tell you whether the explanation is attached
-to the model at all.
+Why a control, and not a threshold: greying out pixels produces images the model never saw,
+which can lower its confidence for reasons of their own [[42]](references.md#ref-42). A random
+region of the same size shares that effect, so what the highlight loses *beyond* it is what the
+explanation can take credit for. The bands this replaced — "decorative" below 0.2, "faithful"
+above 0.5 — were cut-offs nobody could justify. The planned `randomisation` and `complexity`
+metrics still matter: beating a random region shows the model relies on the highlighted area,
+not that the explanation is attached to the model's parameters at all.
 
 ### Privacy — `membership_inference_auc`
 

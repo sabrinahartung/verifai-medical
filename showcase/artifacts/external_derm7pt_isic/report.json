@@ -76,6 +76,14 @@
             }
           ],
           "value_label": "0% means every other number in this report can be read at face value. Above 0, part of the score is memorisation."
+        },
+        "baseline": {
+          "kind": "ideal",
+          "value": 0,
+          "basis": "nothing shared between the test set and the training data",
+          "cleared": true,
+          "claim": "None of the 1,003 test images shares a lesion or an image with the 23,278 the model trained on.",
+          "gap": null
         }
       },
       "plots": []
@@ -8494,6 +8502,14 @@
             "0.722 [0.66–0.77] on 252 images",
             "0.276 [0.15–0.46] on 29 images"
           ]
+        },
+        "baseline": {
+          "kind": "chance",
+          "value": 0.5733,
+          "basis": "always answering the most common class, melanocytic_Nevi (575 of 1,003)",
+          "cleared": true,
+          "claim": "Accuracy 0.677 [0.65–0.71] is above what always answering the most common class scores (melanocytic_Nevi, 0.573).",
+          "gap": 0.1037
         }
       },
       "plots": []
@@ -8578,6 +8594,14 @@
           ],
           "x_title": "Corruption",
           "y_title": "Share of unchanged top-1"
+        },
+        "baseline": {
+          "kind": "ideal",
+          "value": 1.0,
+          "basis": "a prediction no ordinary distortion changes",
+          "cleared": false,
+          "claim": null,
+          "gap": 0.166
         }
       },
       "plots": []
@@ -16702,6 +16726,14 @@
             "0.605 [0.45-0.74] on 38 images",
             "0.590 [0.43-0.73] on 39 images"
           ]
+        },
+        "baseline": {
+          "kind": "control",
+          "value": "the other skin-tone groups",
+          "basis": "accuracy in the other skin-tone groups, each with its interval",
+          "cleared": false,
+          "claim": null,
+          "gap": 0.094
         }
       },
       "plots": []
@@ -16718,15 +16750,15 @@
     },
     "label": "ISIC corpus — as deployed",
     "metric_versions": {
-      "integrity.split_leakage": 1,
-      "performance.classification": 1,
-      "robustness.corruption": 1,
-      "fairness.skin_tone": 1
+      "integrity.split_leakage": 2,
+      "performance.classification": 2,
+      "robustness.corruption": 2,
+      "fairness.skin_tone": 2
     },
     "checkpoint": {
       "path": "artifacts_training/skin_cancer_isic.pt",
       "sha256": "12fbb0335ce803a5"
     }
   },
-  "created_at": "2026-09-24T21:29:31.350772+00:00"
+  "created_at": "2026-09-24T22:07:42.986579+00:00"
 }
