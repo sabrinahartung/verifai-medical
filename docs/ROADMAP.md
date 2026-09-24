@@ -812,7 +812,11 @@ on `cd` (direnv) would also work, but it is machine configuration to fix a probl
   without a CA bundle; `train_model.py` sets `SSL_CERT_FILE` from certifi on import.
 - **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named
   `master` in three places after the default moved to `main`; nothing errored, the
-  workflow simply stopped matching.
+  workflow simply stopped matching. It happened again with the *feat → dev → main* flow:
+  only `main` was listed, so no feature PR into `dev` was tested (fixed 2026-09-24). And CI
+  never installed `showcase/requirements.txt`, so the twenty showcase tests guarded by
+  `importorskip("streamlit")` were skipped on every run while passing locally. Check both
+  whenever a branch is added to the flow or a test file gains a new optional import.
 - The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
   directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
 - **Bare `streamlit` is not the repo's.** Without an activated venv it resolves to the global
