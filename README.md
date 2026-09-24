@@ -1,4 +1,4 @@
-# VERIFAI Showcase — Responsible-AI Evaluation
+# VERIFAI Medical — Responsible-AI Evaluation
 
 [![tests & docs](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml/badge.svg)](https://github.com/sabrinahartung/verifai-medical/actions/workflows/ci.yml)
 
