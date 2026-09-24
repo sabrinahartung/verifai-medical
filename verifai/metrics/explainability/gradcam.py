@@ -7,10 +7,13 @@ ML_Training_Dojo/streamlit_app.py: last residual block, gradient-weighted
 activations, ReLU (evidence *for* the class only), no per-map normalisation.
 
 Added here (so the dashboard can quantify, not just illustrate):
-  - overlays saved as PNGs under the report's plot dir (top class per image),
-  - a light *deletion faithfulness* score: mask the most-attended region and
-    measure how far the class probability drops. If the map is faithful,
-    hiding what it highlights should hurt the prediction.
+  - overlays saved as PNGs for the first few images (pictures are what make an
+    artifact heavy, so only they are capped),
+  - a *deletion faithfulness* score over EVERY test image: grey out the
+    most-attended region and measure how far the class probability drops,
+  - a *random-region control* under identical conditions: the same region moved
+    to a random place. The claim is the difference between the two — whether the
+    highlight matters more than chance — with a 95% interval over the images.
 """
 from __future__ import annotations
 
@@ -57,48 +60,63 @@ def _overlay(img, cam, scale, alpha=0.5):
     return Image.blend(img, Image.fromarray((heat * 255).astype("uint8")), alpha)
 
 
-def _deletion_faithfulness(model, img, cam, class_idx, frac=0.2):
-    """Mask the top-`frac` most-attended pixels; return the probability drop.
+def _cam_mask(cam, size, frac=0.2):
+    """The top-`frac` most-attended pixels, at image resolution, or None if flat."""
+    import numpy as np
+    from PIL import Image
+    cam_img = np.asarray(
+        Image.fromarray(cam.numpy().astype("float32")).resize(size, Image.BICUBIC),
+        dtype=np.float32)
+    if cam_img.max() <= FLAT_EPS:
+        return None
+    return cam_img >= np.quantile(cam_img, 1.0 - frac)
 
-    drop = p_class(original) - p_class(masked). Higher = the highlighted region
-    genuinely drove the score (more faithful). Clamped to [0,1].
+
+def _shifted(mask, rng):
+    """The same region, moved to a random place in the image.
+
+    The control has to differ from the highlight in *where* it is and in nothing
+    else — same size, same shape. Scattering the same number of random pixels
+    would hide fine texture everywhere at once and measure something else.
     """
     import numpy as np
-    import torch
+    h, w = mask.shape
+    return np.roll(mask, (int(rng.integers(h)), int(rng.integers(w))), axis=(0, 1))
+
+
+def _drop(model, img, mask, p0, cls):
+    """How far the class probability falls when `mask` is greyed out, in [0, 1]."""
+    import numpy as np
     from PIL import Image
-
-    classes = model.classes
-    p0 = model.predict_probs(img)[classes[class_idx]]
-
-    cam_img = np.asarray(
-        Image.fromarray((cam.numpy()).astype("float32")).resize(img.size, Image.BICUBIC),
-        dtype=np.float32,
-    )
-    if cam_img.max() <= FLAT_EPS:
-        return 0.0
-    thr = np.quantile(cam_img, 1.0 - frac)
-    mask = cam_img >= thr
     arr = np.asarray(img.convert("RGB")).copy()
-    arr[mask] = 128  # grey out the most-attended region
-    masked = Image.fromarray(arr)
-    p1 = model.predict_probs(masked)[classes[class_idx]]
+    arr[mask] = 128
+    p1 = model.predict_probs(Image.fromarray(arr))[cls]
     return float(max(0.0, min(1.0, p0 - p1)))
 
 
 def run(model, dataset, ctx: dict[str, Any]) -> Finding:
+    import numpy as np
+    from verifai.metrics._stats import mean_ci
+    from verifai.metrics.performance.classification import VERDICT_MIN_N
+
     plot_dir = Path(ctx.get("plot_dir", "plots"))
     plot_dir.mkdir(parents=True, exist_ok=True)
     classes = model.classes
     tm = model.torch_module
     cam_layer = model.cam_layer
+    rng = np.random.default_rng(ctx.get("seed", 42))
 
+    # Every test image is scored; only the first few are drawn. The cap used to
+    # limit both, so the published faithfulness was a mean over the first seven
+    # filenames of a sorted manifest — six of them nevi. Pictures are what make
+    # an artifact heavy; scores are not.
+    max_overlays = int(ctx.get("scenario", {}).get("gradcam_max_images", 7))
     rel_plots: list[str] = []
     captions: list[str] = []
-    faith_scores: list[float] = []
+    faith: list[float] = []
+    control: list[float] = []
 
-    # cap overlays so the artifact stays light
-    max_imgs = int(ctx.get("scenario", {}).get("gradcam_max_images", 7))
-    for s in list(dataset)[:max_imgs]:
+    for i, s in enumerate(dataset):
         img = dataset.load(s)
         probs = model.predict_probs(img)
         top = model.decide(probs, getattr(s, "meta", None))
@@ -107,60 +125,85 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         x = model.to_tensor(img)
         x.requires_grad_(True)
         cam = _gradcam(tm, cam_layer, x, ci)
-        scale = max(FLAT_EPS, float(cam.max()))
 
-        out = _overlay(img, cam, scale)
-        fname = f"gradcam_{s.id}.png"
-        out.save(plot_dir / fname)
-        rel_plots.append(f"plots/{fname}")
-        captions.append(f"{s.id}: {top} ({probs[top]*100:.0f}%)")
+        if i < max_overlays:
+            out = _overlay(img, cam, max(FLAT_EPS, float(cam.max())))
+            fname = f"gradcam_{s.id}.png"
+            out.save(plot_dir / fname)
+            rel_plots.append(f"plots/{fname}")
+            captions.append(f"{s.id}: {top} ({probs[top]*100:.0f}%)")
 
-        faith_scores.append(_deletion_faithfulness(model, img, cam, ci))
+        mask = _cam_mask(cam, img.size)
+        if mask is None:          # a flat map highlights nothing: no region to test
+            continue
+        faith.append(_drop(model, img, mask, probs[top], top))
+        control.append(_drop(model, img, _shifted(mask, rng), probs[top], top))
 
-    mean_faith = round(sum(faith_scores) / len(faith_scores), 3) if faith_scores else None
+    n = len(faith)
+    gains = [f - c for f, c in zip(faith, control)]
+    mean = (lambda xs: round(sum(xs) / len(xs), 4) if xs else None)
+    mf, mr, gain = mean(faith), mean(control), mean(gains)
+    gain_ci = mean_ci(gains)
+    verdict = "measured" if n >= VERDICT_MIN_N else "insufficient"
+    small = (f" Small sample (n={n}) — a plausibility check, not a benchmark."
+             if n < VERDICT_MIN_N else "")
+
+    summary = (f"Masking the region Grad-CAM highlights lowers the model's confidence by "
+               f"{mf:.3f} on average over {n:,} images, against {mr:.3f} for a region of the "
+               f"same size placed at random — a difference of {gain:.3f}"
+               + (f" [{gain_ci[0]:.3f}–{gain_ci[1]:.3f}]" if gain_ci else "") + "." + small
+               if n else "Grad-CAM produced no non-flat map, so no region could be tested.")
+
+    def bar_ci(xs):
+        c = mean_ci(xs)
+        return c or (None, None)
+    (f_lo, f_hi), (r_lo, r_hi) = bar_ci(faith), bar_ci(control)
 
     return Finding(
         pillar="explainability",
         metric="gradcam_faithfulness",
         domain="image",
-        value={"n_overlays": len(rel_plots), "mean_deletion_faithfulness": mean_faith},
-        verdict="measured",
-        summary=(f"Grad-CAM overlays for {len(rel_plots)} examples; mean deletion "
-                 f"faithfulness {mean_faith} (probability drop when the highlighted "
-                 f"region is masked out)." if mean_faith is not None
-                 else "Grad-CAM overlays generated."),
+        value={"n": n, "n_overlays": len(rel_plots),
+               "mean_deletion_faithfulness": mf, "mean_random_control": mr,
+               "faithfulness_gain": gain, "faithfulness_gain_ci": list(gain_ci) if gain_ci else None},
+        verdict=verdict,
+        summary=summary,
         details={
             "explain": {
-                "what": ("Grad-CAM highlights the parts of the image that pushed the model "
-                         "towards its answer. The faithfulness score then checks whether "
-                         "those highlights are honest: the marked region is masked out and "
-                         "we measure how far the model's confidence falls."),
-                "how": ("In the overlays, warm colours (red/yellow) mark the regions that "
-                        "drove the decision, blue marks regions that barely mattered — you "
-                        "want the heat on the lesion, not on hair, rulers or the image "
-                        "border. The scale below shows the average confidence drop when "
-                        "that hot region is hidden: a bigger drop means the explanation "
-                        "reflects what the model actually used."),
-                "limits": ("A convincing heatmap is not proof of medically correct "
-                           "reasoning — it shows where the model looked, not whether it "
-                           "looked for the right reason. A low faithfulness score is the "
-                           "clearer signal: it means the highlight is largely decorative."),
+                "what": ("Grad-CAM highlights the part of the image that pushed the model towards "
+                         "its answer. To check the highlight is honest, that region is greyed out "
+                         "and we measure how far the model's confidence falls — and then do the "
+                         "same with a region of the same size and shape placed at random. A "
+                         "highlight that matters should hurt the prediction more than a random "
+                         "one; if it does not, it is decoration."),
+                "how": ("The overlays show where the model looked for a few example images: warm "
+                        "colours drove the decision, blue barely mattered. The bars compare the "
+                        "average confidence lost when the highlighted region is hidden with the "
+                        "loss when a random region of the same size is hidden, each with its 95% "
+                        "interval, over every test image. The gap between the two bars is the "
+                        "finding; the height of either bar alone says little."),
+                "limits": ("A highlight that clearly beats chance shows the model relies on that "
+                           "region — not that relying on it is medically right. It says where the "
+                           "model looked, never whether it looked for the right reason. And greying "
+                           "out pixels produces images the model never saw in training, which can "
+                           "lower confidence for reasons of its own; the random control shares that "
+                           "effect, which is why the comparison, not the raw drop, is reported."),
             },
+            "better": {"mean_deletion_faithfulness": "higher", "faithfulness_gain": "higher"},
             "target_layer": getattr(model, "cam_layer_path", "layer4[-1]"),
-            "faithfulness_per_image": [round(f, 3) for f in faith_scores],
+            "faithfulness_per_image": [round(f, 3) for f in faith],
+            "random_control_per_image": [round(c, 3) for c in control],
             "chart": {"kind": "images", "title": "Where the model looks (Grad-CAM)",
                       "paths": rel_plots, "captions": captions},
             "chart2": {
-                "kind": "scale", "title": "Deletion faithfulness",
-                "value": mean_faith or 0.0, "min": 0, "max": 1,
-                "ticks": [0, 0.2, 0.5, 1], "tick_labels": ["0", "0.2", "0.5", "1"],
-                "bands": [
-                    {"to": 0.2, "label": "decorative", "color": "#F5D3CE"},
-                    {"to": 0.5, "label": "partly faithful", "color": "#FAECC8"},
-                    {"to": 1.0, "label": "faithful", "color": "#CDE8D5"},
-                ],
-                "value_label": "How far confidence falls when the highlighted region "
-                               "is masked out — higher means the highlight mattered.",
+                "kind": "bar",
+                "title": f"Confidence lost when a region is masked out — {n:,} images",
+                "x": ["Grad-CAM's highlighted region", "A random region of the same size"],
+                "y": [mf or 0.0, mr or 0.0],
+                "y_lo": [f_lo, r_lo] if f_lo is not None else None,
+                "y_hi": [f_hi, r_hi] if f_hi is not None else None,
+                "colors": ["#5B3FD6", "#9AA5B1"],
+                "x_title": "Region masked", "y_title": "Mean drop in confidence",
             },
         },
         plots=rel_plots,

@@ -40,6 +40,7 @@
 name: skin_cancer_isic_probe
 label: "Linear probe (frozen features)"
 project: "Skin lesion classification"
+status: archived
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

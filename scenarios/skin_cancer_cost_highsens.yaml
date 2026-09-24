@@ -12,6 +12,7 @@
 name: skin_cancer_cost_highsens
 label: "High-sensitivity (w=50)"
 project: "Skin lesion classification"
+status: archived
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)

@@ -40,6 +40,16 @@ def investigations_of(model: dict, cards_by_id: dict) -> list[str]:
     return sorted(i for i in found if i)
 
 
+def visible_models(models: list[dict], show_archived: bool) -> list[dict]:
+    """Active models always; archived ones only when asked for.
+
+    An archived model is the record of an experiment, not something to choose
+    between today — so it is one switch away rather than gone, and never
+    silently mixed in with the models kept current.
+    """
+    return [m for m in models if m.get("active") or show_archived]
+
+
 def _model_row(model: dict, status: dict, invs: list[str], key: str):
     with st.container(border=True):
         left, mid, right = st.columns([5, 2, 1.4], vertical_alignment="center")
@@ -52,8 +62,9 @@ def _model_row(model: dict, status: dict, invs: list[str], key: str):
                 st.markdown(":gray[Not evaluated]")
             else:
                 st.markdown(f"{status['evaluated']} of {status['total']} evaluated")
-            if invs:
-                st.caption(" · ".join(invs))
+            tags = ([] if model.get("active") else ["Archived"]) + invs
+            if tags:
+                st.caption(" · ".join(tags))
         with right:
             if st.button("Open →", key=key):
                 go_to_model(model["key"])
@@ -79,16 +90,23 @@ def page():
     cards_by_id = {c["id"]: c for c in load_catalog()}
     evaluated = evaluated_ids()
     configs = sum(len(m["configurations"]) for m in models)
+    active = [m for m in models if m.get("active")]
     st.caption(
-        f"{len(models)} models · {configs} configurations. A **model** is one trained "
-        f"checkpoint. A **configuration** is that model read with one decision rule and "
-        f"scored on one set of images — the same weights can have several, and each has "
-        f"its own report.")
+        f"{len(active)} active and {len(models) - len(active)} archived models · {configs} "
+        f"configurations. A **model** is one trained checkpoint. A **configuration** is that "
+        f"model read with one decision rule and scored on one set of images — the same weights "
+        f"can have several, and each has its own report. **Active** models are re-evaluated "
+        f"when the metrics change; **archived** ones are kept as the record of an experiment.")
 
+    show_archived = st.toggle(f"Show archived models ({len(models) - len(active)})",
+                              value=False, key="show_archived")
+    candidates = visible_models(models, show_archived)
     invs = {m["key"]: investigations_of(m, cards_by_id) for m in models}
-    options = [ALL] + sorted({i for v in invs.values() for i in v})
+    options = [ALL] + sorted({i for m in candidates for i in invs[m["key"]]})
     choice = st.pills("Investigation", options, default=ALL, key="investigation_filter")
-    shown = [m for m in models if choice in (None, ALL) or choice in invs[m["key"]]]
+    shown = [m for m in candidates if choice in (None, ALL) or choice in invs[m["key"]]]
+    if not shown:
+        st.caption("No active model in this project — the archived ones are one switch away.")
 
     for i, model in enumerate(sorted(shown, key=lambda m: natural_key(m["name"]))):
         _model_row(model, model_status(model, evaluated), invs[model["key"]], key=f"model_{i}")

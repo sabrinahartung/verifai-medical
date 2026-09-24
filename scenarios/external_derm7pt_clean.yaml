@@ -64,5 +64,6 @@ model:
 name: external_derm7pt_clean
 label: "HAM10000 corpus only"
 project: "Skin lesion classification"
+status: archived
 sample_size: null
 seed: 42
