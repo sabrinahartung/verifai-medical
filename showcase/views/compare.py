@@ -6,23 +6,52 @@ import plotly.graph_objects as go
 
 from catalog import (_blocked_reason, comparability_key, direction_for,
                      best_run, dominated_by, group_snapshots, run_label)
-from render import explain_metric, placeholder, render_metric_legend
-from routing import current, go_to_overview
+from registry import find_model, load_registry
+from render import breadcrumb, explain_metric, placeholder, render_metric_legend
+from routing import current, go_to_compare, go_to_model, go_to_overview, go_to_project
+
+def scope_ids(cards: list[dict] | None, registry: dict | None,
+              lineage: str | None = None, model: str | None = None
+              ) -> tuple[set[str] | None, str | None]:
+    """Which scenarios a filtered comparison shows, and what to call the filter.
+
+    `(None, None)` is unfiltered. A model's scope is its configurations — the
+    same weights, read and scored differently — and a lineage's is whatever its
+    cards declare. Either way the filter only narrows what is *shown*: the
+    groups below stay keyed on the evaluation set, and runs the filter hides
+    from a group are disclosed.
+    """
+    if model:
+        m = find_model(registry, model)
+        if m:
+            return {c["scenario"] for c in m["configurations"]}, m["name"]
+    if lineage and cards:
+        return {c["id"] for c in cards if (c.get("lineage") or c["id"]) == lineage}, lineage
+    return None, None
+
 
 def comparison(snaps: list[dict], cards: list[dict] | None = None):
-    lineage = current("lineage")
-    st.title("Comparing runs" + (f" — {lineage}" if lineage else ""))
+    registry = load_registry()
+    model_key = current("model")
+    ids, scope = scope_ids(cards, registry, lineage=current("lineage"), model=model_key)
+    model = find_model(registry, model_key) if model_key else None
+
+    if model and ids is not None:
+        breadcrumb([("Overview", go_to_overview),
+                    (model["project"], lambda: go_to_project(model["project"])),
+                    (model["name"], lambda: go_to_model(model["key"]))],
+                   here="Compare")
+    st.title("Comparing runs" + (f" — {scope}" if scope else ""))
     st.caption("Every recorded evaluation, grouped by the exact set of images it was scored on.")
 
-    if st.button("← Back to overview"):
+    if not model and st.button("← Back to overview"):
         go_to_overview()
 
-    # A lineage narrows *what is shown*; it never widens what may be compared.
-    # Grouping stays keyed on the evaluation set, so two runs of one lineage scored
-    # on different manifests still land in different groups.
+    # A filter narrows *what is shown*; it never widens what may be compared.
+    # Grouping stays keyed on the evaluation set, so two runs of one lineage or
+    # one model scored on different manifests still land in different groups.
     hidden_comparable: dict[tuple, set[str]] = {}
-    if lineage and cards:
-        ids = {c["id"] for c in cards if (c.get("lineage") or c["id"]) == lineage}
+    if ids is not None:
         kept = [s for s in snaps if s.get("scenario") in ids]
         # A filtered view still prints a `best` column, and that column ranks only
         # what is on screen. If a run scored on the *same images* is hidden, the
@@ -37,8 +66,13 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 hidden_comparable.setdefault(key, set()).add(
                     run_label(s))
         snaps = kept
-        st.caption(f"Filtered to the {len(ids)} configuration(s) in this lineage. "
-                   f"Comparability is still decided by the evaluation set, not the lineage.")
+        # A filter can outlive the click that set it — the sidebar reopens this
+        # page with the last one still applied — so it is always stated, and
+        # always one click from undone.
+        st.caption(f"Filtered to the {len(ids)} configuration(s) of *{scope}*. "
+                   f"Comparability is still decided by the evaluation set, not by this filter.")
+        if st.button("Show all runs"):
+            go_to_compare()
 
     with st.expander("Why runs are grouped, and when a comparison is refused"):
         st.markdown(
@@ -90,15 +124,16 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         if also:
             st.warning(
                 f"**{len(also)} further run(s) were scored on these same images** and are "
-                f"hidden by the lineage filter: {', '.join(f'*{a}*' for a in also)}. "
+                f"hidden by this filter: {', '.join(f'*{a}*' for a in also)}. "
                 f"The **best** column below ranks only what is shown, so it may not name "
-                f"the strongest configuration you have. Use **Compare all runs** from the "
-                f"overview to see them together.", icon="🔎")
+                f"the strongest configuration you have. **Show all runs**, above, puts "
+                f"them back.", icon="🔎")
 
         placeholder("access_statement", compact=True)
 
         usable = [r for r in runs if _blocked_reason(r) is None]
         blocked = [(r, _blocked_reason(r)) for r in runs if _blocked_reason(r) is not None]
+        usable_scenarios = {r.get("scenario") for r in usable}
 
         # Re-running the same configuration records another snapshot, which is the
         # point of a history — but three identical rows help nobody read a table.
@@ -112,8 +147,24 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 key=f"all_{gi}"):
             usable = [v[-1] for v in by_label.values()]
 
+        # Excluded runs are named the way the table names runs, and dated. Most
+        # are earlier snapshots of a configuration that has a newer, verified run
+        # on screen; naming those by raw model id, undated, read as though the
+        # charted run itself had been thrown out.
+        by_scenario: dict[str, list[tuple[dict, str]]] = {}
         for r, why in blocked:
-            st.warning(f"**{r.get('label', r.get('scenario'))}** is excluded — {why}.")
+            by_scenario.setdefault(r.get("scenario", "?"), []).append((r, why))
+        for scen, entries in by_scenario.items():
+            rs = [r for r, _ in entries]
+            why = entries[-1][1]
+            dates = sorted({(r.get("created_at") or "")[:10] for r in rs if r.get("created_at")})
+            when = (dates[0] if len(dates) == 1 else f"{dates[0]} to {dates[-1]}") if dates else "undated"
+            label = run_label(rs[-1])
+            if scen in usable_scenarios:
+                st.caption(f"↳ {len(rs)} earlier run(s) of **{label}** ({when}) left out — {why}. "
+                           f"A later, verified run of the same configuration is included.")
+            else:
+                st.warning(f"**{label}** ({when}) is excluded — {why}.")
 
         if len(usable) < 2:
             st.info(

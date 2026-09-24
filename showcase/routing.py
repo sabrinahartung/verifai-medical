@@ -38,15 +38,24 @@ def _hop(page: str, **params) -> None:
 
 
 def go_to_overview() -> None:
-    _hop("overview", run=None, lineage=None)
+    _hop("overview", run=None, lineage=None, model=None, project=None)
+
+
+def go_to_project(name: str) -> None:
+    _hop("project", project=name, model=None, run=None, lineage=None)
+
+
+def go_to_model(key: str) -> None:
+    _hop("model", model=key, run=None, lineage=None)
 
 
 def go_to_report(run_id: str) -> None:
     _hop("report", run=run_id, lineage=None)
 
 
-def go_to_compare(lineage: str | None = None) -> None:
-    _hop("compare", lineage=lineage, run=None)
+def go_to_compare(lineage: str | None = None, model: str | None = None) -> None:
+    """All runs, or the runs of one lineage or one model. Never both filters."""
+    _hop("compare", lineage=lineage, model=model, run=None)
 
 
 def current(key: str) -> str | None:

@@ -18,21 +18,14 @@ Filling one in means deleting its entry here and adding the real component.
 from __future__ import annotations
 
 PLANNED: dict[str, dict[str, str]] = {
-    # ---- overview -----------------------------------------------------------
-    "projects": {
-        "title": "Projects and models",
-        "shows": "the models you have, grouped by the problem they solve, with "
-                 "their evaluation status — evaluated, stale, or never run",
-        "blocked_by": "the entity model: a checkpoint content hash has to become "
-                      "the model's identity before versions can be told apart",
-        "phase": "ui-ux-design.md#the-second-premise-the-app-browses-artifacts-the-user-has-models",
-    },
-    "portfolio_coverage": {
-        "title": "Portfolio coverage",
-        "shows": "how many of your models have been evaluated at all — a "
-                 "completeness statement, never a rating",
-        "blocked_by": "the model registry, which does not exist yet",
-        "phase": "ROADMAP.md#what-takes-its-place",
+    # ---- model page ---------------------------------------------------------
+    "stale_status": {
+        "title": "Evaluated on an older checkpoint",
+        "shows": "which reports were scored against weights that have since been "
+                 "retrained — evaluated, but no longer of this model",
+        "blocked_by": "a report does not record the checkpoint hash it was scored "
+                      "against; one field in report.json's meta, written by the runner",
+        "phase": "ui-ux-design.md#what-step-2-landed",
     },
     # ---- report -------------------------------------------------------------
     "provenance_strip": {

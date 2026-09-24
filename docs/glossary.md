@@ -289,6 +289,12 @@ Configuration
     163 melanomas; read with `melanoma ×50` they catch 154. Two configurations, one model, no
     retraining — which is why the difference belongs to the rule and not the weights.
 
+Investigation
+:   A question several runs were made to answer together — the *learning curve* (how much data is
+    enough?) or the *external validation* (does it hold up at an unseen clinic?). It is a filter
+    on a project's models, not a folder: the ISIC model has configurations in both the internal
+    test and the external validation, so it belongs to both.
+
 Model registry
 :   The list of every declared model and its configurations, whether or not any of them has been
     evaluated yet, written from the scenarios into `model_registry.json`. It records what each

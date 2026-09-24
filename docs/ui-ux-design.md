@@ -639,7 +639,7 @@ evaluated, and how does one compare to its predecessor*.
 | ~~**0**~~ | ~~Repoint the two tests that assert on `showcase/app.py`'s **source text**~~ — **done 2026-09-19**: they now scan the whole package, so a split cannot silently stop checking the code that draws | no | no |
 | ~~**1**~~ | ~~Package split · `st.navigation` · URLs · `planned.py` · `absence()`~~ — **done 2026-09-19**, see below | no | navigation only |
 | ~~**2**~~ | ~~**Registry** **58 59 62**~~ — **done 2026-09-24**, see below | an exporter, no model code | not yet — step 3 reads it |
-| **3** | **Projects and the model page** **60 61 63 64 65 66 70**; `group`/`lineage` become derived | no | yes — the largest change |
+| ~~**3**~~ | ~~**Projects and the model page**~~ — **done 2026-09-24**, see below | no | yes — the largest change |
 | **4** | **`details["baseline"]`** on all six metrics, plus the Grad-CAM verdict stops being hardcoded | **yes** | numbers unchanged, statuses sharper |
 | **5** | Report re-laid out to the slot map; findings strip on the tiering from step 4; info box **36** from the four `explain` keys that exist today; every other slot a placeholder | no | yes |
 | **6** | Compare: transpose **47**, placeholders for **44**/**45** | no | yes |
@@ -714,6 +714,36 @@ which artifact folders exist; it still parses no YAML.
   in `report.json`'s meta, written by the runner; it is the next engine change this plan needs.
 
 
+### What step 3 landed
+
+The front page is now **project → model → configuration**, where it was twenty-four evaluation
+tiles.
+
+- **Overview** — one card per project, with how many of its models are evaluated, partly
+  evaluated or not evaluated (**70**, portfolio coverage — counts, never a colour). Reports no
+  registered model claims are listed below as *Other evaluations*: today the demo fixture.
+- **Project page** (**60**) — one row per model with its provenance line and its status. The
+  investigations are a **filter**, not sections: the ISIC checkpoint has configurations in both
+  the internal and the external set, so no model belongs to exactly one. Names sort numerically,
+  so the learning curve reads n=100, 500, 2,000, 7,014.
+- **Model page** (**61 64 65**) — identity (path and content hash, or *Hub, unpinned*), the
+  trainer's record, and the configurations **grouped by the images they were scored on**: the
+  model's own test set first, `argmax` before any weighted rule. The heading teaches the
+  comparability rule on its own — only configurations under one heading compare directly.
+- **Compare, scoped to a model** — the same `scope_ids` as the lineage filter, so it inherits
+  the disclosure of hidden runs scored on the same images. A filter can outlive the click that
+  set it (the sidebar reopens Compare with it applied), so it is always stated and one click from
+  **Show all runs**.
+- **Breadcrumbs** on every drill-down page; the sidebar lists only where a reader can start.
+- Along the way: excluded runs in Compare were named by raw model id with no date, and read as
+  though the charted configuration had been thrown out. They were earlier, unverified snapshots
+  of it; they are now named, dated, and marked as superseded by a later verified run.
+
+Not built, and deliberately so: **63** (supersession) has nothing to show until a scenario
+declares `supersedes:`, and **66** (the delta view) depends on it. **Stale** stays a placeholder
+until a report records its checkpoint hash.
+
+!!! warning "Two things that will bite"
     `showcase/app.py` executes top to bottom on import, and the contract tests depend on it
     (`sys.path.insert(...)` then `import app`). Two of them additionally assert on the file's
     **raw source text**, which a module split silently breaks — hence step 0.
@@ -746,6 +776,11 @@ it.**
 - **Is the case view or the coverage map the better next build?** Both answer *"what am I
   actually looking at"*. Coverage is cheaper and blocked on Phase A; the case view is expensive
   and blocked on `per_example` surviving the [scaling gap](ROADMAP.md#known-scaling-gaps).
+- **The investigation names were written for a page without projects.** `card.group`
+  *"Skin lesion — HAM10000 (verified split)"* was a top-level heading; as a filter inside the
+  project *Skin lesion classification* it shortens to "Skin lesion", which says nothing. It is
+  the author's data, so it is flagged here rather than renamed — something like *"Internal test
+  — HAM10000 (verified split)"* would read correctly in both places.
 - **Who declares a project?** The entity model needs one above the model, and today it would be
   derived from the evaluation set — which conflates *the problem* with *the data used to check
   it*. That works for one project and probably not for thirty.

@@ -1,11 +1,21 @@
-"""Overview — which investigation, and which run inside it."""
+"""Overview — the projects, and the evaluations no model accounts for.
+
+The landing page lists *problems*, not runs. Twenty-four evaluation tiles on
+the front page expected a reader to know what a lineage was; one card per
+project says what exists and how much of it has been evaluated, and everything
+else is one click down.
+
+`gallery` is the previous front page, kept for a deploy that has no model
+registry yet — the same read-the-old-shape rule `normalise_verdict` follows.
+"""
 from __future__ import annotations
 
 import streamlit as st
 
 from catalog import PILLARS, PILLAR_QUESTION, load_snapshots
-from render import placeholder
-from routing import go_to_compare, go_to_report
+from registry import (STATUS_LABEL, evaluated_ids, load_registry, model_status,
+                      models_in, unclaimed)
+from routing import go_to_compare, go_to_project, go_to_report
 
 # ---------- views ----------
 DEFAULT_GROUP = "Models"
@@ -62,9 +72,6 @@ def gallery(cards: list[dict]):
               "is too small to support a claim."
         )
 
-    placeholder("projects")
-    placeholder("portfolio_coverage")
-
     snaps = load_snapshots()
     if snaps:
         if st.button(f"Compare all runs ({len(snaps)} recorded) →"):
@@ -99,7 +106,82 @@ def gallery(cards: list[dict]):
                                   key=f"lin_{gi}_{i}")
 
 
+def _what_am_i_looking_at():
+    with st.expander("What am I looking at?"):
+        st.markdown(
+            "Each **project** is one problem a set of models tries to solve. Inside it, each "
+            "**model** is one trained checkpoint, and each model can be evaluated in several "
+            "**configurations** — read with a different decision rule, or scored on a "
+            "different set of images. Every evaluation asks the same separate questions "
+            "instead of reporting a single accuracy number:\n\n"
+            + "\n".join(f"- **{p.capitalize()}** — {PILLAR_QUESTION[p]}" for p in PILLARS)
+            + "\n\nThe results were computed once by the engine in this repo and stored as "
+              "files, so this page is just a reader — nothing is recomputed when you click. "
+              "Every metric states what it measures and, just as importantly, when the sample "
+              "is too small to support a claim."
+        )
+
+
+def _project_card(project: dict, registry: dict, evaluated: set[str], cards_by_id: dict,
+                  key: str):
+    models = models_in(registry, project["name"])
+    states = [model_status(m, evaluated)["state"] for m in models]
+    configs = sum(len(m["configurations"]) for m in models)
+    # The project's most common emoji, not its first: the first model
+    # alphabetically is a learning-curve run, and its 📈 is not the project's.
+    emojis = [cards_by_id[c["scenario"]].get("emoji") for m in models
+              for c in m["configurations"] if c["scenario"] in cards_by_id]
+    emojis = [e for e in emojis if e]
+    emoji = max(set(emojis), key=emojis.count) if emojis else "🧠"
+    with st.container(border=True):
+        st.markdown(f"#### {emoji} {project['name']}")
+        st.caption(f"{len(models)} models · {configs} configurations")
+        # Counts, not a colour: this says what exists, never whether it is good.
+        counts = [f"**{states.count(s)}** {STATUS_LABEL[s].lower()}"
+                  for s in ("evaluated", "partly", "not_evaluated") if states.count(s)]
+        st.markdown(" · ".join(counts))
+        if st.button("Open project →", key=key):
+            go_to_project(project["name"])
+
+
+def projects_overview(registry: dict, cards: list[dict]):
+    st.title("VERIFAI — Responsible-AI Showcase")
+    st.caption("Your models, grouped by the problem they solve. Open a project to see which "
+               "models exist, which have been evaluated, and what each evaluation found.")
+    _what_am_i_looking_at()
+
+    evaluated = evaluated_ids()
+    cards_by_id = {c["id"]: c for c in cards}
+    # Two columns, not three: a project name is a phrase, and a third of a
+    # narrow window broke "classification" mid-word.
+    cols = st.columns(2)
+    for i, project in enumerate(registry["projects"]):
+        with cols[i % 2]:
+            _project_card(project, registry, evaluated, cards_by_id, key=f"proj_{i}")
+
+    snaps = load_snapshots()
+    if snaps and st.button(f"Compare all runs ({len(snaps)} recorded) →", type="tertiary"):
+        go_to_compare()
+
+    # Evaluations no declared model accounts for are shown, never dropped: the
+    # demo fixture today, and any report whose scenario was since deleted.
+    others = unclaimed(cards, registry)
+    if others:
+        st.divider()
+        st.subheader("Other evaluations")
+        st.caption("Reports that no declared model accounts for.")
+        cols = st.columns(3)
+        for i, card in enumerate(sorted(others, key=lambda c: c["name"])):
+            with cols[i % 3]:
+                _tile(card, key=f"other_{i}")
+
+
 def page():
-    """Route entry: the gallery of everything that has been evaluated."""
+    """Route entry: projects when a model registry exists, the old gallery otherwise."""
     from catalog import load_catalog
-    gallery(load_catalog())
+    cards = load_catalog()
+    registry = load_registry()
+    if registry is None:
+        gallery(cards)
+        return
+    projects_overview(registry, cards)

@@ -6,15 +6,27 @@ import json
 import streamlit as st
 
 from catalog import PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER, normalise_verdict
-from render import (entries_for, metric_keys, placeholder, render_caveats,
+from registry import load_registry, model_of_scenario
+from render import (breadcrumb, entries_for, metric_keys, placeholder, render_caveats,
                     render_chart, render_explain, render_metric_explanations)
-from routing import go_to_overview
+from routing import go_to_model, go_to_overview, go_to_project
 
 def dashboard(card: dict):
     base = card["_dir"]
     report = json.loads((base / "report.json").read_text(encoding="utf-8"))
 
-    if st.button("← Back to overview"):
+    # The way back up is the hierarchy the reader came down: project, model,
+    # configuration. An evaluation no declared model accounts for — the demo
+    # fixture — has no hierarchy above it, and gets the plain way back.
+    registry = load_registry()
+    model = model_of_scenario(registry, card["id"])
+    if model:
+        label = next(c["label"] for c in model["configurations"] if c["scenario"] == card["id"])
+        breadcrumb([("Overview", go_to_overview),
+                    (model["project"], lambda: go_to_project(model["project"])),
+                    (model["name"], lambda: go_to_model(model["key"]))],
+                   here=label)
+    elif st.button("← Back to overview"):
         go_to_overview()
 
     st.title(f"{card.get('emoji','🧠')} {card['name']}")

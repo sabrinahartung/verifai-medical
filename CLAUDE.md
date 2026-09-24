@@ -145,9 +145,15 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
 - `showcase/` — `app.py` is routing and re-exports only (`st.navigation`); `catalog.py` reads
   artifacts and snapshots and owns the verdict vocabulary, `registry.py` reads the model
   registry, `render.py` draws, `views/` holds one module per page. It auto-discovers every
-  `artifacts/<id>/` folder with both `card.json` and `report.json`; clicking through renders the
-  report grouped by pillar. Planned-but-unbuilt components live in `planned.py` and render only
-  under `VERIFAI_SKELETON=1` — never on the public deploy. The gallery is sectioned
+  `artifacts/<id>/` folder with both `card.json` and `report.json`. Navigation runs
+  **project → model → configuration's report**: the overview lists projects from the model
+  registry, a project lists its models with their status, a model page lists its configurations
+  grouped by evaluation set. The sidebar holds only Overview and Compare runs; the drill-down
+  pages are hidden and located by a breadcrumb. Reports no registered model claims (the demo
+  fixture) are listed separately, never dropped. Planned-but-unbuilt components live in
+  `planned.py` and render only under `VERIFAI_SKELETON=1` — never on the public deploy; a test
+  asserts each is placed on some page. Without a registry the overview falls back to the
+  earlier gallery, which is sectioned
   by `card.group` (which problem) and collapses `card.lineage` (configurations of one
   investigation) into a single card. Both are **presentation only**: comparability is decided by
   the evaluation manifest's content hash, and a lineage filter must never widen it — asserted in
@@ -168,7 +174,8 @@ one checkpoint must agree on it; the registry builder raises if they do not. Lik
 it is presentation: it never widens what may be compared.
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
-a new artifact folder is a new tile. `card:` in the YAML is passed straight through to `card.json`.
+its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed
+straight through to `card.json`.
 To list a model *before* evaluating it, run `scripts/build_model_registry.py`; it then shows as
 not evaluated.
 

@@ -771,6 +771,14 @@ bigger than a ResNet18:
   workflow simply stopped matching.
 - The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
   directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+- **Bare `streamlit` is not the repo's.** Without an activated venv it resolves to the global
+  python.org install (`/Library/Frameworks/Python.framework/.../bin/streamlit`), which has
+  Streamlit 1.63 and nothing else, so the app dies on `ModuleNotFoundError: No module named
+  'plotly'`. Run `.venv/bin/streamlit run showcase/app.py`, or `source .venv/bin/activate`
+  first. Installing plotly globally only moves the failure to the next missing package.
+- **A running Streamlit server did not pick up edits to `showcase/views/*.py`**, even on a fresh
+  page load; the old module stayed in memory. Restart the server after editing anything below
+  `showcase/app.py` rather than trusting the reload.
 - Results are bit-identical **per device**, not across devices: expect third-decimal
   drift between CPU and MPS, which is why `report.json` records `meta.device`.
 

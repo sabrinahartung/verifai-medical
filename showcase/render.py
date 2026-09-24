@@ -42,6 +42,22 @@ except ImportError:                                           # pragma: no cover
 SKELETON = os.getenv("VERIFAI_SKELETON") == "1"
 
 
+def breadcrumb(trail: list[tuple[str, object]], here: str) -> None:
+    """Where the reader is, and one click back to any level above it.
+
+    The drill-down pages are hidden from the sidebar, so this is what locates
+    them. Tertiary buttons read as links and stay on one line; the last element
+    is the current page and is plain text, because a link to where you already
+    are is noise.
+    """
+    with st.container(horizontal=True, gap="small", vertical_alignment="center"):
+        for i, (label, go) in enumerate(trail):
+            if st.button(label, type="tertiary", key=f"crumb_{i}_{label}"):
+                go()
+            st.markdown(":gray[›]")
+        st.markdown(f"**{here}**")
+
+
 def placeholder(key: str, compact: bool = False) -> bool:
     """Draw the slot a planned component will occupy. Returns whether it drew.
 

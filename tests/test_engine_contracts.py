@@ -1601,3 +1601,61 @@ def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
     fake = {"models": [{"key": "k", "configurations": [{"scenario": "a"}]}]}
     left = reg_mod.unclaimed([{"id": "a"}, {"id": "fixture"}], fake)
     assert [c["id"] for c in left] == ["fixture"]
+
+
+# --- step 3: projects, the model page, and the model-scoped comparison --------
+def test_every_planned_component_has_a_place_on_some_page():
+    """A planned entry nothing draws is a promise with no slot — the skeleton
+    would claim a component is coming without showing where it goes."""
+    import re as _re
+    sys.path.insert(0, str(REPO / "showcase"))
+    from planned import PLANNED
+    # A slot inside a page, or a whole planned page (`planned_pages._stub`).
+    placed = set(_re.findall(r'(?:placeholder|_stub)\(\s*"([a-z_]+)"', _showcase_source()))
+    assert set(PLANNED) <= placed, f"planned but never placed: {sorted(set(PLANNED) - placed)}"
+    assert placed <= set(PLANNED), f"placed but not planned: {sorted(placed - set(PLANNED))}"
+
+
+def test_a_model_scoped_comparison_shows_exactly_its_configurations():
+    """The model page's 'compare' narrows to that checkpoint's configurations —
+    and goes through the same scope as the lineage filter, so it inherits the
+    same disclosure of hidden runs scored on the same images."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import scope_ids
+    reg = {"models": [{"key": "m", "name": "Model M",
+                       "configurations": [{"scenario": "a"}, {"scenario": "b"}]}]}
+    cards = [{"id": "a", "lineage": "L"}, {"id": "c", "lineage": "L"}]
+    assert scope_ids(cards, reg, model="m") == ({"a", "b"}, "Model M")
+    assert scope_ids(cards, reg, lineage="L") == ({"a", "c"}, "L")
+    assert scope_ids(cards, reg) == (None, None)
+    # an unknown model falls back to unfiltered rather than to an empty table
+    assert scope_ids(cards, reg, model="gone") == (None, None)
+
+
+def test_a_models_configurations_are_grouped_by_the_images_they_were_scored_on():
+    """Only configurations under one heading can be compared directly, so the
+    page groups by evaluation set: the model's own test set first, argmax before
+    any weighted rule."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.model import by_evaluation_set
+    model = {"trained_by": "own", "configurations": [
+        {"scenario": "ext", "label": "external", "eval_manifest": "a_external.csv",
+         "decision_weights": None},
+        {"scenario": "own_w", "label": "weighted", "eval_manifest": "z_test.csv",
+         "decision_weights": {"melanoma": 5}},
+        {"scenario": "own", "label": "as trained", "eval_manifest": "z_test.csv",
+         "decision_weights": None},
+    ]}
+    groups = by_evaluation_set(model)
+    assert [m for m, _ in groups] == ["z_test.csv", "a_external.csv"], "home set first"
+    assert [c["scenario"] for c in groups[0][1]] == ["own", "own_w"], "argmax first"
+
+
+def test_model_names_sort_their_numbers_as_numbers():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.project import natural_key
+    names = ["n=2,000", "n=100", "n=7,014", "n=500"]
+    assert sorted(names, key=natural_key) == ["n=100", "n=500", "n=2,000", "n=7,014"]

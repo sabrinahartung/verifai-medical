@@ -49,27 +49,33 @@ from views.report import dashboard  # noqa: F401,E402
 
 import routing  # noqa: E402
 from views import compare as _compare, overview as _overview, report as _report  # noqa: E402
+from views import model as _model, project as _project  # noqa: E402
 
 
 def _build_navigation():
     """The pages, and the sidebar that lists them.
 
-    Report is listed even with nothing selected — it then says so. The
-    alternative, hiding it until a run is picked, makes the navigation change
-    shape under the reader, which is worse than one honest empty state.
+    The sidebar lists where a reader can *start*: the overview and the
+    comparison. Project, model and report are drill-down pages — hidden from the
+    sidebar, reached by clicking down, and located by the breadcrumb at the top
+    of each. Listing them would put three entries in the sidebar that each open
+    on "nothing selected".
     """
     # No url_path on the default page: Streamlit serves the default at "/" and
     # 404s on an explicit path for it, so naming one would break the very link
     # a reader is most likely to type.
     overview = st.Page(_overview.page, title="Overview", icon=":material/grid_view:",
                        default=True)
-    report = st.Page(_report.page, title="Report", icon=":material/description:",
-                     url_path="report")
+    project = st.Page(_project.page, title="Project", url_path="project",
+                      visibility="hidden")
+    model = st.Page(_model.page, title="Model", url_path="model", visibility="hidden")
+    report = st.Page(_report.page, title="Report", url_path="report", visibility="hidden")
     compare = st.Page(_compare.page, title="Compare runs", icon=":material/compare_arrows:",
                       url_path="compare")
-    routing.register(overview=overview, report=report, compare=compare)
+    routing.register(overview=overview, project=project, model=model, report=report,
+                     compare=compare)
 
-    sections: dict[str, list] = {"Evaluations": [overview, report, compare]}
+    sections: dict[str, list] = {"Evaluations": [overview, project, model, report, compare]}
 
     if SKELETON:
         # Planned pages appear only in skeleton mode, so the public navigation
