@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from verifai.core.run import run_scenario
 from verifai.export.artifacts import write_report
+from verifai.export.model_registry import write_registry
 
 
 def main(scenario_path: str) -> None:
@@ -30,6 +31,11 @@ def main(scenario_path: str) -> None:
     print(f"✓ {len(report.findings)} finding(s) written -> {path}")
     for f in report.findings:
         print(f"   · {f.pillar:<14} {f.metric:<22} [{f.verdict}] {f.summary[:70]}")
+    # The showcase lists models from the registry, not from artifact folders, so
+    # it is refreshed on every run: a retrained checkpoint has new bytes, and
+    # therefore a new identity, the moment it is evaluated.
+    reg = write_registry(root=Path(__file__).resolve().parent.parent)
+    print(f"✓ model registry refreshed -> {reg}")
 
 
 if __name__ == "__main__":

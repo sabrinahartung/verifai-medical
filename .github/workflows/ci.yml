@@ -1,10 +1,14 @@
 name: tests & docs
 
+# Feature branches land in dev, and dev goes to main for a release. With only
+# main listed here, no feature PR was ever tested — the second time CI has been
+# switched off by a branch name without anything erroring (see the roadmap's
+# operational notes). The docs job below still deploys from main alone.
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -27,11 +31,16 @@ jobs:
       # CPU wheels on purpose: the default torch wheel pulls ~2.5 GB of CUDA for
       # a runner with no GPU. Installed before requirements-engine.txt so its
       # plain `torch` line is already satisfied.
+      #
+      # showcase/requirements.txt too: every showcase test starts with
+      # importorskip("streamlit"), and without it twenty of them — the lineage
+      # filter that must not widen a comparison among them — were skipped here
+      # on every run while passing locally.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements-engine.txt -r requirements-dev.txt
+          pip install -r requirements-engine.txt -r requirements-dev.txt -r showcase/requirements.txt
 
       - name: Run the contract tests
         run: pytest tests/ -q

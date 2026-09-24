@@ -65,5 +65,6 @@ model:
     melanoma: 30
 name: external_derm7pt_isic_highsens
 label: "ISIC · melanoma ×30 (tuned on HAM10000)"
+project: "Skin lesion classification"
 sample_size: null
 seed: 42

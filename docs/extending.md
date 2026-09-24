@@ -4,7 +4,9 @@ Two extension paths, both designed so the Streamlit app never learns about your 
 
 ## Adding a model
 
-A model is a scenario file. Run it, and a new tile appears.
+A model is a scenario file. Run it, and a new tile appears. To list it *before* running it —
+so it shows as not evaluated rather than not at all — rebuild the model registry:
+`python scripts/build_model_registry.py`. `run_scenario.py` does that itself after every run.
 
 ```mermaid
 flowchart LR
@@ -16,6 +18,8 @@ flowchart LR
 
 ```yaml
 name: my_model
+label: "My model"                # heads its column in the comparison table
+project: "Skin lesion classification"   # which problem; groups models in the overview
 domain: image
 seed: 42
 

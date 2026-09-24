@@ -165,6 +165,13 @@ Unfinished, and still ranked by what it would establish:
       every manifest row and feed no model. The one untested lever that adds *signal*
       rather than parameters — and it makes subgroup behaviour a design choice rather
       than an artefact, which is worth stating up front.
+- [ ] **Give Grad-CAM a sample worth averaging.** `explainability/gradcam.py` scores
+      `list(dataset)[:gradcam_max_images]` with a default of 7 that no scenario overrides, on
+      a manifest the loader sorts — so on the 1,493-image run the published faithfulness is a
+      mean over the first seven filenames, six of them nevi. Stratify by class, raise *n* to
+      what the compute allows, and add the random-attribution control
+      [[42]](references.md#ref-42): faithfulness 0.3 means nothing until it is set against
+      what a random highlight scores under identical conditions.
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97
@@ -751,6 +758,50 @@ bigger than a ResNet18:
   report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
   opt-in per metric, before the catalogue lands.
 
+## Tooling — planned: move to uv
+
+**Planned, on its own branch — not on `feat/user-interface`.** Noted 2026-09-24, after the global
+`streamlit` trap below cost a debugging session.
+
+**Why.** The dependencies are declared in four places — `pyproject.toml`,
+`requirements-engine.txt`, `requirements-dev.txt`, `showcase/requirements.txt` — and **none of
+them pins a version**. `pyproject.toml` has drifted (it still says "four RAI pillars" and lists
+neither Streamlit nor Plotly). The local venv runs Python 3.13.5 while CI runs 3.12, and CI
+installs whatever torch is newest on the day. For a project whose results are meant to be
+recomputable, the environment is the least reproducible part of it.
+
+uv answers all of it at once:
+
+- **one `pyproject.toml`** and a committed **`uv.lock`** — every machine and CI resolve the same
+  versions;
+- **`uv run …` needs no activated environment.** `uv run streamlit run showcase/app.py` always
+  uses the project's environment, creating or syncing it first — which removes the
+  global-`streamlit` trap by construction rather than by remembering `.venv/bin/`;
+- the same tool as the author's other projects, and much faster installs and CI.
+
+**Shape of the change.**
+
+- Dependency groups (PEP 735) rather than four files: `engine` (torch, torchvision, numpy,
+  matplotlib, huggingface-hub, pyyaml), `showcase` (streamlit, plotly, pillow), `dev` (pytest,
+  mkdocs-material). Locally `uv sync --all-groups`.
+- **The showcase deploy must stay torch-free** — the invariant that keeps Streamlit Community
+  Cloud free. Keep `showcase/requirements.txt` next to the entrypoint, where Cloud looks first,
+  but *generate* it from the lock (`uv export` restricted to the `showcase` group, no hashes), so
+  the deploy gets pinned versions too. The existing test that it carries no torch keeps guarding
+  it. Whether Cloud can read `uv.lock` directly is worth checking at the time — only useful if it
+  can install the `showcase` group alone.
+- A `.python-version` so local and CI run the same interpreter.
+- torch on CI: the CPU wheel index via `[[tool.uv.index]]`, replacing today's separate
+  `pip install torch --index-url …` step. macOS keeps the PyPI wheels, which carry MPS.
+- CI: `astral-sh/setup-uv`, `uv sync --locked`, `uv run pytest`, `uv run mkdocs build --strict`.
+- Update `docs/development.md`, the Commands block in `CLAUDE.md`, and the README to `uv run …`.
+
+**Until then**, run the repo's own interpreter explicitly — `.venv/bin/streamlit`,
+`.venv/bin/python -m pytest` — or `source .venv/bin/activate` once per terminal. Auto-activation
+on `cd` (direnv) would also work, but it is machine configuration to fix a problem uv removes.
+
+---
+
 ## Operational notes that have cost time
 
 - **Streamlit strips `<style>`** (`FORBID_TAGS: ['style']`), so CSS-class styling in
@@ -761,9 +812,21 @@ bigger than a ResNet18:
   without a CA bundle; `train_model.py` sets `SSL_CERT_FILE` from certifi on import.
 - **A branch rename silently switches CI off.** `.github/workflows/ci.yml` named
   `master` in three places after the default moved to `main`; nothing errored, the
-  workflow simply stopped matching.
+  workflow simply stopped matching. It happened again with the *feat → dev → main* flow:
+  only `main` was listed, so no feature PR into `dev` was tested (fixed 2026-09-24). And CI
+  never installed `showcase/requirements.txt`, so the twenty showcase tests guarded by
+  `importorskip("streamlit")` were skipped on every run while passing locally. Check both
+  whenever a branch is added to the flow or a test file gains a new optional import.
 - The `.venv` console scripts carry absolute shebangs, so moving or renaming the repo
   directory breaks `streamlit`, `pytest` and `mkdocs` while `.venv/bin/python` keeps working.
+- **Bare `streamlit` is not the repo's.** Without an activated venv it resolves to the global
+  python.org install (`/Library/Frameworks/Python.framework/.../bin/streamlit`), which has
+  Streamlit 1.63 and nothing else, so the app dies on `ModuleNotFoundError: No module named
+  'plotly'`. Run `.venv/bin/streamlit run showcase/app.py`, or `source .venv/bin/activate`
+  first. Installing plotly globally only moves the failure to the next missing package.
+- **A running Streamlit server did not pick up edits to `showcase/views/*.py`**, even on a fresh
+  page load; the old module stayed in memory. Restart the server after editing anything below
+  `showcase/app.py` rather than trusting the reload.
 - Results are bit-identical **per device**, not across devices: expect third-decimal
   drift between CPU and MPS, which is why `report.json` records `meta.device`.
 

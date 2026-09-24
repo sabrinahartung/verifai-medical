@@ -11,6 +11,7 @@
 #   4. python scripts/run_scenario.py scenarios/skin_cancer_clean.yaml
 name: skin_cancer_cost_moderate
 label: "Melanoma-weighted (w=5)"
+project: "Skin lesion classification"
 domain: image
 seed: 42
 sample_size: null          # evaluate the whole test manifest (1,493 images)
@@ -67,7 +68,7 @@ dataset:
   source: "HAM10000"
 
 card:
-  group: "Skin lesion — HAM10000 (verified split)"
+  group: "Internal test — HAM10000 (verified split)"
   lineage: "ResNet18 · clean split"
   name: "Melanoma-weighted (w=5)"
   emoji: "🔬"

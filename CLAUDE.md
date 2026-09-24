@@ -133,8 +133,27 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   so a new metric becomes comparable without this module knowing about it. Every snapshot
   carries the evaluation manifest's **content hash** and the integrity verdict — those two
   fields are what let `showcase/app.py` refuse a dishonest comparison, so do not drop them.
-- `showcase/app.py` — auto-discovers every `artifacts/<id>/` folder with both `card.json` and
-  `report.json`; clicking through renders the report grouped by pillar. The gallery is sectioned
+- `verifai/export/model_registry.py` — writes `showcase/artifacts/model_registry.json`: every
+  declared **model** and its configurations, read from the scenarios, so a model that has never
+  been evaluated still exists for the showcase. A model is a **checkpoint, identified by its
+  content hash** — never by `model.id`, which names three checkpoints in one direction and one
+  checkpoint answers to five ids in the other. The scenario whose `name` is the checkpoint's
+  filename trained it (`train_model.py` writes `<out_dir>/<name>.pt`); every other scenario on
+  those weights is a configuration of it. Evaluation status is **not** stored — the showcase
+  derives it from which artifact folders exist. Deterministic output; `run_scenario.py`
+  refreshes it after every run, and a test fails when it falls out of step with the scenarios.
+- `showcase/` — `app.py` is routing and re-exports only (`st.navigation`); `catalog.py` reads
+  artifacts and snapshots and owns the verdict vocabulary, `registry.py` reads the model
+  registry, `render.py` draws, `views/` holds one module per page. It auto-discovers every
+  `artifacts/<id>/` folder with both `card.json` and `report.json`. Navigation runs
+  **project → model → configuration's report**: the overview lists projects from the model
+  registry, a project lists its models with their status, a model page lists its configurations
+  grouped by evaluation set. The sidebar holds only Overview and Compare runs; the drill-down
+  pages are hidden and located by a breadcrumb. Reports no registered model claims (the demo
+  fixture) are listed separately, never dropped. Planned-but-unbuilt components live in
+  `planned.py` and render only under `VERIFAI_SKELETON=1` — never on the public deploy; a test
+  asserts each is placed on some page. Without a registry the overview falls back to the
+  earlier gallery, which is sectioned
   by `card.group` (which problem) and collapses `card.lineage` (configurations of one
   investigation) into a single card. Both are **presentation only**: comparability is decided by
   the evaluation manifest's content hash, and a lineage filter must never widen it — asserted in
@@ -142,15 +161,26 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
 
 ### The two extension contracts
 
-Every scenario declares a top-level `label:` — a short human name. It heads that run's
-column in the comparison table, and without it the snapshot falls back to `model_id`, which
+Every scenario declares a top-level `label:` — a short human name. It names that run's
+row in the comparison table, and without it the snapshot falls back to `model_id`, which
 turns the table into identifiers a reader has to decode (`external-derm7pt-isic` against
 `external-derm7pt-isic-masked` differ by one decision weight and neither string says which).
-`showcase/app.py::run_label` falls back to the gallery card's name for artifacts written
-before this existed; an explicit label always wins. A test asserts every scenario has one.
+`showcase/app.py::run_label` names a run by the label its scenario declares **today** (from the
+model registry), so a configuration reads the same in the comparison table as on its model page
+and report; the label a snapshot recorded at run time only names a run whose scenario is gone,
+and the gallery card's name stands in for snapshots that predate labels — never overriding a
+real one. A test asserts every scenario has one.
+
+Every scenario also declares a top-level `project:` — the problem it belongs to (today all of
+them: `"Skin lesion classification"`). The overview groups models by it. All configurations of
+one checkpoint must agree on it; the registry builder raises if they do not. Like `card.group`
+it is presentation: it never widens what may be compared.
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
-a new artifact folder is a new tile. `card:` in the YAML is passed straight through to `card.json`.
+its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed
+straight through to `card.json`.
+To list a model *before* evaluating it, run `scripts/build_model_registry.py`; it then shows as
+not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
 `METRIC_REGISTRY`, list its id under `metrics:` in the scenario. To be rendered, return a chart
@@ -166,8 +196,12 @@ that renders as a scale, so older artifacts don't break.
 
 **Every metric must also ship its own explanation** in `Finding.details["explain"]`, with three
 keys: `what` (what is being measured and why it matters), `how` (how to read this chart), and
-`limits` (what this number does *not* tell you). The app renders `what` + the summary inline and
-puts `how`/`limits` in a "How to read this chart" expander. This lives in the engine, not the app,
+`limits` (what this number does *not* tell you). The report renders them **open, in one fixed
+order** — what was measured, what came out (the summary), why it matters (`impact`, planned), how
+to read the chart, the chart, what it does not tell you — and never behind a click: the primary
+reader has never seen such a report, and an expander hid exactly the answers they most needed. A
+test asserts the order matches `docs/extending.md` and that none of these returns to an expander;
+only the glossary definitions sit behind one. This lives in the engine, not the app,
 so a new metric brings its own wording and still needs no app changes. Write it for a reader who
 has never seen a Responsible-AI report — plots alone do not communicate.
 
@@ -204,9 +238,11 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
 - State `n` in the `summary` and say plainly when it is only a plausibility check.
 - A metric that cannot be computed reports *why* and returns `None`, never an invented number —
   see `privacy/mia.py`, which requires a train/holdout split that the example set does not have.
-- `showcase/artifacts/_sample_skin_resnet/` is a dev fixture with fake numbers, flagged by
-  `"sample": true` in its `card.json`; the app shows a warning banner for it. Never set
-  `sample: false` on placeholder data.
+- An artifact with placeholder numbers must carry `"sample": true` in its `card.json`; the app
+  shows a warning banner for it. Never set `sample: false` on placeholder data. The one such
+  fixture, `_sample_skin_resnet`, was removed on 2026-09-24 once real runs had long replaced
+  it — on a public page, a tile of fake numbers confused more readers than its banner warned.
+  The banner stays, for the next placeholder.
 - **Never aggregate the pillars into one score, and never do arithmetic across metrics.** Not a "responsibility score", not a
   weighted RAI index, not a five-star rating — the same argument as the retired accuracy
   threshold, one level up. The weights would be the value judgement the reader came to

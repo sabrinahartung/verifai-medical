@@ -42,6 +42,7 @@ model:
   weights_path: artifacts_training/curve_ft_n100.pt
 name: curve_ft_n100
 label: "fine-tuned, n=100"
+project: "Skin lesion classification"
 sample_size: null
 seed: 42
 training:

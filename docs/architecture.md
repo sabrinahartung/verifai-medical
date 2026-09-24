@@ -103,7 +103,8 @@ detect and would otherwise produce a full report of flattering numbers.
 | `datasets/loaders.py` | manifest → `ImageDataset`, extra columns → `ImageSample.meta` | import from `verifai.models` |
 | `metrics/**` | one `run(model, dataset, ctx) -> Finding` each | know the app exists |
 | `export/artifacts.py` | `report.json` + `card.json` + `plots/` | compute anything |
-| `showcase/app.py` | discovery and rendering | know any metric's name |
+| `export/model_registry.py` | `model_registry.json` — models, their checkpoint hashes and configurations | store evaluation status, or any score |
+| `showcase/` | discovery and rendering; status derived from which artifacts exist | know any metric's name, or parse a scenario |
 
 !!! note "One dependency direction that is asserted in tests"
     `datasets/loaders.py` once did `from verifai.models.image import CLASSES` — a dataset

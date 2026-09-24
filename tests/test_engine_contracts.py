@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -14,6 +15,20 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
+
+def _showcase_source() -> str:
+    """Every line of the showcase package, concatenated.
+
+    The assertions below are about the *rendering path*, which used to be one
+    file. It is now a package, and reading `app.py` alone would quietly stop
+    checking the code that actually draws anything — a test that passes because
+    it is looking in the wrong place is worse than no test.
+    """
+    files = sorted((REPO / "showcase").rglob("*.py"))
+    assert files, "the showcase package must not be empty"
+    return "\n".join(f.read_text(encoding="utf-8") for f in files)
+
+
 sys.path.insert(0, str(REPO))
 
 from verifai.core.run import METRIC_REGISTRY, _load          # noqa: E402
@@ -882,7 +897,7 @@ def test_explanation_cards_survive_streamlits_html_sanitiser():
     assert "<" not in md and "style=" not in md, "no raw HTML in the card"
     assert "Membership-inference AUC" in md and "Measures" in md
 
-    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    source = _showcase_source()
     assert "unsafe_allow_html" not in source, (
         "the explanation path must not depend on HTML Streamlit may strip")
 
@@ -1065,7 +1080,7 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
         "fixture check: a hidden run must actually beat the shown ones, or this "
         "test would pass even with the disclosure removed")
 
-    source = (REPO / "showcase" / "app.py").read_text(encoding="utf-8")
+    source = _showcase_source()
     assert "hidden_comparable" in source, \
         "the comparison view must track runs the lineage filter hides"
     assert "were scored on these same images" in source, \
@@ -1367,3 +1382,396 @@ def test_older_artifacts_fall_back_to_the_card_name():
     unknown = {"scenario": "never_seen", "label": "mid", "model_id": "mid"}
     assert app.run_label(unknown) == "mid"
     assert app.run_label({"scenario": "never_seen"}) == "never_seen"
+
+
+# --- the skeleton: placeholders for what is planned and not built -------------
+def _heading_ids(path) -> set:
+    """Approximate python-markdown's toc slugifier for one file's headings."""
+    import re as _re
+    import unicodedata as _ud
+    ids = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = _re.match(r"^#{1,6}\s+(.*)", line)
+        if not m:
+            continue
+        t = _re.sub(r"`([^`]*)`", r"\1", m.group(1).strip().lower())
+        t = _re.sub(r"\[\[?([^\]]*)\]\]?\([^)]*\)", r"\1", t)
+        t = _re.sub(r"[*_]", "", t)
+        t = _ud.normalize("NFKD", t)
+        t = _re.sub(r"[^\w\s-]", "", t)
+        ids.add(_re.sub(r"\s+", "-", t.strip()))
+    return ids
+
+
+def test_every_placeholder_points_at_a_plan_that_still_exists():
+    """A placeholder is a promise. An unresolvable one is a stale promise.
+
+    Each entry in `planned.py` names the document section that says what the
+    component is for and what is blocking it. If that section is renamed or
+    deleted, the placeholder has to be updated or removed in the same change —
+    otherwise the app goes on advertising a plan nobody can read.
+    """
+    sys.path.insert(0, str(REPO / "showcase"))
+    from planned import PLANNED
+
+    assert PLANNED, "the skeleton must not be empty while components are unbuilt"
+    for key, entry in PLANNED.items():
+        for field in ("title", "shows", "blocked_by", "phase"):
+            assert entry.get(field), f"{key} is missing {field}"
+        doc, _, anchor = entry["phase"].partition("#")
+        path = REPO / "docs" / doc
+        assert path.exists(), f"{key} points at a document that does not exist: {doc}"
+        assert anchor, f"{key} must name a section, not just a file"
+        assert anchor in _heading_ids(path), (
+            f"{key} points at docs/{doc}#{anchor}, which is not a heading there")
+
+
+def test_planned_components_are_hidden_unless_asked_for():
+    """The public deploy must never advertise capability it does not have.
+
+    Same rule as the `sample: true` banner, one level up: an empty "Coverage
+    map" card on a live page is a claim about the future rendered in the
+    present. Skeleton mode is opt-in through the environment, which is why the
+    torch-free Streamlit Cloud deploy is safe by default.
+    """
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import render
+
+    assert render.SKELETON == (os.getenv("VERIFAI_SKELETON") == "1")
+    if not render.SKELETON:
+        assert render.placeholder("coverage_map") is False, \
+            "placeholders must not draw unless VERIFAI_SKELETON=1"
+    assert render.placeholder("not_a_planned_component") is False
+
+
+def test_the_showcase_package_stays_free_of_heavy_imports():
+    """`showcase/requirements.txt` has no torch and the skeleton must not add one."""
+    source = _showcase_source()
+    for heavy in ("import torch", "import torchvision", "from torch",
+                  "import transformers"):
+        assert heavy not in source, f"the showcase must not need {heavy!r}"
+
+
+# --- the model registry: which models exist, whether or not they have run -----
+def _write_scenario(dir_, name, weights=None, project="P", training=False, **extra):
+    """A minimal scenario file, enough for the registry builder to read."""
+    import yaml as _yaml
+    sc = {"name": name, "label": name.replace("_", " "), "project": project,
+          "model": {"weights_path": weights} if weights else {},
+          "dataset": {"manifest": "m.csv", "id": "d"}, "metrics": ["x.y"], **extra}
+    if training:
+        sc["training"] = {"arch": "resnet18"}
+    (dir_ / f"{name}.yaml").write_text(_yaml.safe_dump(sc), encoding="utf-8")
+
+
+def test_every_scenario_declares_a_project():
+    """The overview groups models by project, and a model without one lands in
+    'Unassigned' — a bucket that grows quietly until it is the whole page."""
+    yaml = pytest.importorskip("yaml")
+    missing = [p.name for p in sorted((REPO / "scenarios").glob("*.yaml"))
+               if not yaml.safe_load(p.read_text(encoding="utf-8")).get("project")]
+    assert not missing, f"scenarios without a project: {missing}"
+
+
+def test_the_committed_model_registry_is_in_step_with_the_scenarios():
+    """Rebuilding must reproduce the committed file exactly.
+
+    Checkpoints are gitignored, so where they are absent the builder carries
+    hashes and provenance forward from the committed file — and equality then
+    means the *scenarios* have not moved on without it. Where they are present,
+    it also means no checkpoint was retrained without the registry noticing.
+    Fix: `python scripts/build_model_registry.py`.
+    """
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import REGISTRY_PATH, build_registry
+    committed = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    rebuilt = build_registry(REPO / "scenarios", root=REPO, previous=committed)
+    assert rebuilt == committed, (
+        "showcase/artifacts/model_registry.json is out of date — "
+        "run scripts/build_model_registry.py")
+
+
+def test_a_model_is_its_checkpoint_not_its_model_id():
+    """`model.id` names three checkpoints in one direction and one checkpoint
+    answers to five ids in the other, so grouping on it would merge different
+    models and split one. Every configuration of a model must point at the same
+    weights, and no two models may share them."""
+    from verifai.export.model_registry import REGISTRY_PATH
+    reg = json.loads((REPO / REGISTRY_PATH).read_text(encoding="utf-8"))
+    yaml = pytest.importorskip("yaml")
+    weights_of = {}
+    for p in (REPO / "scenarios").glob("*.yaml"):
+        sc = yaml.safe_load(p.read_text(encoding="utf-8"))
+        m = sc.get("model") or {}
+        weights_of[sc["name"]] = m.get("weights_path") or m.get("repo_id")
+    seen = {}
+    for model in reg["models"]:
+        refs = {weights_of[c["scenario"]] for c in model["configurations"]}
+        assert len(refs) == 1, f"{model['key']} mixes weights: {refs}"
+        ref = refs.pop()
+        assert ref not in seen, f"{model['key']} and {seen.get(ref)} share {ref}"
+        seen[ref] = model["key"]
+    # and the configurations are all accounted for, once
+    listed = [c["scenario"] for m in reg["models"] for c in m["configurations"]]
+    assert sorted(listed) == sorted(weights_of), "every scenario is one configuration"
+
+
+def test_only_the_scenario_named_after_a_checkpoint_trained_it(tmp_path):
+    """Several configurations carry a copied `training:` block while evaluating
+    someone else's weights. `train_model.py` writes `<out_dir>/<name>.pt`, so
+    that name — not the presence of a block — says who trained it."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "base", weights="ck/base.pt", training=True)
+    _write_scenario(sc, "base_tuned", weights="ck/base.pt", training=True,
+                    )   # a copied block, and not the trainer
+    reg = build_registry(sc, root=tmp_path)
+    (model,) = reg["models"]
+    assert model["trained_by"] == "base"
+    assert [c["scenario"] for c in model["configurations"]] == ["base", "base_tuned"]
+
+
+def test_model_provenance_never_carries_a_score(tmp_path):
+    """A validation accuracy on the model page would read as the model's result,
+    with no interval, beside the test-set report that carries one."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    ck = tmp_path / "ck"; ck.mkdir()
+    (ck / "m.pt").write_bytes(b"weights")
+    (ck / "m_training.json").write_text(json.dumps({
+        "arch": "resnet18", "train_images": 10, "best_val_balanced_accuracy": 0.72,
+        "history": [{"epoch": 1, "val_accuracy": 0.6}]}), encoding="utf-8")
+    _write_scenario(sc, "m", weights="ck/m.pt", training=True)
+    prov = build_registry(sc, root=tmp_path)["models"][0]["provenance"]
+    assert prov == {"arch": "resnet18", "train_images": 10}
+
+
+def test_a_model_belongs_to_one_project(tmp_path):
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "a", weights="ck/a.pt", project="Skin")
+    _write_scenario(sc, "a_other", weights="ck/a.pt", project="Chest")
+    with pytest.raises(ValueError, match="2 projects"):
+        build_registry(sc, root=tmp_path)
+
+
+def test_models_without_declared_weights_are_never_merged(tmp_path):
+    """Two scenarios that name no weights are not therefore the same model.
+    An invented shared identity would let a comparison treat them as one."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_scenario(sc, "x"); _write_scenario(sc, "y")
+    models = build_registry(sc, root=tmp_path)["models"]
+    assert len(models) == 2 and not any(m["identified"] for m in models)
+
+
+def test_a_missing_checkpoint_keeps_the_identity_it_had(tmp_path):
+    """Checkpoints are gitignored. Rebuilding on a machine without them must not
+    erase what is known about them — it would silently turn every model's
+    content hash back into a path."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    ck = tmp_path / "ck"; ck.mkdir()
+    (ck / "m.pt").write_bytes(b"weights")
+    (ck / "m_training.json").write_text('{"arch": "resnet18"}', encoding="utf-8")
+    _write_scenario(sc, "m", weights="ck/m.pt", training=True)
+    first = build_registry(sc, root=tmp_path)
+    (ck / "m.pt").unlink(); (ck / "m_training.json").unlink()
+    assert build_registry(sc, root=tmp_path, previous=first) == first
+    orphaned = build_registry(sc, root=tmp_path)["models"][0]
+    assert orphaned["identity"] == "path:ck/m.pt" and orphaned["sha256"] is None
+
+
+def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
+    """Status is counted from which reports exist, never stored; and an
+    evaluation no model claims is returned, not dropped."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import registry as reg_mod
+    model = {"configurations": [{"scenario": "a"}, {"scenario": "b"}]}
+    assert reg_mod.model_status(model, {"a", "b"})["state"] == "evaluated"
+    assert reg_mod.model_status(model, {"a"}) == {"evaluated": 1, "total": 2, "state": "partly"}
+    assert reg_mod.model_status(model, set())["state"] == "not_evaluated"
+    fake = {"models": [{"key": "k", "configurations": [{"scenario": "a"}]}]}
+    left = reg_mod.unclaimed([{"id": "a"}, {"id": "fixture"}], fake)
+    assert [c["id"] for c in left] == ["fixture"]
+
+
+# --- step 3: projects, the model page, and the model-scoped comparison --------
+def test_every_planned_component_has_a_place_on_some_page():
+    """A planned entry nothing draws is a promise with no slot — the skeleton
+    would claim a component is coming without showing where it goes."""
+    import re as _re
+    sys.path.insert(0, str(REPO / "showcase"))
+    from planned import PLANNED
+    # A slot inside a page, or a whole planned page (`planned_pages._stub`).
+    placed = set(_re.findall(r'(?:placeholder|_stub)\(\s*"([a-z_]+)"', _showcase_source()))
+    assert set(PLANNED) <= placed, f"planned but never placed: {sorted(set(PLANNED) - placed)}"
+    assert placed <= set(PLANNED), f"placed but not planned: {sorted(placed - set(PLANNED))}"
+
+
+def test_a_model_scoped_comparison_shows_exactly_its_configurations():
+    """The model page's 'compare' narrows to that checkpoint's configurations —
+    and goes through the same scope as the lineage filter, so it inherits the
+    same disclosure of hidden runs scored on the same images."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import scope_ids
+    reg = {"models": [{"key": "m", "name": "Model M",
+                       "configurations": [{"scenario": "a"}, {"scenario": "b"}]}]}
+    cards = [{"id": "a", "lineage": "L"}, {"id": "c", "lineage": "L"}]
+    assert scope_ids(cards, reg, model="m") == ({"a", "b"}, "Model M")
+    assert scope_ids(cards, reg, lineage="L") == ({"a", "c"}, "L")
+    assert scope_ids(cards, reg) == (None, None)
+    # an unknown model falls back to unfiltered rather than to an empty table
+    assert scope_ids(cards, reg, model="gone") == (None, None)
+
+
+def test_a_models_configurations_are_grouped_by_the_images_they_were_scored_on():
+    """Only configurations under one heading can be compared directly, so the
+    page groups by evaluation set: the model's own test set first, argmax before
+    any weighted rule."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.model import by_evaluation_set
+    model = {"trained_by": "own", "configurations": [
+        {"scenario": "ext", "label": "external", "eval_manifest": "a_external.csv",
+         "decision_weights": None},
+        {"scenario": "own_w", "label": "weighted", "eval_manifest": "z_test.csv",
+         "decision_weights": {"melanoma": 5}},
+        {"scenario": "own", "label": "as trained", "eval_manifest": "z_test.csv",
+         "decision_weights": None},
+    ]}
+    groups = by_evaluation_set(model)
+    assert [m for m, _ in groups] == ["z_test.csv", "a_external.csv"], "home set first"
+    assert [c["scenario"] for c in groups[0][1]] == ["own", "own_w"], "argmax first"
+
+
+def test_model_names_sort_their_numbers_as_numbers():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.project import natural_key
+    names = ["n=2,000", "n=100", "n=7,014", "n=500"]
+    assert sorted(names, key=natural_key) == ["n=100", "n=500", "n=2,000", "n=7,014"]
+
+
+# --- step 5: the report layout ------------------------------------------------
+def test_the_info_box_asks_its_five_questions_in_the_documented_order():
+    """'Same order every time' is the contract docs/extending.md states. A
+    reader who has learned where 'what it does not tell you' sits must find it
+    there on every finding."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import render
+    assert render.INFO_BOX_ORDER == ("what", "summary", "impact", "how", "limits")
+    doc = (REPO / "docs" / "extending.md").read_text(encoding="utf-8")
+    table = doc[doc.index("| The reader asks |"):]
+    positions = [table.index(k) for k in ("explain.what", "`summary`", "explain.impact",
+                                           "explain.how", "explain.limits")]
+    assert positions == sorted(positions), "the documented order and the rendered one differ"
+
+
+def test_a_findings_explanation_is_never_behind_a_click():
+    """Progressive disclosure by depth on the page, never by click — the
+    settled rule for the primary reader. The expander that hid 'how to read
+    this chart' and 'what it does not tell you' must not come back; only the
+    reference definitions may sit behind one."""
+    source = _showcase_source()
+    for label in ("How to read this chart", "What it does not tell you",
+                  "What was measured", "What came out"):
+        assert f'expander("{label}' not in source, f"{label!r} is behind a click again"
+
+
+def test_the_report_holds_its_page_when_integrity_is_not_verified():
+    """Every other number is conditional on the split. A report whose split was
+    never checked — or has no integrity finding at all — must say so above
+    everything, not as one sixth of a row."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import integrity_state
+    clean = {"pillar": "integrity", "verdict": "measured", "summary": "clean"}
+    unverified = {"pillar": "integrity", "verdict": "unavailable", "summary": "not checked"}
+    leaked = {"pillar": "integrity", "verdict": "fail", "summary": "leaked"}   # retired word
+    other = {"pillar": "performance", "verdict": "measured"}
+    assert integrity_state([clean, other])[0] == "measured"
+    assert integrity_state([unverified, other]) == ("unavailable", unverified)
+    assert integrity_state([leaked])[0] == "invalid", "a retired `fail` still gates the page"
+    assert integrity_state([other]) == ("unavailable", None), "no check is not a clean check"
+
+
+def test_a_configuration_goes_by_one_name_on_every_page():
+    """The comparison table named 18 of 23 configurations differently from the
+    model page, because it preferred the label a snapshot recorded at run time.
+    The label the scenario declares today wins; the recorded one only names a
+    run whose scenario is gone; a card name never overrides either."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+    app._SCENARIO_LABELS["renamed"] = "Current name"
+    app._CARD_NAMES["renamed"] = "Gallery name"
+    recorded = {"scenario": "renamed", "label": "Name at run time", "model_id": "mid"}
+    assert app.run_label(recorded) == "Current name"
+    gone = {"scenario": "deleted_since", "label": "Name at run time", "model_id": "mid"}
+    assert app.run_label(gone) == "Name at run time"
+    # and on the real artifacts: every snapshot reads as its model page does
+    app.load_catalog()
+    import glob as _glob
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text("utf-8"))
+    current = {c["scenario"]: c["label"] for m in reg["models"] for c in m["configurations"]}
+    for f in _glob.glob(str(REPO / "showcase/artifacts/*/history/*.json")):
+        snap = json.loads(Path(f).read_text(encoding="utf-8"))
+        if snap["scenario"] in current:
+            assert app.run_label(snap) == current[snap["scenario"]], snap["scenario"]
+
+
+# --- step 6: the comparison page ----------------------------------------------
+def test_comparison_columns_are_named_as_readers_know_them():
+    """A header reading `performance.per_class.melanoma.ppv_test_prevalence`
+    invites exactly the misreading the glossary exists to prevent. Each column
+    gets its term, plus what the pattern's wildcard matched, so melanoma's
+    sensitivity and a mole's do not share a name — and names stay unique."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import metric_labels
+    keys = ["performance.per_class.melanoma.sensitivity",
+            "performance.per_class.melanocytic_Nevi.sensitivity",
+            "performance.per_class.melanoma.support", "performance.support.melanoma",
+            "privacy.mia_auc", "not.in.the.glossary"]
+    names = metric_labels(keys)
+    assert names["performance.per_class.melanoma.sensitivity"].endswith("· melanoma")
+    assert names["privacy.mia_auc"] == "Membership-inference AUC"
+    assert names["not.in.the.glossary"] == "not.in.the.glossary", "unknown keys stay raw"
+    assert len(set(names.values())) == len(keys), f"names collide: {names}"
+
+
+def test_the_tradeoff_frontier_respects_each_axis_direction():
+    """Grey on the scatter means beaten on both axes by another run — a fact.
+    With privacy's AUC lower-is-better, a run that is worse on that axis is not
+    'beaten' merely for having the larger number."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import pareto_front
+    pts = [("a", 0.9, 0.6), ("b", 0.8, 0.5), ("c", 0.7, 0.7), ("d", None, 0.1)]
+    assert pareto_front(pts, "higher", "lower") == {"a", "b"}   # c is beaten by b on both
+    assert pareto_front(pts, "higher", "higher") == {"a", "c"}  # b is beaten by a on both
+    assert pareto_front([("x", 1, 1), ("y", 1, 1)], "higher", "higher") == {"x", "y"}, \
+        "identical runs do not beat each other"
+
+
+def test_the_comparison_table_has_a_row_per_run_and_marks_only_ranked_leaders():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import BEATEN_BY, comparison_table
+    runs = [{"scenario": "p", "label": "P", "model_id": "p", "metrics": {"m.up": 0.9, "m.free": 3}},
+            {"scenario": "q", "label": "Q", "model_id": "q", "metrics": {"m.up": 0.5, "m.free": 7}}]
+    table, leaders = comparison_table(runs, ["m.up", "m.free"],
+                                      {"m.up": "higher", "m.free": None}, {"Q": "P"})
+    assert list(table["Run"]) == ["P", "Q"], "runs are rows"
+    assert leaders == {"m.up": "P", "m.free": None}, "an undeclared metric is never ranked"
+    assert list(table[BEATEN_BY]) == ["", "P"]

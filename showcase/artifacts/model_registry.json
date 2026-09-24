@@ -1,0 +1,952 @@
+{
+  "schema": 1,
+  "projects": [
+    {
+      "name": "Skin lesion classification",
+      "models": [
+        "curve_ft_n100",
+        "curve_ft_n2000",
+        "curve_ft_n500",
+        "curve_ft_n7014",
+        "curve_probe_n100",
+        "curve_probe_n2000",
+        "curve_probe_n500",
+        "curve_probe_n7014",
+        "resnet18_ham10000_classweights",
+        "skin_cancer_clean",
+        "skin_cancer_focal",
+        "skin_cancer_isic",
+        "skin_cancer_isic_probe",
+        "skin_cancer_isic_r50",
+        "skin_cancer_oversample"
+      ]
+    }
+  ],
+  "models": [
+    {
+      "identity": "sha256:3c107f51f25ed06a",
+      "sha256": "3c107f51f25ed06a",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_ft_n100.pt"
+      },
+      "key": "curve_ft_n100",
+      "configurations": [
+        {
+          "scenario": "curve_ft_n100",
+          "label": "fine-tuned, n=100",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_ft_n100",
+      "name": "fine-tuned, n=100",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": false,
+        "manifests": {
+          "train": "data/manifests/isic_n100_train.csv",
+          "val": "data/manifests/isic_n100_val.csv",
+          "test": "data/manifests/isic_n100_test.csv"
+        },
+        "train_images": 120,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:c3e526f590532e5c",
+      "sha256": "c3e526f590532e5c",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_ft_n2000.pt"
+      },
+      "key": "curve_ft_n2000",
+      "configurations": [
+        {
+          "scenario": "curve_ft_n2000",
+          "label": "fine-tuned, n=2,000",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_ft_n2000",
+      "name": "fine-tuned, n=2,000",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": false,
+        "manifests": {
+          "train": "data/manifests/isic_n2000_train.csv",
+          "val": "data/manifests/isic_n2000_val.csv",
+          "test": "data/manifests/isic_n2000_test.csv"
+        },
+        "train_images": 2002,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:8b2c2d2bfa367b6d",
+      "sha256": "8b2c2d2bfa367b6d",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_ft_n500.pt"
+      },
+      "key": "curve_ft_n500",
+      "configurations": [
+        {
+          "scenario": "curve_ft_n500",
+          "label": "fine-tuned, n=500",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_ft_n500",
+      "name": "fine-tuned, n=500",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": false,
+        "manifests": {
+          "train": "data/manifests/isic_n500_train.csv",
+          "val": "data/manifests/isic_n500_val.csv",
+          "test": "data/manifests/isic_n500_test.csv"
+        },
+        "train_images": 504,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:0a42400661062a0d",
+      "sha256": "0a42400661062a0d",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_ft_n7014.pt"
+      },
+      "key": "curve_ft_n7014",
+      "configurations": [
+        {
+          "scenario": "curve_ft_n7014",
+          "label": "fine-tuned, n=7,014",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_ft_n7014",
+      "name": "fine-tuned, n=7,014",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": false,
+        "manifests": {
+          "train": "data/manifests/isic_n7014_train.csv",
+          "val": "data/manifests/isic_n7014_val.csv",
+          "test": "data/manifests/isic_n7014_test.csv"
+        },
+        "train_images": 7031,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:2f302b80776f5250",
+      "sha256": "2f302b80776f5250",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_probe_n100.pt"
+      },
+      "key": "curve_probe_n100",
+      "configurations": [
+        {
+          "scenario": "curve_probe_n100",
+          "label": "linear probe, n=100",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_probe_n100",
+      "name": "linear probe, n=100",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": true,
+        "manifests": {
+          "train": "data/manifests/isic_n100_train.csv",
+          "val": "data/manifests/isic_n100_val.csv",
+          "test": "data/manifests/isic_n100_test.csv"
+        },
+        "train_images": 120,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:8f8a1dd223ba5a23",
+      "sha256": "8f8a1dd223ba5a23",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_probe_n2000.pt"
+      },
+      "key": "curve_probe_n2000",
+      "configurations": [
+        {
+          "scenario": "curve_probe_n2000",
+          "label": "linear probe, n=2,000",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_probe_n2000",
+      "name": "linear probe, n=2,000",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": true,
+        "manifests": {
+          "train": "data/manifests/isic_n2000_train.csv",
+          "val": "data/manifests/isic_n2000_val.csv",
+          "test": "data/manifests/isic_n2000_test.csv"
+        },
+        "train_images": 2002,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:e0dadc3f3d4e9315",
+      "sha256": "e0dadc3f3d4e9315",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_probe_n500.pt"
+      },
+      "key": "curve_probe_n500",
+      "configurations": [
+        {
+          "scenario": "curve_probe_n500",
+          "label": "linear probe, n=500",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_probe_n500",
+      "name": "linear probe, n=500",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": true,
+        "manifests": {
+          "train": "data/manifests/isic_n500_train.csv",
+          "val": "data/manifests/isic_n500_val.csv",
+          "test": "data/manifests/isic_n500_test.csv"
+        },
+        "train_images": 504,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:881affebbdda27b7",
+      "sha256": "881affebbdda27b7",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/curve_probe_n7014.pt"
+      },
+      "key": "curve_probe_n7014",
+      "configurations": [
+        {
+          "scenario": "curve_probe_n7014",
+          "label": "linear probe, n=7,014",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "curve_probe_n7014",
+      "name": "linear probe, n=7,014",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": true,
+        "manifests": {
+          "train": "data/manifests/isic_n7014_train.csv",
+          "val": "data/manifests/isic_n7014_val.csv",
+          "test": "data/manifests/isic_n7014_test.csv"
+        },
+        "train_images": 7031,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@unpinned",
+      "sha256": null,
+      "checkpoint": {
+        "kind": "hub",
+        "repo_id": "sabrinahartung1010/skin-lesion-resnet18",
+        "filename": "resnet18_ham10000_classweights.pt",
+        "revision": null
+      },
+      "key": "resnet18_ham10000_classweights",
+      "configurations": [
+        {
+          "scenario": "skin_cancer",
+          "label": "Original checkpoint (split unverified)",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_examples.csv",
+          "dataset_id": "ham10000-examples",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": null,
+      "name": "Original checkpoint (split unverified)",
+      "provenance": null,
+      "identified": true
+    },
+    {
+      "identity": "sha256:68c29910a0c197b0",
+      "sha256": "68c29910a0c197b0",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_clean.pt"
+      },
+      "key": "skin_cancer_clean",
+      "configurations": [
+        {
+          "scenario": "external_derm7pt_clean",
+          "label": "HAM10000 corpus only",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_clean",
+          "label": "HAM10000 corpus (clean split)",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_cost_highsens",
+          "label": "High-sensitivity (w=50)",
+          "decision_weights": {
+            "melanoma": 50
+          },
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_cost_moderate",
+          "label": "Melanoma-weighted (w=5)",
+          "decision_weights": {
+            "melanoma": 5
+          },
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_clean",
+      "name": "HAM10000 corpus (clean split)",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "manifests": {
+          "train": "data/manifests/ham10000_train.csv",
+          "val": "data/manifests/ham10000_val.csv",
+          "test": "data/manifests/ham10000_test.csv"
+        },
+        "train_images": 7014,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:5a83a49f70520e68",
+      "sha256": "5a83a49f70520e68",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_focal.pt"
+      },
+      "key": "skin_cancer_focal",
+      "configurations": [
+        {
+          "scenario": "skin_cancer_focal",
+          "label": "Focal loss (γ=2)",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_focal",
+      "name": "Focal loss (γ=2)",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "focal",
+        "focal_gamma": 2.0,
+        "sampling": "none",
+        "manifests": {
+          "train": "data/manifests/ham10000_train.csv",
+          "val": "data/manifests/ham10000_val.csv",
+          "test": "data/manifests/ham10000_test.csv"
+        },
+        "train_images": 7014,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:12fbb0335ce803a5",
+      "sha256": "12fbb0335ce803a5",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_isic.pt"
+      },
+      "key": "skin_cancer_isic",
+      "configurations": [
+        {
+          "scenario": "external_derm7pt_isic",
+          "label": "ISIC corpus — as deployed",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "external_derm7pt_isic_highsens",
+          "label": "ISIC · melanoma ×30 (tuned on HAM10000)",
+          "decision_weights": {
+            "melanoma": 30
+          },
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "external_derm7pt_isic_masked",
+          "label": "ISIC corpus — absent class masked",
+          "decision_weights": {
+            "actinic_keratoses": 0
+          },
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_isic",
+          "label": "ISIC corpus",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_isic_highsens",
+          "label": "ISIC · melanoma ×30",
+          "decision_weights": {
+            "melanoma": 30
+          },
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_isic",
+      "name": "ISIC corpus",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "manifests": {
+          "train": "data/manifests/isic_train.csv",
+          "val": "data/manifests/isic_val.csv",
+          "test": "data/manifests/isic_test.csv"
+        },
+        "train_images": 21770,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:aadaf104e83c138a",
+      "sha256": "aadaf104e83c138a",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_isic_probe.pt"
+      },
+      "key": "skin_cancer_isic_probe",
+      "configurations": [
+        {
+          "scenario": "external_derm7pt_probe",
+          "label": "Linear probe (frozen features)",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "skin_cancer_isic_probe",
+          "label": "Linear probe (frozen features)",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_isic_probe",
+      "name": "Linear probe (frozen features)",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "freeze_backbone": true,
+        "manifests": {
+          "train": "data/manifests/isic_train.csv",
+          "val": "data/manifests/isic_val.csv",
+          "test": "data/manifests/isic_test.csv"
+        },
+        "train_images": 21770,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:60e91eb08e0bcd32",
+      "sha256": "60e91eb08e0bcd32",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_isic_r50.pt"
+      },
+      "key": "skin_cancer_isic_r50",
+      "configurations": [
+        {
+          "scenario": "skin_cancer_isic_r50",
+          "label": "ResNet50 · ISIC corpus",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_isic_r50",
+      "name": "ResNet50 · ISIC corpus",
+      "provenance": {
+        "arch": "resnet50",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": true,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "none",
+        "manifests": {
+          "train": "data/manifests/isic_train.csv",
+          "val": "data/manifests/isic_val.csv",
+          "test": "data/manifests/isic_test.csv"
+        },
+        "train_images": 21770,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    },
+    {
+      "identity": "sha256:e625343add8ccf7d",
+      "sha256": "e625343add8ccf7d",
+      "checkpoint": {
+        "kind": "local",
+        "path": "artifacts_training/skin_cancer_oversample.pt"
+      },
+      "key": "skin_cancer_oversample",
+      "configurations": [
+        {
+          "scenario": "skin_cancer_oversample",
+          "label": "Balanced oversampling",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "project": "Skin lesion classification",
+      "trained_by": "skin_cancer_oversample",
+      "name": "Balanced oversampling",
+      "provenance": {
+        "arch": "resnet18",
+        "classes": [
+          "actinic_keratoses",
+          "basal_cell_carcinoma",
+          "benign_keratosis-like_lesions",
+          "dermatofibroma",
+          "melanocytic_Nevi",
+          "melanoma",
+          "vascular_lesions"
+        ],
+        "seed": 42,
+        "epochs": 12,
+        "image_size": 224,
+        "class_weights": false,
+        "loss": "ce",
+        "focal_gamma": null,
+        "sampling": "balanced",
+        "manifests": {
+          "train": "data/manifests/ham10000_train.csv",
+          "val": "data/manifests/ham10000_val.csv",
+          "test": "data/manifests/ham10000_test.csv"
+        },
+        "train_images": 7014,
+        "val_images": 1508,
+        "note": "test manifest was not read during training"
+      },
+      "identified": true
+    }
+  ]
+}
