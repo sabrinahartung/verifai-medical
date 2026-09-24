@@ -1880,3 +1880,39 @@ def test_run_active_runs_exactly_the_active_scenarios():
                       if _yaml.safe_load(p.read_text(encoding="utf-8")).get("status") == "active")
     assert sorted(p.name for p in active_scenarios(REPO / "scenarios")) == expected
     assert expected, "at least one scenario must stay active"
+
+
+# --- every page renders -------------------------------------------------------
+def _render_page(params):
+    """Run one page function the way st.navigation would, with its route set."""
+    import sys as _sys
+    import importlib as _il
+    import streamlit as _st
+    _sys.path.insert(0, "showcase")
+    page = params.pop("_page")
+    for key, value in params.items():
+        _st.session_state[key] = value
+    _il.import_module(f"views.{page}").page()
+
+
+@pytest.mark.parametrize("params", [
+    {"_page": "overview"},
+    {"_page": "project", "project": "Skin lesion classification"},
+    {"_page": "model", "model": "skin_cancer_isic"},
+    {"_page": "model", "model": "skin_cancer_focal"},
+    {"_page": "report", "run": "skin_cancer_isic"},
+    {"_page": "report", "run": "skin_cancer"},
+    {"_page": "compare"},
+    {"_page": "compare", "model": "skin_cancer_isic"},
+    {"_page": "compare", "lineage": "ResNet18 · clean split"},
+], ids=lambda p: "-".join(str(v) for v in p.values()))
+def test_every_page_renders_without_an_exception(params, monkeypatch):
+    """The unit tests cover the helpers; this covers the pages that call them.
+    A broken call inside a page — an argument slipped into the wrong bracket —
+    passed every other test and crashed the whole comparison page."""
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+    monkeypatch.chdir(REPO)
+    at = AppTest.from_function(_render_page, args=(dict(params),), default_timeout=120)
+    at.run()
+    assert not at.exception, [e.value for e in at.exception]

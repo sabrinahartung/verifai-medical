@@ -219,8 +219,8 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         # pushed the `best` column off the right edge, and the metrics — the axis
         # the reader chooses — became the one that could not scroll.
         table, leaders = comparison_table(usable, chosen, dirs, dom,
-                                          dated=bool(repeats,
-                                          statuses=statuses) and len(usable) > len(by_label))
+                                          dated=bool(repeats) and len(usable) > len(by_label),
+                                          statuses=statuses)
         st.dataframe(style_leaders(table, leaders), hide_index=True, width="stretch",
                      column_config=table_columns(chosen, names, dirs))
         st.caption("One row per run. A **bold, tinted** cell leads its column — only where the "
