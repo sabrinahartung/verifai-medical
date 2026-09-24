@@ -161,12 +161,15 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
 
 ### The two extension contracts
 
-Every scenario declares a top-level `label:` — a short human name. It heads that run's
-column in the comparison table, and without it the snapshot falls back to `model_id`, which
+Every scenario declares a top-level `label:` — a short human name. It names that run's
+row in the comparison table, and without it the snapshot falls back to `model_id`, which
 turns the table into identifiers a reader has to decode (`external-derm7pt-isic` against
 `external-derm7pt-isic-masked` differ by one decision weight and neither string says which).
-`showcase/app.py::run_label` falls back to the gallery card's name for artifacts written
-before this existed; an explicit label always wins. A test asserts every scenario has one.
+`showcase/app.py::run_label` names a run by the label its scenario declares **today** (from the
+model registry), so a configuration reads the same in the comparison table as on its model page
+and report; the label a snapshot recorded at run time only names a run whose scenario is gone,
+and the gallery card's name stands in for snapshots that predate labels — never overriding a
+real one. A test asserts every scenario has one.
 
 Every scenario also declares a top-level `project:` — the problem it belongs to (today all of
 them: `"Skin lesion classification"`). The overview groups models by it. All configurations of

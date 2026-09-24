@@ -643,7 +643,7 @@ evaluated, and how does one compare to its predecessor*.
 | **4** | **`details["baseline"]`** on all six metrics, plus the Grad-CAM verdict stops being hardcoded | **yes** | numbers unchanged, statuses sharper |
 | ~~**5a**~~ | ~~Report re-laid out to the slot map~~ — **done 2026-09-24**, see below | no | yes |
 | **5b** | The findings strip on the tiering from step 4 — its slot is placed and waiting | no | yes |
-| **6** | Compare: transpose **47**, placeholders for **44**/**45** | no | yes |
+| ~~**6**~~ | ~~Compare: transpose **47**, placeholders for **44**/**45**~~ — **done 2026-09-24**, see below | no | yes |
 | **7** | Studio **54**–**56** **67 68 69** as placeholders behind the torch gate | no | no |
 | **8+** | Each engine phase fills its own placeholders: A → **22 23 31 32 33 69**, B → **24 27 28 29**, F → **48**, G → **25 34 38 39 40 44 45 49**, case-view → **50**–**53** | yes | incremental |
 
@@ -783,6 +783,35 @@ roughly two screens back.
 **Visible now, fixed in step 4:** on the 7-image run, Explainability is the one pillar reading
 *Measured* — the hardcoded Grad-CAM verdict, which the old six-icon row made easy to miss and
 the glance list does not.
+
+### What step 6 landed
+
+The comparison page, rebuilt around the fact that runs are what grows.
+
+- **Runs as rows** (**47**). With seventeen runs as columns, five fitted and the `best` column
+  sat off the right edge. Now each run is a row with its name pinned, each column a metric the
+  reader chose, and the leader of every *ranked* column is bold and tinted in place. A column
+  whose metric declares no direction gets no arrow and no leader — nothing is inferred from a
+  name.
+- **Columns named as readers know them.** *Sensitivity (recall) · melanoma*, not
+  `performance.per_class.melanoma.sensitivity`: the glossary's term plus whatever the pattern's
+  wildcard matched, so melanoma's sensitivity and a mole's do not share a header. The raw key and
+  the definition are in each header's tooltip — the author, who wins on this page, loses nothing.
+  The picker and the charts use the same names.
+- **Dominance moved into the table.** *"Beaten on every selected metric by"* is a column, where it
+  was a stack of captions under the table.
+- **The trade-off scatter shows the trade-off.** Only the runs no other run beats on both axes
+  are labelled, joined by a line; the rest are grey, named on hover. On melanoma sensitivity
+  against precision that is eight of seventeen — from *Focal loss* to *ISIC · melanoma ×30* —
+  where before all seventeen labels collided. Four frontier runs still sit within 0.05 of each
+  other; that density is the data.
+- **One name per configuration, on every page.** The table named 18 of 23 configurations
+  differently from their model page, because `run_label` preferred the label a snapshot recorded
+  at run time — *"Skin-Lesion ResNet18 (clean split)"* here, *"HAM10000 corpus (clean split)"*
+  there. The label the scenario declares today now wins; the recorded one names only a run whose
+  scenario is gone.
+- **44 and 45** share one placeholder per group: which runs could be opened and which only
+  queried, and which findings were measured for one model only.
 
 !!! warning "Two things that will bite"
     `showcase/app.py` executes top to bottom on import, and the contract tests depend on it

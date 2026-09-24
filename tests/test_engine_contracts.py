@@ -1703,3 +1703,75 @@ def test_the_report_holds_its_page_when_integrity_is_not_verified():
     assert integrity_state([unverified, other]) == ("unavailable", unverified)
     assert integrity_state([leaked])[0] == "invalid", "a retired `fail` still gates the page"
     assert integrity_state([other]) == ("unavailable", None), "no check is not a clean check"
+
+
+def test_a_configuration_goes_by_one_name_on_every_page():
+    """The comparison table named 18 of 23 configurations differently from the
+    model page, because it preferred the label a snapshot recorded at run time.
+    The label the scenario declares today wins; the recorded one only names a
+    run whose scenario is gone; a card name never overrides either."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import app
+    app._SCENARIO_LABELS["renamed"] = "Current name"
+    app._CARD_NAMES["renamed"] = "Gallery name"
+    recorded = {"scenario": "renamed", "label": "Name at run time", "model_id": "mid"}
+    assert app.run_label(recorded) == "Current name"
+    gone = {"scenario": "deleted_since", "label": "Name at run time", "model_id": "mid"}
+    assert app.run_label(gone) == "Name at run time"
+    # and on the real artifacts: every snapshot reads as its model page does
+    app.load_catalog()
+    import glob as _glob
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text("utf-8"))
+    current = {c["scenario"]: c["label"] for m in reg["models"] for c in m["configurations"]}
+    for f in _glob.glob(str(REPO / "showcase/artifacts/*/history/*.json")):
+        snap = json.loads(Path(f).read_text(encoding="utf-8"))
+        if snap["scenario"] in current:
+            assert app.run_label(snap) == current[snap["scenario"]], snap["scenario"]
+
+
+# --- step 6: the comparison page ----------------------------------------------
+def test_comparison_columns_are_named_as_readers_know_them():
+    """A header reading `performance.per_class.melanoma.ppv_test_prevalence`
+    invites exactly the misreading the glossary exists to prevent. Each column
+    gets its term, plus what the pattern's wildcard matched, so melanoma's
+    sensitivity and a mole's do not share a name — and names stay unique."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import metric_labels
+    keys = ["performance.per_class.melanoma.sensitivity",
+            "performance.per_class.melanocytic_Nevi.sensitivity",
+            "performance.per_class.melanoma.support", "performance.support.melanoma",
+            "privacy.mia_auc", "not.in.the.glossary"]
+    names = metric_labels(keys)
+    assert names["performance.per_class.melanoma.sensitivity"].endswith("· melanoma")
+    assert names["privacy.mia_auc"] == "Membership-inference AUC"
+    assert names["not.in.the.glossary"] == "not.in.the.glossary", "unknown keys stay raw"
+    assert len(set(names.values())) == len(keys), f"names collide: {names}"
+
+
+def test_the_tradeoff_frontier_respects_each_axis_direction():
+    """Grey on the scatter means beaten on both axes by another run — a fact.
+    With privacy's AUC lower-is-better, a run that is worse on that axis is not
+    'beaten' merely for having the larger number."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import pareto_front
+    pts = [("a", 0.9, 0.6), ("b", 0.8, 0.5), ("c", 0.7, 0.7), ("d", None, 0.1)]
+    assert pareto_front(pts, "higher", "lower") == {"a", "b"}   # c is beaten by b on both
+    assert pareto_front(pts, "higher", "higher") == {"a", "c"}  # b is beaten by a on both
+    assert pareto_front([("x", 1, 1), ("y", 1, 1)], "higher", "higher") == {"x", "y"}, \
+        "identical runs do not beat each other"
+
+
+def test_the_comparison_table_has_a_row_per_run_and_marks_only_ranked_leaders():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.compare import BEATEN_BY, comparison_table
+    runs = [{"scenario": "p", "label": "P", "model_id": "p", "metrics": {"m.up": 0.9, "m.free": 3}},
+            {"scenario": "q", "label": "Q", "model_id": "q", "metrics": {"m.up": 0.5, "m.free": 7}}]
+    table, leaders = comparison_table(runs, ["m.up", "m.free"],
+                                      {"m.up": "higher", "m.free": None}, {"Q": "P"})
+    assert list(table["Run"]) == ["P", "Q"], "runs are rows"
+    assert leaders == {"m.up": "P", "m.free": None}, "an undeclared metric is never ranked"
+    assert list(table[BEATEN_BY]) == ["", "P"]

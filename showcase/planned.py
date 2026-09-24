@@ -104,8 +104,9 @@ PLANNED: dict[str, dict[str, str]] = {
     # ---- compare ------------------------------------------------------------
     "access_statement": {
         "title": "Access levels in this group",
-        "shows": "which runs could be opened and which could only be queried, and "
-                 "which rows are therefore compared at the weaker level",
+        "shows": "which runs could be opened and which could only be queried, which "
+                 "columns are therefore compared at the weaker level, and which findings "
+                 "were measured for one model only and are not used in the comparison",
         "blocked_by": "Phase A: every model here is a local checkpoint, so the "
                       "question has never had to be asked",
         "phase": "ROADMAP.md#comparing-models-that-were-not-evaluated-under-the-same-suite",

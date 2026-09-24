@@ -34,7 +34,7 @@ st.set_page_config(page_title="VERIFAI Showcase — Responsible AI", layout="wid
 # Re-exported so `import app` keeps working for anything outside this package.
 # noqa: F401 throughout — these are the module's public surface, not dead code.
 from catalog import (ART, PILLARS, PILLAR_QUESTION, VERDICT,  # noqa: F401,E402
-                     VERDICT_ORDER, _CARD_NAMES, _blocked_reason, best_run,
+                     VERDICT_ORDER, _CARD_NAMES, _SCENARIO_LABELS, _blocked_reason, best_run,
                      comparability_key, direction_for, dominated_by,
                      group_snapshots, load_catalog, load_snapshots,
                      normalise_verdict, run_label)

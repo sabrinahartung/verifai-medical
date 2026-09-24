@@ -27,9 +27,10 @@ from catalog import PILLARS, PILLAR_QUESTION, VERDICT, normalise_verdict
 # alongside, the explanations simply disappear and every number still renders.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
-    from verifai.core.glossary import (entries_for, explain_metric,
+    from verifai.core.glossary import (GLOSSARY, entries_for, explain_metric,
                                        metric_keys, pillar_of)
 except ImportError:                                           # pragma: no cover
+    GLOSSARY = []                                             # names fall back to raw keys
     entries_for = lambda keys: []                             # noqa: E731
     metric_keys = lambda value, prefix: []                    # noqa: E731
     explain_metric = lambda key: None                         # noqa: E731

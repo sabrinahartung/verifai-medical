@@ -114,6 +114,13 @@ def load_catalog() -> list[dict]:
     # declared a `label:`. Primed here rather than by the caller because every
     # page needs it and only this function knows when the catalog was read.
     _CARD_NAMES.update({c["id"]: c["name"] for c in cards if c.get("name")})
+    # And the name each configuration is declared under *now*, from the model
+    # registry — read as plain JSON, since the registry module imports this one.
+    reg = ART / "model_registry.json"
+    if reg.is_file():
+        models = json.loads(reg.read_text(encoding="utf-8")).get("models", [])
+        _SCENARIO_LABELS.update({c["scenario"]: c["label"] for m in models
+                                 for c in m["configurations"] if c.get("label")})
     return cards
 
 
@@ -138,22 +145,32 @@ def load_snapshots() -> list[dict]:
 # A module-level cache rather than a parameter because run_label is called from
 # eight places, several of them deep inside the comparison view.
 _CARD_NAMES: dict[str, str] = {}
+# Scenario id -> the label the scenario declares today, from the model registry.
+_SCENARIO_LABELS: dict[str, str] = {}
 
 
 def run_label(snap: dict) -> str:
     """What to call this run in a table, a chart legend or a warning.
 
-    A scenario declares `label:` and the exporter writes it into the snapshot;
-    without one it falls back to `model_id`, and a table headed
-    `external-derm7pt-isic` against `external-derm7pt-isic-masked` is one a reader
-    has to decode rather than read — the two differ by a single decision weight
-    and nothing in those strings says which is which.
+    In order: the label its scenario declares **today**, then the label the
+    snapshot recorded when it ran, then the gallery card's name, then whatever
+    identifier is left.
 
-    Every scenario carries a label now, but artifacts written before that do not,
-    and re-running eighteen evaluations to change a caption would be absurd. So a
-    snapshot whose label is merely its model id falls back to the gallery card's
-    name, which was always human-readable.
+    Today's label comes first because a configuration's name is presentation,
+    not measurement, and it must read the same on every page. The model page,
+    the breadcrumb and the report title all use the scenario's current label;
+    when this used the recorded one, 18 of 23 configurations were called one
+    thing in the comparison table and another everywhere else — "Skin-Lesion
+    ResNet18 (clean split)" here, "HAM10000 corpus (clean split)" there. The
+    recorded label still names a run whose scenario has since been deleted.
+
+    A snapshot whose recorded label is merely its model id predates labels, so
+    the card's name — always human-readable — stands in for it. That fallback
+    may never override a real label.
     """
+    current = _SCENARIO_LABELS.get(snap.get("scenario", ""))
+    if current:
+        return current
     label = snap.get("label")
     if label and label != snap.get("model_id"):
         return label

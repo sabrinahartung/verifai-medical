@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 from catalog import (_blocked_reason, comparability_key, direction_for,
                      best_run, dominated_by, group_snapshots, run_label)
 from registry import find_model, load_registry
-from render import breadcrumb, explain_metric, placeholder, render_metric_legend
+from render import GLOSSARY, breadcrumb, explain_metric, placeholder, render_metric_legend
 from routing import current, go_to_compare, go_to_model, go_to_overview, go_to_project
 
 def scope_ids(cards: list[dict] | None, registry: dict | None,
@@ -176,13 +176,14 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             st.divider(); continue
 
         keys = sorted({k for r in usable for k in r["metrics"]})
+        names = metric_labels(keys)
         default = [k for k in ("performance.per_class.melanoma.sensitivity",
                                "performance.per_class.melanoma.ppv_test_prevalence",
                                "performance.accuracy", "performance.balanced_accuracy",
                                "performance.top3_accuracy", "robustness.mean_stability",
                                "fairness.accuracy_gap", "privacy.mia_auc") if k in keys]
         chosen = st.multiselect("Metrics to compare", keys, default=default or keys[:6],
-                                key=f"ms_{gi}")
+                                format_func=lambda k: names[k], key=f"ms_{gi}")
         # Right above the table it annotates, so the reader can see what it does
         # without hunting for it. Off by default: someone who knows the terms
         # should not have to scroll past their definitions.
@@ -210,36 +211,24 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 "tool and a rule-out tool want opposite ends of this table. That is a "
                 "decision about intended use, not one the data can settle."
             )
-        for loser, winner in dom.items():
-            st.caption(f"↳ **{loser}** is beaten by *{winner}* on every selected metric, "
-                       f"so it can be dismissed without a value judgement.")
 
-        # --- table: value, direction, and who leads each metric ---
-        rows = []
-        for k in chosen:
-            d = dirs[k]
-            arrow = {"higher": "↑ better", "lower": "↓ better"}.get(d, "—")
-            leader = best_run(k, usable, d)
-            # The key alone is a developer string: reading
-            # `..._ppv_test_prevalence` as "how many did it catch" is the exact
-            # misreading this table invites. When explanations are on, lead with
-            # the name the concept is actually known by.
-            row = {"metric": k, "good": arrow}
-            if explaining:
-                entry = explain_metric(k)
-                row = {"term": entry["term"] if entry else "—", **row}
-            for r in usable:
-                lab = run_label(r)
-                v = r["metrics"].get(k)
-                row[lab] = None if v is None else round(v, 4)
-            row["best"] = leader or "—"
-            rows.append(row)
-        st.dataframe(rows, width="stretch")
-        st.caption("**best** is only filled in where the metric declared which direction is "
-                   "an improvement. An undeclared metric is shown but not ranked.")
+        # --- table: one row per run, one column per metric ---
+        # Runs are rows because runs are what grows: seventeen of them as columns
+        # pushed the `best` column off the right edge, and the metrics — the axis
+        # the reader chooses — became the one that could not scroll.
+        table, leaders = comparison_table(usable, chosen, dirs, dom,
+                                          dated=bool(repeats) and len(usable) > len(by_label))
+        st.dataframe(style_leaders(table, leaders), hide_index=True, width="stretch",
+                     column_config=table_columns(chosen, names, dirs))
+        st.caption("One row per run. A **bold, tinted** cell leads its column — only where the "
+                   "metric declares which direction is better (↑ higher, ↓ lower); a column "
+                   "without an arrow is shown but not ranked. The last column names a run "
+                   "that beats this one on every selected metric: such a run can be dismissed "
+                   "without a value judgement. Hover a column name for its definition; click "
+                   "it to sort.")
 
         if explaining:
-            st.markdown("###### Legend — what the rows above mean")
+            st.markdown("###### Legend — what the columns above mean")
             st.caption("General definitions: the same wording applies to any model on any "
                        "dataset. Colour marks the pillar each metric belongs to.")
             if not render_metric_legend(chosen):
@@ -249,29 +238,25 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         ranked_keys = [k for k in chosen if dirs.get(k)]
         if len(ranked_keys) >= 2:
             c1, c2 = st.columns(2)
-            xk = c1.selectbox("Trade-off: x", ranked_keys, index=0, key=f"x_{gi}")
-            yk = c2.selectbox("Trade-off: y", ranked_keys,
-                              index=min(1, len(ranked_keys) - 1), key=f"y_{gi}")
-            fig = go.Figure()
-            for r in usable:
-                lab = run_label(r)
-                fig.add_trace(go.Scatter(
-                    x=[r["metrics"].get(xk)], y=[r["metrics"].get(yk)], mode="markers+text",
-                    text=[lab], textposition="top center", name=lab, marker=dict(size=14)))
-            fig.update_layout(
-                title=f"{yk} against {xk} — each point is one run",
-                xaxis_title=f"{xk} ({dirs.get(xk, '')} is better)",
-                yaxis_title=f"{yk} ({dirs.get(yk, '')} is better)", showlegend=False)
-            st.plotly_chart(fig, width="stretch")
+            xk = c1.selectbox("Trade-off: x", ranked_keys, index=0,
+                              format_func=lambda k: names[k], key=f"x_{gi}")
+            yk = c2.selectbox("Trade-off: y", ranked_keys, index=min(1, len(ranked_keys) - 1),
+                              format_func=lambda k: names[k], key=f"y_{gi}")
+            st.plotly_chart(tradeoff_figure(usable, xk, yk, dirs, names), width="stretch")
+            st.caption("Labelled points are the runs no other run beats on both axes at once, "
+                       "joined by the line. A grey point is beaten on both by at least one "
+                       "other run — hover it for its name. Which labelled point is right "
+                       "depends on what the model is for.")
 
-        metric = st.selectbox("Bar chart", chosen, key=f"sb_{gi}")
+        metric = st.selectbox("Bar chart", chosen, format_func=lambda k: names[k],
+                              key=f"sb_{gi}")
         leader = best_run(metric, usable, dirs.get(metric))
         fig = go.Figure(go.Bar(
             x=labels, y=[r["metrics"].get(metric) for r in usable],
             marker_color=["#2E9E5B" if l == leader else "#5B3FD6" for l in labels]))
-        fig.update_layout(title=f"{metric}"
+        fig.update_layout(title=names[metric]
                                 + (f"  ·  best: {leader}" if leader else "  ·  unranked"),
-                          xaxis_title="Run", yaxis_title=metric)
+                          xaxis_title="Run", yaxis_title=names[metric])
         st.plotly_chart(fig, width="stretch")
         st.divider()
 
@@ -287,3 +272,123 @@ def page():
     """Route entry: every recorded run, grouped by the images it was scored on."""
     from catalog import load_catalog, load_snapshots
     comparison(load_snapshots(), load_catalog())
+
+
+# ---------- the table and the trade-off, as pure functions ----------
+ARROW = {"higher": "↑", "lower": "↓"}
+LEADER_STYLE = "font-weight: 700; background-color: rgba(46, 158, 91, 0.22)"
+BEATEN_BY = "Beaten on every selected metric by"
+
+
+def metric_labels(keys: list[str]) -> dict[str, str]:
+    """The name each flattened key is known by, unique across `keys`.
+
+    The glossary's term, plus whatever its pattern's wildcards matched — the
+    class in `performance.per_class.*.sensitivity` — so melanoma's sensitivity
+    and a mole's do not share a header. Two keys that still collide (the metric
+    records class size under two paths) keep their raw key beside the name.
+    """
+    import fnmatch
+    out = {}
+    for key in keys:
+        name = key
+        for pattern, entry in GLOSSARY:
+            if key == pattern or fnmatch.fnmatch(key, pattern):
+                ks, ps = key.split("."), pattern.split(".")
+                wild = [k for k, p in zip(ks, ps) if "*" in p] if len(ks) == len(ps) else []
+                name = entry["term"] + ("".join(f" · {w}" for w in wild))
+                break
+        out[key] = name
+    counts: dict[str, int] = {}
+    for name in out.values():
+        counts[name] = counts.get(name, 0) + 1
+    return {k: (n if counts[n] == 1 else f"{n} ({k})") for k, n in out.items()}
+
+
+def comparison_table(runs: list[dict], keys: list[str], dirs: dict[str, str | None],
+                     dominated: dict[str, str], dated: bool = False):
+    """(DataFrame with one row per run, {key: leading run's label or None})."""
+    import pandas as pd
+    data: dict[str, list] = {"Run": [run_label(r) for r in runs]}
+    if dated:
+        data["Recorded"] = [(r.get("created_at") or "")[:10] for r in runs]
+    for k in keys:
+        data[k] = [None if r["metrics"].get(k) is None else round(r["metrics"][k], 4)
+                   for r in runs]
+    data[BEATEN_BY] = [dominated.get(lab, "") for lab in data["Run"]]
+    leaders = {k: best_run(k, runs, dirs.get(k)) for k in keys}
+    return pd.DataFrame(data), leaders
+
+
+def style_leaders(table, leaders: dict[str, str | None]):
+    """Bold and tint the leading cell of every ranked column; never an unranked one."""
+    def mark(col):
+        lead = leaders.get(col.name)
+        return [LEADER_STYLE if lead and run == lead else "" for run in table["Run"]]
+    return (table.style.apply(mark, axis=0)
+            .format({k: "{:.4f}" for k in leaders}, na_rep="—"))
+
+
+def table_columns(keys: list[str], names: dict[str, str], dirs: dict[str, str | None]) -> dict:
+    cols = {"Run": st.column_config.TextColumn("Run", pinned=True),
+            BEATEN_BY: st.column_config.TextColumn(
+                BEATEN_BY, help="Another run at least as good on every selected metric and "
+                                "better on one. Empty means this run is part of the trade-off.")}
+    for k in keys:
+        entry = explain_metric(k) or {}
+        d = dirs.get(k)
+        rank = (f"{d.capitalize()} is better." if d else
+                "Not ranked: this metric declares no direction, and none is inferred from "
+                "its name.")
+        cols[k] = st.column_config.NumberColumn(
+            f"{names[k]} {ARROW.get(d, '')}".strip(),
+            help=f"`{k}` — {entry.get('measures', 'No definition recorded.')} {rank}")
+    return cols
+
+
+def pareto_front(points: list[tuple[str, float | None, float | None]],
+                 dx: str, dy: str) -> set[str]:
+    """Labels of the points no other point beats on both axes.
+
+    A point is beaten when another is at least as good on x and on y and better
+    on one, in each axis's declared direction. That is decidable from the data;
+    choosing among the points that are left is not.
+    """
+    def better_or_equal(a, b, d):
+        return a >= b if d == "higher" else a <= b
+    pts = [(l, x, y) for l, x, y in points if x is not None and y is not None]
+    front = set()
+    for la, xa, ya in pts:
+        beaten = any(better_or_equal(xb, xa, dx) and better_or_equal(yb, ya, dy)
+                     and (xb, yb) != (xa, ya)
+                     for lb, xb, yb in pts if lb != la)
+        if not beaten:
+            front.add(la)
+    return front
+
+
+def tradeoff_figure(runs, xk, yk, dirs, names):
+    pts = [(run_label(r), r["metrics"].get(xk), r["metrics"].get(yk)) for r in runs]
+    front = pareto_front(pts, dirs[xk], dirs[yk])
+    on = sorted((p for p in pts if p[0] in front and p[1] is not None), key=lambda p: p[1])
+    off = [p for p in pts if p[0] not in front and p[1] is not None and p[2] is not None]
+    fig = go.Figure()
+    if off:
+        fig.add_trace(go.Scatter(
+            x=[p[1] for p in off], y=[p[2] for p in off], mode="markers",
+            marker=dict(size=10, color="rgba(130, 130, 130, 0.55)"),
+            hovertext=[p[0] for p in off], hoverinfo="text", name="beaten on both axes"))
+    fig.add_trace(go.Scatter(
+        x=[p[1] for p in on], y=[p[2] for p in on], mode="lines+markers+text",
+        line=dict(dash="dot", width=1.5, color="#2E9E5B"),
+        marker=dict(size=14, color="#2E9E5B"), text=[p[0] for p in on],
+        # Neighbours on the frontier sit close together — three runs within
+        # 0.05 of each other here — so labels alternate above and below.
+        textposition=["top center" if i % 2 == 0 else "bottom center" for i in range(len(on))],
+        hovertext=[p[0] for p in on], hoverinfo="text",
+        name="the trade-off"))
+    fig.update_layout(
+        title=f"{names[yk]} against {names[xk]} — each point is one run",
+        xaxis_title=f"{names[xk]} ({dirs[xk]} is better)",
+        yaxis_title=f"{names[yk]} ({dirs[yk]} is better)", showlegend=False)
+    return fig
