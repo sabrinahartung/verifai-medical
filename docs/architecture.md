@@ -48,11 +48,11 @@ The split is deliberate and load-bearing. The engine needs torch, torchvision an
 hundred MB of images; the showcase needs `streamlit`, `pillow` and `plotly`. Because the
 showcase only ever *reads* precomputed files, it deploys to a free tier and stays online.
 
-!!! warning "Keep the dependency files separate"
-    `requirements-engine.txt` is heavy; `showcase/requirements.txt` is deliberately light.
-    Streamlit Community Cloud resolves the dependency file in the **entrypoint's directory**
-    before the repo root — which is the only thing stopping it from installing the torch
-    dependencies declared in the root `pyproject.toml`.
+!!! warning "Keep the showcase's dependencies separate"
+    The `engine` group in `pyproject.toml` is heavy; the `showcase` group is deliberately light,
+    and `showcase/requirements.txt` is exported from it. Streamlit Community Cloud resolves the
+    dependency file in the **entrypoint's directory** before the repo root — which keeps the root
+    `uv.lock`, torch and all, off the free tier. See [Development](development.md#environment).
 
 ## What runs when you evaluate
 

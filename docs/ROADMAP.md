@@ -265,7 +265,7 @@ of one half. Which is exactly the open item at the top of this page.
        preprocessing. This is where "paste a link and it works" is genuinely true.
     3. **`hf_text`** — `AutoModelForSequenceClassification` + `AutoTokenizer`;
        `dataset.load()` returns a string and `predict_probs` is unchanged.
-- `transformers` goes in `requirements-engine.txt` only, never in the showcase list.
+- `transformers` goes in the `engine` dependency group only, never in the `showcase` group.
 - Deliberately **not** first: ONNX, sklearn/joblib, generative checkpoints. Each is a
   different loading story and none of them is on the path to the next result.
 
@@ -417,7 +417,7 @@ will assume the wrong one.
 
 **Write it when it is short.** FGSM, PGD, additive noise and occlusion are tens of lines each
 in numpy/torch, and the wording has to be ours anyway. Take a dependency only where
-re-implementing is genuinely error-prone, and only in `requirements-engine.txt`.
+re-implementing is genuinely error-prone, and only in the `engine` dependency group.
 
 **And check that the dependency still exists.** A toolkit named in a plan is a claim with a
 shelf life. The shortlist this catalogue was built from [[34]](references.md#ref-34) was sixteen months old when it was
@@ -433,8 +433,8 @@ version, months since the last commit, and whether it actually resolves against 
 XAI evaluation is the case the lean-dependency rule carves out: MPRT, ROAD and the relative
 stability estimators are subtle enough that re-implementing them means re-deriving a JMLR paper.
 **Quantus [[27]](references.md#ref-27) is adopted** — verified to resolve against this stack (Python 3.13, numpy 2.5,
-torch 2.14), adding `quantus[captum]` plus eleven transitive packages, engine-only, never in
-`showcase/requirements.txt`. It covers five of the eight explainability rows and brings a sixth
+torch 2.14), adding `quantus[captum]` plus eleven transitive packages, engine group only, never
+in the `showcase` group. It covers five of the eight explainability rows and brings a sixth
 sub-aspect, `axiomatic`, that the catalogue did not have.
 
 It arrives behind **one adapter module**. No metric imports `quantus` directly, so the library
@@ -758,47 +758,64 @@ bigger than a ResNet18:
   report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
   opt-in per metric, before the catalogue lands.
 
-## Tooling — planned: move to uv
+## Tooling — moved to uv (done 2026-09-24)
 
-**Planned, on its own branch — not on `feat/user-interface`.** Noted 2026-09-24, after the global
-`streamlit` trap below cost a debugging session.
+**Done, on `chore/uv`.** Planned here on 2026-09-24 after the global-`streamlit` trap below cost
+a debugging session; the plan is kept below the line as it was written, with what actually
+landed recorded first. Day-to-day use is in [Development](development.md#environment).
 
-**Why.** The dependencies are declared in four places — `pyproject.toml`,
-`requirements-engine.txt`, `requirements-dev.txt`, `showcase/requirements.txt` — and **none of
-them pins a version**. `pyproject.toml` has drifted (it still says "four RAI pillars" and lists
-neither Streamlit nor Plotly). The local venv runs Python 3.13.5 while CI runs 3.12, and CI
-installs whatever torch is newest on the day. For a project whose results are meant to be
-recomputable, the environment is the least reproducible part of it.
+**What landed.**
 
-uv answers all of it at once:
+- **One `pyproject.toml`**, four dependency groups — `engine`, `data`, `showcase`, `dev` — and
+  `[project] dependencies` left empty, because nothing is needed by every use of the repository.
+- **`uv.lock`, written to reproduce the environment every published artifact came from**, version
+  for version: all 78 packages match the `.venv` they were produced in. A fresh lock would have
+  upgraded 22 of them — Streamlit 1.63 → 1.64, and two major versions — so each was pinned back.
+  A migration that is also an upgrade makes any later difference in a number unattributable.
+  `uv sync --dry-run` against that `.venv` reports *"Would make no changes"*.
+- **`.python-version` = 3.13**, the interpreter the artifacts were produced with. CI ran 3.12
+  until now.
+- **Three undeclared imports declared.** `duckdb` (the dataset scripts), `certifi`
+  (`train_model.py`'s macOS CA fix) and `pandas` (the comparison table) were each imported
+  directly and installed only by accident — the first by hand, the other two as someone else's
+  dependency. A strict `uv sync` would have removed `duckdb` and broken both dataset scripts.
+- **CI on uv** (`astral-sh/setup-uv`, pinned to v10.2.0 and uv 0.12.1): `uv sync --locked`, all
+  107 tests, `mkdocs build --strict` on every pull request, and a check that
+  `showcase/requirements.txt` still matches the lock. torch's CPU wheels now come from the lock on
+  Linux, replacing the separate `pip install torch --index-url …` step.
+- **`requirements-dev.txt` is gone**; the `dev` group replaces it.
 
-- **one `pyproject.toml`** and a committed **`uv.lock`** — every machine and CI resolve the same
-  versions;
-- **`uv run …` needs no activated environment.** `uv run streamlit run showcase/app.py` always
-  uses the project's environment, creating or syncing it first — which removes the
-  global-`streamlit` trap by construction rather than by remembering `.venv/bin/`;
-- the same tool as the author's other projects, and much faster installs and CI.
+**Where it departs from the plan.**
 
-**Shape of the change.**
+- **`requirements-engine.txt` stays, unpinned.** The plan assumed it could go. It cannot: the GPU
+  notebook installs it on Colab and Kaggle, where uv is absent and torch comes preinstalled as the
+  platform's CUDA build — a pinned `torch==…` there would make pip replace it. It is now
+  documented as the notebook's list, and a test keeps its package names equal to the `engine`
+  group's while versions float.
+- **"A test asserts the showcase is torch-free" was not true.** `CLAUDE.md` said so; the two tests
+  it pointed at check the showcase's *imports*, not `showcase/requirements.txt`. One now reads the
+  file and the group both.
 
-- Dependency groups (PEP 735) rather than four files: `engine` (torch, torchvision, numpy,
-  matplotlib, huggingface-hub, pyyaml), `showcase` (streamlit, plotly, pillow), `dev` (pytest,
-  mkdocs-material). Locally `uv sync --all-groups`.
-- **The showcase deploy must stay torch-free** — the invariant that keeps Streamlit Community
-  Cloud free. Keep `showcase/requirements.txt` next to the entrypoint, where Cloud looks first,
-  but *generate* it from the lock (`uv export` restricted to the `showcase` group, no hashes), so
-  the deploy gets pinned versions too. The existing test that it carries no torch keeps guarding
-  it. Whether Cloud can read `uv.lock` directly is worth checking at the time — only useful if it
-  can install the `showcase` group alone.
-- A `.python-version` so local and CI run the same interpreter.
-- torch on CI: the CPU wheel index via `[[tool.uv.index]]`, replacing today's separate
-  `pip install torch --index-url …` step. macOS keeps the PyPI wheels, which carry MPS.
-- CI: `astral-sh/setup-uv`, `uv sync --locked`, `uv run pytest`, `uv run mkdocs build --strict`.
-- Update `docs/development.md`, the Commands block in `CLAUDE.md`, and the README to `uv run …`.
+**Still to check, before the first release to `main`.** `showcase/requirements.txt` is now
+pinned — Streamlit 1.63.0, pandas 3.0.5, numpy 2.5.2 among them — where it used to let pip pick.
+Those pins were resolved for Python ≥ 3.12 (`requires-python`), and on Streamlit Community Cloud
+the Python version is chosen in the app's settings at deploy time — not visible from this
+repository. Confirm it before `dev`
+reaches `main`, which is what deploys.
 
-**Until then**, run the repo's own interpreter explicitly — `.venv/bin/streamlit`,
-`.venv/bin/python -m pytest` — or `source .venv/bin/activate` once per terminal. Auto-activation
-on `cd` (direnv) would also work, but it is machine configuration to fix a problem uv removes.
+??? note "The plan as written"
+    **Why.** The dependencies were declared in four places — `pyproject.toml`,
+    `requirements-engine.txt`, `requirements-dev.txt`, `showcase/requirements.txt` — and **none of
+    them pinned a version**. `pyproject.toml` had drifted (it still said "four RAI pillars" and
+    listed neither Streamlit nor Plotly). The local venv ran Python 3.13.5 while CI ran 3.12, and CI
+    installed whatever torch was newest on the day. For a project whose results are meant to be
+    recomputable, the environment was the least reproducible part of it.
+
+    **Shape of the change.** Dependency groups rather than four files; the showcase deploy kept
+    torch-free by exporting `showcase/requirements.txt` from the lock; a `.python-version`; torch's
+    CPU index on CI via `[[tool.uv.index]]`; CI on `setup-uv`, `uv sync --locked`, `uv run pytest`,
+    `uv run mkdocs build --strict`; and `docs/development.md`, `CLAUDE.md` and the README moved to
+    `uv run …`.
 
 ---
 
@@ -822,8 +839,8 @@ on `cd` (direnv) would also work, but it is machine configuration to fix a probl
 - **Bare `streamlit` is not the repo's.** Without an activated venv it resolves to the global
   python.org install (`/Library/Frameworks/Python.framework/.../bin/streamlit`), which has
   Streamlit 1.63 and nothing else, so the app dies on `ModuleNotFoundError: No module named
-  'plotly'`. Run `.venv/bin/streamlit run showcase/app.py`, or `source .venv/bin/activate`
-  first. Installing plotly globally only moves the failure to the next missing package.
+  'plotly'`. Since the move to uv, `uv run streamlit run showcase/app.py` cannot hit this. Installing
+  plotly globally only moves the failure to the next missing package.
 - **A running Streamlit server did not pick up edits to `showcase/views/*.py`**, even on a fresh
   page load; the old module stayed in memory. Restart the server after editing anything below
   `showcase/app.py` rather than trusting the reload.

@@ -24,12 +24,17 @@ pipeline, the full metric catalogue across the pillars, and the split-integrity 
 
 ## Quickstart
 
-**Engine — produce a real run** (in an environment with `torch` — e.g. your
-`ML_Training_Dojo/.venv`, where everything is already installed):
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). One command installs the exact
+versions every result here was produced with:
 
 ```bash
-pip install -r requirements-engine.txt          # only if torch is missing
-python scripts/run_scenario.py scenarios/skin_cancer.yaml
+uv sync
+```
+
+**Engine — produce a real run:**
+
+```bash
+uv run python scripts/run_scenario.py scenarios/skin_cancer.yaml
 ```
 
 This uses the **7 real, labeled HAM10000 example images** in `data/examples/` and your
@@ -42,8 +47,7 @@ card.json, plots/ with Grad-CAM overlays). Runs on a laptop in seconds.
 **Showcase — take a look:**
 
 ```bash
-pip install -r showcase/requirements.txt
-streamlit run showcase/app.py
+uv run streamlit run showcase/app.py
 ```
 
 **Big run without GPU worries:** `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) — exactly so your
@@ -71,7 +75,7 @@ scripts/            run_scenario.py (CLI) + run_on_free_gpu.ipynb
 showcase/           SHOP WINDOW (deploys for free on Streamlit Community Cloud)
   app.py            tile gallery -> click a model -> Plotly dashboard
   artifacts/<id>/   one folder = one tile (card.json + report.json + plots/)
-  requirements.txt  deliberately LIGHT (free-tier friendly)
+  requirements.txt  exported from uv.lock, deliberately LIGHT (free-tier friendly)
 ```
 
 ## What the `skin_cancer` run measures (all really computed)

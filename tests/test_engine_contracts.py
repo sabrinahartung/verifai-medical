@@ -1775,3 +1775,42 @@ def test_the_comparison_table_has_a_row_per_run_and_marks_only_ranked_leaders():
     assert list(table["Run"]) == ["P", "Q"], "runs are rows"
     assert leaders == {"m.up": "P", "m.free": None}, "an undeclared metric is never ranked"
     assert list(table[BEATEN_BY]) == ["", "P"]
+
+
+# --- dependencies: one source of truth, two files exported from it ------------
+def _group(name: str) -> list[str]:
+    import re as _re
+    import tomllib
+    groups = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))["dependency-groups"]
+    return sorted(_re.split(r"[<>=!~;\[ ]", d, maxsplit=1)[0].lower().replace("_", "-")
+                  for d in groups[name])
+
+
+def _requirement_names(path) -> list[str]:
+    import re as _re
+    names = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith(("#", "-")):
+            names.append(_re.split(r"[<>=!~;\[ ]", line, maxsplit=1)[0].lower().replace("_", "-"))
+    return names
+
+
+def test_the_public_showcase_never_installs_torch():
+    """The free tier of Streamlit Community Cloud is what keeps the demo
+    always-on, and it holds only while the showcase's install list stays light.
+    Checked at the source (the `showcase` group) and in the file Cloud actually
+    reads — the second is exported, and an export can pick up anything."""
+    heavy = {"torch", "torchvision", "torchaudio", "transformers"}
+    assert not heavy & set(_group("showcase")), "the showcase group must stay torch-free"
+    installed = set(_requirement_names(REPO / "showcase" / "requirements.txt"))
+    assert not heavy & installed, f"showcase/requirements.txt pulls in {heavy & installed}"
+    assert {"streamlit", "plotly", "pandas", "pillow"} <= installed, \
+        "showcase/requirements.txt must hold what the showcase imports"
+
+
+def test_the_notebooks_engine_list_names_what_the_engine_group_names():
+    """requirements-engine.txt is unpinned on purpose — on Colab a pinned torch
+    would replace the platform's GPU build — so versions may float, but which
+    packages it installs may not drift from pyproject.toml."""
+    assert sorted(_requirement_names(REPO / "requirements-engine.txt")) == _group("engine")

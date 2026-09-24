@@ -15,25 +15,27 @@ All user-facing text (metric summaries, chart titles/axis labels, README, app co
 
 ## Commands
 
-The repo `.venv` already has both engine and showcase deps (torch, torchvision, streamlit, plotly, …).
+Dependencies are managed with **uv**: `pyproject.toml` declares them, `uv.lock` pins every version,
+`.python-version` pins the interpreter (3.13). `uv sync` installs everything into `.venv`, and
+`uv run …` always uses that environment — nothing to activate. Never run a bare `streamlit` or
+`pytest`: without `uv run` it resolves to a global install that lacks the project's packages.
 
 ```bash
 # run one scenario end-to-end -> writes showcase/artifacts/<scenario name>/
-.venv/bin/python scripts/run_scenario.py scenarios/skin_cancer.yaml
+uv run python scripts/run_scenario.py scenarios/skin_cancer.yaml
 
 # view the showcase (reads only precomputed artifacts)
-.venv/bin/streamlit run showcase/app.py
+uv run streamlit run showcase/app.py
 ```
 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (82 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (107 of them, no network or checkpoint needed):
 
 ```bash
-pip install -r requirements-dev.txt
-.venv/bin/python -m pytest tests/ -q
-.venv/bin/python -m pytest tests/test_engine_contracts.py::test_classes_are_derived_from_the_data -q
+uv run pytest -q
+uv run pytest tests/test_engine_contracts.py::test_classes_are_derived_from_the_data -q
 ```
 
 They cover the seams a second model plugs into. The end-to-end smoke test is still running
@@ -92,9 +94,19 @@ are deliberate rather than incidental. When you
 change engine behaviour, update the matching page: the numbers in `docs/results.md` and
 `docs/pipeline.md` are measured, not illustrative, so they must not drift.
 
-Dependency files are split on purpose: `requirements-engine.txt` (heavy, offline run) vs
-`showcase/requirements.txt` (light, Streamlit Community Cloud free tier). Never add torch to the
-showcase requirements without a deliberate decision.
+Dependencies are split into **groups** in `pyproject.toml`, on purpose: `engine` (heavy, offline
+run), `data` (DuckDB, for the dataset-preparation scripts), `showcase` (light — Streamlit Community
+Cloud's free tier) and `dev`. Add one with `uv add --group <group> <package>`. Never add torch to
+the `showcase` group without a deliberate decision; a test fails if it appears. Two files are
+**exported** from this, never hand-edited:
+
+- `showcase/requirements.txt` — the `showcase` group, pinned from the lock, for Streamlit Cloud,
+  which reads the entrypoint's directory before the repo root. After changing that group, re-run
+  `uv export --locked --only-group showcase --no-hashes --no-emit-project --format
+  requirements-txt -o showcase/requirements.txt`; CI fails when it is out of step with the lock.
+- `requirements-engine.txt` — the GPU notebook's list, **unpinned on purpose**: on Colab and
+  Kaggle a pinned `torch` would replace the platform's CUDA build. A test keeps its package names
+  equal to the `engine` group's.
 
 ## Architecture
 
