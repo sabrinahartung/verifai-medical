@@ -165,6 +165,13 @@ Unfinished, and still ranked by what it would establish:
       every manifest row and feed no model. The one untested lever that adds *signal*
       rather than parameters — and it makes subgroup behaviour a design choice rather
       than an artefact, which is worth stating up front.
+- [ ] **Give Grad-CAM a sample worth averaging.** `explainability/gradcam.py` scores
+      `list(dataset)[:gradcam_max_images]` with a default of 7 that no scenario overrides, on
+      a manifest the loader sorts — so on the 1,493-image run the published faithfulness is a
+      mean over the first seven filenames, six of them nevi. Stratify by class, raise *n* to
+      what the compute allows, and add the random-attribution control
+      [[42]](references.md#ref-42): faithfulness 0.3 means nothing until it is set against
+      what a random highlight scores under identical conditions.
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97

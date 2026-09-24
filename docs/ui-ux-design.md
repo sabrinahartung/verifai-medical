@@ -171,7 +171,7 @@ Four levels, where the app has two:
 
 | Level | Is | Count today | Identity |
 |---|---|---|---|
-| **Use case** | the problem: task, label space, evaluation-set family | 3 | declared |
+| **Project** | the problem: task, label space, evaluation-set family | 1 | declared |
 | **Model** | a trained checkpoint with its provenance | 15 | **checkpoint content hash** |
 | **Configuration** | a model plus how it is read: decision rule, evaluation set, metric set | 23 | the scenario |
 | **Evaluation** | an executed configuration | 24 artifacts / 44 snapshots | manifest content hash |
@@ -209,7 +209,7 @@ construction; choosing a different one warns that the comparison will not be ava
 **before** the run rather than after. This is the cheapest possible moment to enforce an engine
 invariant, and it is the strongest single argument for building the registry.
 
-**`card.group` and `card.lineage` stop being authored.** Group becomes the use case and lineage
+**`card.group` and `card.lineage` stop being authored.** Group becomes the project and lineage
 splits into model and configuration, both derived. The invariant holds unchanged: presentation
 narrows what is *shown* and never widens what may be *compared*.
 
@@ -239,7 +239,7 @@ computable, and without it a reader will read an old evaluation as a current one
 
 ```mermaid
 flowchart LR
-    U["Use case<br/><i>which problem</i>"] --> M["Model<br/><i>one checkpoint + provenance</i>"]
+    U["Project<br/><i>which problem</i>"] --> M["Model<br/><i>one checkpoint + provenance</i>"]
     M --> S["status:<br/>evaluated · stale · never"]
     S -->|evaluated| R["Report"]
     S -->|never / stale| E["Evaluate<br/><i>local only</i>"]
@@ -369,7 +369,12 @@ regardless.
 
     Under this ordering it would be promoted to the top of an otherwise-empty strip: a fake
     headline on the run that exists to demonstrate honesty at small n. The ordering did not
-    create this; it made it visible. Fixed in the same change as the baseline field.
+    create this; it made it visible.
+
+    Two separate problems, and only one of them belongs to the interface. The hardcoded verdict
+    is fixed with the baseline field ([step 4](#build-order)). *Which* seven images are scored —
+    the first seven of a sorted manifest, six of them nevi on the full run — is a sampling
+    question tracked in the [roadmap](ROADMAP.md#the-open-scientific-work).
 
 #### The honest counterargument
 
@@ -524,7 +529,7 @@ listed last and sequenced early.
 |---|---|---|---|
 | 58 | **Checkpoint content hash** as model identity | [second premise](#the-second-premise-the-app-browses-artifacts-the-user-has-models) | — |
 | 59 | **Model registry** — committed declarations, never checkpoints on disk | second premise | — |
-| 60 | **Use-case level** in the Overview | second premise | 2, 3 |
+| 60 | **Project level** in the Overview | second premise | 2, 3 |
 | 61 | **Model page** — provenance, configurations, siblings, predecessors, evaluations | second premise | — |
 | 62 | **Evaluation status** — evaluated · **stale** · never | second premise · [Extending](extending.md#planned-the-conformance-checklist) | 4 |
 | 63 | **Supersession** (`supersedes:`) replacing the flat archive flag | second premise · [Phase E](ROADMAP.md#phase-e-the-interface) | — |
@@ -623,31 +628,41 @@ Four rules:
 
 ## Build order
 
-Two changes since this page was first drafted: an **engine step** now precedes the report
-re-layout, because the findings strip cannot be built without it; and the **model registry** is
-sequenced early, because it moves the root object and every later step would otherwise be built
-against the wrong one.
+Revised 2026-09-24. The **registry and model page now come first** and the baseline field moves
+to sit immediately before the findings strip, which is its only consumer. That keeps this branch
+interface work for as long as possible: the registry and model page need no engine change at all,
+and they are the thing that was actually asked for — *here are my models, which of them are
+evaluated, and how does one compare to its predecessor*.
 
 | Step | What lands | Touches the engine? | Visible publicly? |
 |---|---|---|---|
 | ~~**0**~~ | ~~Repoint the two tests that assert on `showcase/app.py`'s **source text**~~ — **done 2026-09-19**: they now scan the whole package, so a split cannot silently stop checking the code that draws | no | no |
 | ~~**1**~~ | ~~Package split · `st.navigation` · URLs · `planned.py` · `absence()`~~ — **done 2026-09-19**, see below | no | navigation only |
-| **2** | **`details["baseline"]`** on all six metrics, pulled forward from Phase G, plus the `gradcam.py:127` sample-size gate | **yes** | numbers unchanged, statuses sharper |
-| **3** | **Registry** **58 59 62** — models as declared data, status derived from artifacts | no | yes |
-| **4** | **Model page** **61 63 64 65 66** and the use-case level **60 70** in the Overview; `group`/`lineage` become derived | no | yes — the largest change |
-| **5** | Report re-laid out to the slot map; findings strip on the tiering from step 2; info box **36** from the four `explain` keys that exist today; every other slot a placeholder | no | yes |
+| **2** | **Registry** **58 59 62** — models as declared data, status derived from artifacts | an exporter, no model code | yes |
+| **3** | **Projects and the model page** **60 61 63 64 65 66 70**; `group`/`lineage` become derived | no | yes — the largest change |
+| **4** | **`details["baseline"]`** on all six metrics, plus the Grad-CAM verdict stops being hardcoded | **yes** | numbers unchanged, statuses sharper |
+| **5** | Report re-laid out to the slot map; findings strip on the tiering from step 4; info box **36** from the four `explain` keys that exist today; every other slot a placeholder | no | yes |
 | **6** | Compare: transpose **47**, placeholders for **44**/**45** | no | yes |
 | **7** | Studio **54**–**56** **67 68 69** as placeholders behind the torch gate | no | no |
 | **8+** | Each engine phase fills its own placeholders: A → **22 23 31 32 33 69**, B → **24 27 28 29**, F → **48**, G → **25 34 38 39 40 44 45 49**, case-view → **50**–**53** | yes | incremental |
 
-Steps 0–1 and 3–7 touch no engine code. Step 2 is the only engine work in the sequence and it is
-small — roughly ten lines per metric plus one gate — but nothing in step 5 works without it.
-
-**Why the registry comes before the report.** Step 4 changes what a tile *is*. Building the
+**Why the registry comes before the report.** Step 3 changes what a tile *is*. Building the
 report page first means building its header, its breadcrumb and its delta affordance against a
 root object that is about to be replaced, and then rebuilding them. The report is also the step
 that benefits most from the registry existing, because *"compare with the previous version"* is
 a link from the report header once models have predecessors, and a dead end before that.
+
+**Why the baseline field moved down.** It was step 2 while the report came right after it. The
+registry and model page do not read a finding's tier, so nothing gained by doing it first, and
+it put engine work at the front of an interface branch.
+
+**What step 4 does *not* include.** Grad-CAM scores the first seven images of a sorted manifest —
+on the 1,493-image run, six of the seven are nevi — and whether that sample should be stratified,
+enlarged, or measured against a random-attribution control is a question about the
+*measurement*, not the interface. It is tracked with the rest of the open scientific work in the
+[roadmap](ROADMAP.md#the-open-scientific-work). Step 4 only stops the metric from reporting
+`measured` regardless of its sample, because a status the app displays is part of the interface,
+and a wrong one makes the page say something untrue.
 
 ### What step 1 landed
 
@@ -691,7 +706,7 @@ Twenty-four artifacts and twenty-three scenarios were written before any of this
 the retired verdict vocabulary already follows applies: **read the old shape, do not rewrite
 it.**
 
-- `card.group` / `card.lineage` keep rendering where no use case or model is declared, exactly as
+- `card.group` / `card.lineage` keep rendering where no project or model is declared, exactly as
   `normalise_verdict` still maps `pass`/`warn`/`fail`.
 - A model with no declared checkpoint hash falls back to its `weights_path`, and a model with
   neither is shown as **unidentified** rather than being given a synthetic id — an invented
@@ -709,9 +724,9 @@ it.**
 - **Is the case view or the coverage map the better next build?** Both answer *"what am I
   actually looking at"*. Coverage is cheaper and blocked on Phase A; the case view is expensive
   and blocked on `per_example` surviving the [scaling gap](ROADMAP.md#known-scaling-gaps).
-- **Who declares a use case?** The entity model needs one above the model, and today it would be
+- **Who declares a project?** The entity model needs one above the model, and today it would be
   derived from the evaluation set — which conflates *the problem* with *the data used to check
-  it*. That works for three use cases and probably not for thirty.
+  it*. That works for one project and probably not for thirty.
 - **Does succession need a policy?** `supersedes:` is an author's declaration. Nothing stops a
   model being declared the successor of one it is worse than, and the delta view would report
   that faithfully — which is arguably the correct behaviour, and arguably a loophole.
