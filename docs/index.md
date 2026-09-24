@@ -6,6 +6,11 @@ integrity, performance, fairness, robustness, explainability and privacy.
 The evaluation runs *once*, offline, and produces static artifacts. A small Streamlit app
 reads those files and renders them. No server, no database, no running costs.
 
+!!! tip "Try it"
+    **[verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/)** — every model evaluated so far, its reports and
+    the comparison between them. The app runs on Streamlit's free tier and sleeps when unused; if
+    it says it has gone to sleep, wake it and give it a minute.
+
 ```mermaid
 flowchart LR
     subgraph engine["⚙️ ENGINE — runs offline, once"]
