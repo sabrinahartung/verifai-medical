@@ -29,7 +29,7 @@ METRIC_VERSIONS: dict[str, int] = {
     "performance.classification": 3,
     "explainability.gradcam": 3,        # 2: every test image, against a random control
     "robustness.corruption": 3,         # 3: an interval on the mean, and n
-    "fairness.skin_tone": 3,
+    "fairness.skin_tone": 4,           # 4: no dataset named in its text; intervals in the summary
     "privacy.mia": 3,
 }
 

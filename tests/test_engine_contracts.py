@@ -2004,6 +2004,34 @@ def test_each_pillar_card_says_what_it_was_compared_with_and_never_grades():
         "the separate strip is merged into the pillar cards; it must not come back as a second list"
 
 
+def test_every_measured_summary_states_n_and_an_interval():
+    """The summary is a template in the metric, so its rules can be checked: a
+    reader must learn how many images a number rests on, and how uncertain it is.
+
+    Integrity is exempt from the interval — a count of shared identifiers is
+    exact, not a sample estimate.
+    """
+    import re
+    from verifai.core.suite import METRIC_VERSIONS  # noqa: F401  (current reports only)
+    registry = json.loads((REPO / "showcase" / "artifacts" / "model_registry.json").read_text())
+    active = {c["scenario"] for m in registry["models"] for c in m["configurations"]
+              if c.get("status") == "active"}
+    assert active, "no active configuration — this test would pass vacuously"
+    n_images = re.compile(r"\d[\d,]*\s+(?:[\w-]+\s+)?images")
+    interval = re.compile(r"\[-?\d+\.\d+–-?\d+\.\d+\]")
+    for scenario in active:
+        report = json.loads((REPO / "showcase" / "artifacts" / scenario / "report.json").read_text())
+        for f in report["findings"]:
+            if f["verdict"] not in ("measured", "insufficient") or not f.get("value"):
+                continue
+            s_ = f["summary"]
+            assert n_images.search(s_), f"{scenario}/{f['metric']}: no image count in {s_!r}"
+            if f["pillar"] != "integrity" and (f["details"] or {}).get("enough_per_bin", True):
+                assert interval.search(s_), f"{scenario}/{f['metric']}: no interval in {s_!r}"
+            assert "_" not in re.sub(r"`[^`]*`", "", s_), \
+                f"{scenario}/{f['metric']}: an identifier leaked into {s_!r}"
+
+
 def test_every_finding_in_a_current_active_report_carries_a_baseline():
     """The runner attaches one to every finding; a current active report without
     one means a metric is missing from BY_FINDING."""

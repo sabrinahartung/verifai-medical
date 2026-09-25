@@ -2,7 +2,7 @@
   "schema": 1,
   "metric_versions": {
     "explainability.gradcam": 3,
-    "fairness.skin_tone": 3,
+    "fairness.skin_tone": 4,
     "integrity.split_leakage": 2,
     "performance.classification": 3,
     "privacy.mia": 3,

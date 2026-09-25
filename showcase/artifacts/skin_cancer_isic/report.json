@@ -15652,10 +15652,10 @@
         "gap_is_separated": true
       },
       "verdict": "measured",
-      "summary": "Accuracy by ITA-estimated skin type over 1,493 images; the largest gap is 33 points, between dark (V–VI) (0.60 on 60 images) and medium (III–IV) (0.93 on 108). Their 95% intervals do not overlap, so the difference is supported.",
+      "summary": "Accuracy by ITA-estimated skin type over 1,493 images; the largest gap is 33 points, between dark (V–VI) (0.600 [0.47–0.71] on 60 images) and medium (III–IV) (0.926 [0.86–0.96] on 108). Their 95% intervals do not overlap, so the difference is supported.",
       "details": {
         "explain": {
-          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. HAM10000 carries no skin-type labels, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
+          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. Skin-type labels are rarely recorded with dermoscopy images, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
           "how": "The bars show how many images fall into each skin-tone bin. What matters is the shape: a tall light bar next to a near-empty dark bar means the model is barely being tested on darker skin, so any headline accuracy mostly describes light skin. Once every populated bin holds at least 10 images, a second chart adds the accuracy per bin and the gap between them.",
           "limits": "Coverage is not performance — this chart shows who is in the sample, not how well the model serves them. ITA is also an estimate from pixels, not a clinical Fitzpatrick assessment: lighting, vignetting and dermatoscope settings all shift it."
         },
@@ -27762,7 +27762,7 @@
       "performance.classification": 3,
       "explainability.gradcam": 3,
       "robustness.corruption": 3,
-      "fairness.skin_tone": 3,
+      "fairness.skin_tone": 4,
       "privacy.mia": 3
     },
     "checkpoint": {
@@ -27770,5 +27770,5 @@
       "sha256": "12fbb0335ce803a5"
     }
   },
-  "created_at": "2026-09-25T09:08:27.489973+00:00"
+  "created_at": "2026-09-25T10:42:30.487428+00:00"
 }

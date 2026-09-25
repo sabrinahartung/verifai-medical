@@ -8644,10 +8644,10 @@
         "gap_is_separated": false
       },
       "verdict": "insufficient",
-      "summary": "Accuracy by ITA-estimated skin type over 1,003 images; the largest gap is 9 points, between dark (V–VI) (0.59 on 39 images) and light (I–II) (0.68 on 926). Their 95% intervals overlap, so this gap is not yet distinguishable from sampling noise — the smaller groups are too small to conclude from.",
+      "summary": "Accuracy by ITA-estimated skin type over 1,003 images; the largest gap is 9 points, between dark (V–VI) (0.590 [0.43–0.73] on 39 images) and light (I–II) (0.684 [0.65–0.71] on 926). Their 95% intervals overlap, so this gap is not yet distinguishable from sampling noise — the smaller groups are too small to conclude from.",
       "details": {
         "explain": {
-          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. HAM10000 carries no skin-type labels, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
+          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. Skin-type labels are rarely recorded with dermoscopy images, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
           "how": "The bars show how many images fall into each skin-tone bin. What matters is the shape: a tall light bar next to a near-empty dark bar means the model is barely being tested on darker skin, so any headline accuracy mostly describes light skin. Once every populated bin holds at least 10 images, a second chart adds the accuracy per bin and the gap between them.",
           "limits": "Coverage is not performance — this chart shows who is in the sample, not how well the model serves them. ITA is also an estimate from pixels, not a clinical Fitzpatrick assessment: lighting, vignetting and dermatoscope settings all shift it."
         },
@@ -16757,12 +16757,12 @@
       "integrity.split_leakage": 2,
       "performance.classification": 3,
       "robustness.corruption": 3,
-      "fairness.skin_tone": 3
+      "fairness.skin_tone": 4
     },
     "checkpoint": {
       "path": "artifacts_training/skin_cancer_isic.pt",
       "sha256": "12fbb0335ce803a5"
     }
   },
-  "created_at": "2026-09-25T09:06:51.991065+00:00"
+  "created_at": "2026-09-25T10:40:54.197689+00:00"
 }
