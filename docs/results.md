@@ -579,6 +579,36 @@ at the internal prevalence it collapses — 0.502 → **0.282** for ISIC, 0.259 
     finding states this; the two figures are not comparable. Melanoma sensitivity,
     specificity and J do not depend on which other classes exist.
 
+## Experiment 8 — a model this project did not train
+
+The original checkpoint on the Hugging Face Hub, scored on the same 1,493 HAM10000 test images
+as the ISIC model (configuration `original_checkpoint_ham10000`, Phase B). Its author published
+weights, not a list of training images; its training data is only *inferred* as HAM10000 from the
+model card, and the leakage audit behind this project found that data covers 9,964 of HAM10000's
+10,015 images.
+
+| | Original checkpoint (split not checkable) | ISIC model (split verified) |
+|---|---|---|
+| Top-1 accuracy | **0.867** [0.85–0.88] | 0.806 [0.79–0.83] |
+| Balanced accuracy | **0.878** | 0.713 |
+| Melanoma sensitivity | 0.650 [0.57–0.72] | 0.620 [0.54–0.69] |
+| Mean prediction stability | 0.766 | 0.765 |
+| Largest skin-tone accuracy gap | 17 points | 33 points |
+
+The integrity checks say what can be said: **provenance** — no training manifests, so no split
+check is possible; **corpus ancestry** — trained on HAM10000, tested on HAM10000, with no
+image-by-image check, so leakage *cannot be ruled out*; the **membership attack** is unavailable,
+because it needs known training members. The report carries the provisional banner, and every
+*established* mark on it reads *on a split that could not be checked*.
+
+!!! warning "Read the 0.878 as an upper bound, not a result"
+    Two explanations fit the gap, and nothing in this evaluation can separate them. The original
+    checkpoint trained on HAM10000 itself, the same distribution as the test set, where the ISIC
+    model trained on a mix of three archives — an in-distribution model is expected to score
+    higher. And it very likely saw most of these test images. The honest statement
+    is the one the report makes: the number is measured correctly and may not describe
+    generalisation at all.
+
 ## Training run
 
 12 epochs, 4.6 minutes on MPS, batch size 32, lr 1e-4, class-weighted cross-entropy.

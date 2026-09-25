@@ -89,6 +89,103 @@
       "plots": []
     },
     {
+      "pillar": "integrity",
+      "metric": "provenance",
+      "domain": "image",
+      "value": {
+        "source": "local",
+        "training_record": true,
+        "training_manifests": 2,
+        "trained_on": [
+          "isic2019"
+        ],
+        "trained_on_basis": null,
+        "checkable": true
+      },
+      "verdict": "measured",
+      "summary": "Trained in this repository by scenario `skin_cancer_isic`, loaded from the local checkpoint `skin_cancer_isic.pt`. Its 2 training manifests are on disk, so every one of the 1,003 test images can be checked against what the model saw.",
+      "details": {
+        "explain": {
+          "what": "Every other number in this report assumes the model never saw these images. Whether that can be checked depends on where the model came from: a model trained here comes with the list of images it trained on, so the overlap can be counted. A model downloaded from someone else usually comes with no such list, and then the overlap cannot be counted at all.",
+          "how": "Read the source first — trained here, or downloaded — and then whether a training record was found. With a record, the split check above is the real answer. Without one, the corpus check beside it is the only leakage check left, and it can only say whether leakage is possible, never that it did not happen.",
+          "limits": "A training record says what its author declared. It cannot prove that nothing else was used — a model fine-tuned from another checkpoint inherits whatever that checkpoint saw, and no record here would show it."
+        },
+        "baseline": {
+          "kind": "ideal",
+          "value": true,
+          "basis": "a declared training record the split can be checked against",
+          "cleared": true,
+          "claim": "The model's training data is on record, so the split could be checked image by image.",
+          "gap": null
+        }
+      },
+      "plots": []
+    },
+    {
+      "pillar": "integrity",
+      "metric": "corpus_ancestry",
+      "domain": "image",
+      "value": {
+        "trained_on": [
+          "isic2019"
+        ],
+        "evaluated_on": "derm7pt",
+        "shared": [],
+        "held_back_row_by_row": null
+      },
+      "verdict": "measured",
+      "summary": "No shared archive: the model trained on ISIC 2019, and the 1,003 test images come from Derm7pt, which neither contains nor is contained in it.",
+      "details": {
+        "explain": {
+          "what": "Public image archives are often built out of each other: the ISIC 2019 collection includes all of HAM10000. A model trained on the bigger archive has therefore seen images from the smaller one, and a test on the smaller one may ask it questions it has already answered. This checks whether the archive the model trained on and the archive these test images come from overlap at all.",
+          "how": "No shared archive means this kind of leakage is impossible. A shared archive means it is possible — and then the question is whether the overlap was removed image by image, which only the split check above can say. When that check cannot run, leakage cannot be ruled out, and every number below should be read as an upper bound on how well the model generalises.",
+          "limits": "It knows only the containment listed in the project's archive table, each with its source. Two archives that share images without saying so are not caught, and an archive missing from the table is reported as unknown rather than assumed to be separate."
+        },
+        "baseline": {
+          "kind": "ideal",
+          "value": "separate",
+          "basis": "no archive shared with the training data, or one held back image by image",
+          "cleared": true,
+          "claim": "The test images come from an archive the model did not train on.",
+          "gap": null
+        }
+      },
+      "plots": []
+    },
+    {
+      "pillar": "integrity",
+      "metric": "label_space",
+      "domain": "image",
+      "value": {
+        "relation": "dataset_subset",
+        "n_model_classes": 7,
+        "n_dataset_classes": 6,
+        "unscored": [
+          "actinic_keratoses"
+        ],
+        "unpredictable": [],
+        "label_map": {}
+      },
+      "verdict": "measured",
+      "summary": "The 1,003 test images hold 6 of the model's 7 classes: actinic keratoses never occur here, so they go unscored and averages over classes use 6 rather than 7.",
+      "details": {
+        "explain": {
+          "what": "The model answers with one of a fixed list of classes, and the test images are labelled with a list of their own. If the two lists differ, some of the model's classes can never be tested here, or some images can never be answered correctly. Either changes what every other number means, so it is stated first.",
+          "how": "Identical lists are the ordinary case. Classes the data lacks are left out of per-class results and of balanced accuracy, which is then averaged over fewer classes. Classes the model lacks turn every image of them into an error. A label map, when there is one, says which data label was read as which model class.",
+          "limits": "It compares names, not meanings. Two archives can use the same word for slightly different diagnostic criteria, and a label map records a decision someone made about that — it does not verify it."
+        },
+        "baseline": {
+          "kind": "ideal",
+          "value": "identical",
+          "basis": "the model and the data naming the same classes",
+          "cleared": false,
+          "claim": null,
+          "gap": null
+        }
+      },
+      "plots": []
+    },
+    {
       "pillar": "performance",
       "metric": "top1_accuracy",
       "domain": "image",
@@ -16755,6 +16852,9 @@
     "label": "ISIC corpus — as deployed",
     "metric_versions": {
       "integrity.split_leakage": 2,
+      "integrity.provenance": 1,
+      "integrity.corpus_ancestry": 1,
+      "integrity.label_space": 1,
       "performance.classification": 3,
       "robustness.corruption": 3,
       "fairness.skin_tone": 4
@@ -16766,11 +16866,64 @@
     "task": "classification",
     "modality": "pixels",
     "access": "training_data",
+    "model": {
+      "classes": [
+        "actinic_keratoses",
+        "basal_cell_carcinoma",
+        "benign_keratosis-like_lesions",
+        "dermatofibroma",
+        "melanocytic_Nevi",
+        "melanoma",
+        "vascular_lesions"
+      ],
+      "preprocessing": {
+        "resize": [
+          224,
+          224
+        ],
+        "to_tensor": true,
+        "mean": [
+          0.485,
+          0.456,
+          0.406
+        ],
+        "std": [
+          0.229,
+          0.224,
+          0.225
+        ]
+      },
+      "preprocessing_sha256": "c650b62d4c28d8c5"
+    },
     "coverage": [
       {
         "metric": "integrity.split_leakage",
         "pillar": "integrity",
         "finding": "split_leakage",
+        "requires": "labels",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "integrity.provenance",
+        "pillar": "integrity",
+        "finding": "provenance",
+        "requires": "labels",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "integrity.corpus_ancestry",
+        "pillar": "integrity",
+        "finding": "corpus_ancestry",
+        "requires": "labels",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "integrity.label_space",
+        "pillar": "integrity",
+        "finding": "label_space",
         "requires": "labels",
         "status": "measured",
         "reachable": true
@@ -16789,7 +16942,8 @@
         "finding": "gradcam_faithfulness",
         "requires": "gradients",
         "status": "not_requested",
-        "reachable": true
+        "reachable": true,
+        "reason": "Derm7pt's licence forbids redistributing its images, and a Grad-CAM overlay is a derived image, so none is rendered"
       },
       {
         "metric": "robustness.corruption",
@@ -16813,9 +16967,10 @@
         "finding": "membership_inference_auc",
         "requires": "training_data",
         "status": "not_requested",
-        "reachable": true
+        "reachable": true,
+        "reason": "the membership attack asks about this model's own training members, a different question from the one this external test asks"
       }
     ]
   },
-  "created_at": "2026-09-25T11:43:42.162549+00:00"
+  "created_at": "2026-09-25T15:13:53.160581+00:00"
 }

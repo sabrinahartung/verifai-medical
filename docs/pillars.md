@@ -242,10 +242,10 @@ reason, never a silent absence and never an invented number.
 | Metric | Sub-aspect | What it establishes | Status |
 |---|---|---|---|
 | `split_leakage` | row overlap | shared `image_id` / `lesion_id` between the evaluation manifest and everything the model trained on | **shipped** |
-| `provenance` | declared origin | what is *known* about a checkpoint's training data — `unavailable`, never "clean", when it is undeclared | tier 1 |
-| `label_space` | compatibility | model classes against dataset classes; a mismatch requires an explicit `label_map`, and is never guessed | tier 1 |
-| `preprocessing_fingerprint` | compatibility | the transform actually used, recorded and compared against what the checkpoint declares | tier 1 |
-| `corpus_ancestry` | corpus overlap | the model's declared datasets against the evaluation corpus, via an ancestry table (HAM10000 ⊂ ISIC 2019). The only leakage check possible for a model whose row ids we do not hold | tier 2 |
+| `provenance` | declared origin | what is *known* about a checkpoint's training data — `unavailable`, never "clean", when it is undeclared | **shipped** |
+| `label_space` | compatibility | model classes against dataset classes; a disjoint pair requires an explicit `label_map`, and is never guessed | **shipped** |
+| `preprocessing_fingerprint` | compatibility | the transform actually used, recorded with a hash in every report — **shipped**; compared against what a Hub checkpoint declares in its `preprocessor_config.json` — Phase C | recorded |
+| `corpus_ancestry` | corpus overlap | the model's declared datasets against the evaluation corpus, via an ancestry table (`data/corpora.yaml`: HAM10000 ⊂ ISIC 2019). The only leakage check possible for a model whose row ids we do not hold | **shipped** |
 | `near_duplicates` | row overlap | perceptual hashing (images) or shingling (text) across splits — catches the second photograph of one lesion that identifier matching misses | tier 2 |
 | `benchmark_contamination` | corpus overlap | was the evaluation benchmark inside the training corpus? n-gram and canary overlap where the corpus is known; perplexity on the benchmark against a paraphrase where it is not [[30]](references.md#ref-30) | tier 5 |
 

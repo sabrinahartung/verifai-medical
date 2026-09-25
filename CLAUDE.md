@@ -133,7 +133,15 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   as a precondition and `metrics/integrity/split_leakage.py` publishes the same result as
   a finding, so the guard and the report cannot drift apart. Splits are compared by
   `lesion_id` as well as `image_id`, because a second photo of a memorised lesion is not
-  a fair test question.
+  a fair test question. It also holds what Phase B checks for a model this project did not
+  train: `corpus ancestry` against `data/corpora.yaml` (which archive contains which, each
+  with its reference — an archive missing there is unknown, never independent), and the
+  `label_space` relation, which the runner checks before any metric and refuses when disjoint
+  unless `dataset.label_map` is declared. A scenario states `model.trained_on` (corpus ids, or
+  `{corpora, basis}` when only inferred) and `dataset.corpus`. A shared corpus with no
+  row-level check is `insufficient` — leakage cannot be ruled out — never `invalid`, which
+  stays reserved for contamination that was found. On such a provisional report every
+  *established* mark outside integrity reads *on a split that could not be checked*.
 - `verifai/models/image.py` — `ImageClassifier` wrapper (`SkinLesionModel` is kept as an alias).
   Metrics use `.torch_module` and `.cam_layer` (hooks/Grad-CAM), `.to_tensor()`,
   `.predict_probs()`. Classes, architecture, Grad-CAM layer, image size and device all come from
@@ -201,9 +209,12 @@ it is presentation: it never widens what may be compared.
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
 experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
-day. Archived is not *wrong*; it lacks what was added since. Today two are active — the ISIC
-model on its internal test and on Derm7pt "as deployed" — and twenty-one archived. Re-running
-those two reproduced all 274 published values exactly, which is what makes freezing the rest safe.
+day. Archived is not *wrong*; it lacks what was added since. Today three are active — the ISIC
+model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint on the
+HAM10000 test set, the project's one model it did not train — and twenty-one archived. Re-running
+the ISIC two reproduced all 274 published values exactly, which is what makes freezing the rest
+safe. A scenario may say why it leaves an applicable metric out, in `not_requested:
+{metric id: reason}`; the report shows the reason instead of a bare "not requested".
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed

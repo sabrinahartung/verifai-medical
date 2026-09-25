@@ -1,0 +1,12 @@
+{
+  "id": "original_checkpoint_ham10000",
+  "name": "Skin-Lesion ResNet18 (original checkpoint)",
+  "emoji": "🔬",
+  "domain": "image",
+  "dataset": "ham10000-clean-test",
+  "description": "The original Hub checkpoint on the full HAM10000 test set. Its training data is only inferred, and very likely includes these images: what an evaluation can and cannot say about a model it did not train.",
+  "sample": false,
+  "group": "Internal test — HAM10000 (split not checkable)",
+  "lineage": "ResNet18 · original checkpoint",
+  "hf_url": "https://huggingface.co/sabrinahartung1010/skin-lesion-resnet18"
+}

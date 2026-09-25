@@ -19,22 +19,13 @@ from __future__ import annotations
 
 PLANNED: dict[str, dict[str, str]] = {
     # ---- report -------------------------------------------------------------
-    "provenance_strip": {
-        "title": "Provenance strip",
-        "shows": "task, access level, intended-use profile, checkpoint revision "
-                 "and the preprocessing fingerprint the model was scored under",
-        "blocked_by": "Phase A (access and task declarations) and Phase B "
-                      "(preprocessing fingerprint)",
-        "phase": "ROADMAP.md#phase-a-the-two-contracts-and-capability-gating",
-    },
-    "integrity_gate": {
-        "title": "The rest of the integrity gate",
-        "shows": "provenance, corpus ancestry and label-space compatibility beside the "
-                 "split-leakage check — the parts of the gate that need more than a "
-                 "training manifest to run",
-        "blocked_by": "Phase B. Split leakage exists, and the banner that holds the page "
-                      "when it fails is built; the other three checks are not",
-        "phase": "ROADMAP.md#phase-b-what-you-can-and-cannot-verify-about-someone-elses-model",
+    "intended_use": {
+        "title": "Intended-use profile",
+        "shows": "what this model is meant to be used for — screening, triage, second "
+                 "opinion — and which criteria that use brings with it; the rest of the "
+                 "provenance strip (task, access, weights, preprocessing) is built",
+        "blocked_by": "Phase G: intended use becomes a profile in the versioned policy file",
+        "phase": "ROADMAP.md#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them",
     },
     "impact": {
         "title": "Why it matters",
