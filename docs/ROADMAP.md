@@ -118,6 +118,24 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
 the full run are nevi — because M2 is where Explainability's status on the report changes.
 
+**Under consideration, not scheduled (raised 2026-09-25):** an additional pillar from the
+earlier VERIFAI paper, still being worked out, with **human-in-the-loop** functionality as part
+of it: a clinician or other medical reviewer looks at the results and gives feedback, and that
+feedback informs retraining. Whether it is useful enough to build is itself open. Questions to
+settle before it gets a milestone:
+
+- **Where the feedback lives.** The showcase has no server and no database on purpose, so
+  collecting reviews needs either a separate write path or an offline step whose output is a
+  file the engine reads.
+- **Which cases a reviewer sees.** Reviewed cases that go back into training must never come
+  from the test manifest. If they did, the split-integrity check would reject the next run,
+  because it compares by `image_id` and `lesion_id`.
+- **What the feedback is.** Corrected labels, a verdict on an explanation, or a judgement of
+  whether a finding matters clinically: each feeds a different place, and only the first feeds
+  retraining directly.
+- **Framing.** This is an educational proof of concept, so a clinician's review is feedback on
+  an evaluation. It is not a clinical sign-off.
+
 ---
 
 ## Why this exists
