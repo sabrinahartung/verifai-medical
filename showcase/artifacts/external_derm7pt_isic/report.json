@@ -253,7 +253,7 @@
         }
       },
       "verdict": "measured",
-      "summary": "Top-1 accuracy 0.677 [0.65–0.71] on 1003 labeled examples; balanced 0.4999 over 6 of 7 classes — actinic_keratoses does not occur in this evaluation set, so the balanced figure is not comparable with one computed over all 7. Weakest class basal_cell_carcinoma: sensitivity 0.191 [0.10–0.33] on 42 images.",
+      "summary": "Top-1 accuracy 0.677 [0.65–0.71] on 1,003 labeled images; balanced accuracy 0.500 over 6 of 7 classes — actinic keratoses does not occur in this evaluation set, so the balanced figure is not comparable with one computed over all 7. Weakest class basal cell carcinoma: sensitivity 0.191 [0.10–0.33] on 42 images.",
       "details": {
         "explain": {
           "what": "Top-1 accuracy is the share of images whose most confident class is correct. Reported per class as well, because one averaged number hides the classes that matter most: a model can look strong overall while missing most melanomas, since melanoma is rare in the data.",
@@ -8506,9 +8506,9 @@
         "baseline": {
           "kind": "chance",
           "value": 0.5733,
-          "basis": "always answering the most common class, melanocytic_Nevi (575 of 1,003)",
+          "basis": "always answering the most common class, melanocytic nevi (575 of 1,003)",
           "cleared": true,
-          "claim": "Accuracy 0.677 [0.65–0.71] is above what always answering the most common class scores (melanocytic_Nevi, 0.573).",
+          "claim": "Accuracy 0.677 [0.65–0.71] is above what always answering the most common class scores (melanocytic nevi, 0.573).",
           "gap": 0.1037
         }
       },
@@ -8544,10 +8544,14 @@
           ]
         },
         "mean_stability": 0.834,
+        "mean_stability_ci": [
+          0.8196,
+          0.8484
+        ],
         "n": 1003
       },
       "verdict": "measured",
-      "summary": "The prediction stays stable under corruptions for 83% of the images on average.",
+      "summary": "The top-1 prediction stays the same under a corruption in 0.834 [0.82–0.85] of cases on average, over 1,003 images and 4 corruptions (noise, blur, brightness, jpeg). Least stable under brightness: 0.738 [0.71–0.76].",
       "details": {
         "better": {
           "mean_stability": "higher",
@@ -8587,10 +8591,10 @@
             0.93
           ],
           "hover": [
-            "0.852 [0.83-0.87] of 1003",
-            "0.832 [0.81-0.85] of 1003",
-            "0.738 [0.71-0.76] of 1003",
-            "0.914 [0.90-0.93] of 1003"
+            "0.852 [0.83–0.87] of 1,003",
+            "0.832 [0.81–0.85] of 1,003",
+            "0.738 [0.71–0.76] of 1,003",
+            "0.914 [0.90–0.93] of 1,003"
           ],
           "x_title": "Corruption",
           "y_title": "Share of unchanged top-1"
@@ -8640,10 +8644,10 @@
         "gap_is_separated": false
       },
       "verdict": "insufficient",
-      "summary": "Subgroup accuracy by ITA skin type; largest gap 9 points between dark (V–VI) (0.59, n=39) and light (I–II) (0.68, n=926), n=1003. Their 95% intervals overlap, so this gap is not yet distinguishable from sampling noise — the smaller groups are too small to conclude from.",
+      "summary": "Accuracy by ITA-estimated skin type over 1,003 images; the largest gap is 9 points, between dark (V–VI) (0.590 [0.43–0.73] on 39 images) and light (I–II) (0.684 [0.65–0.71] on 926). Their 95% intervals overlap, so this gap is not yet distinguishable from sampling noise — the smaller groups are too small to conclude from.",
       "details": {
         "explain": {
-          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. HAM10000 carries no skin-type labels, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
+          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. Skin-type labels are rarely recorded with dermoscopy images, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
           "how": "The bars show how many images fall into each skin-tone bin. What matters is the shape: a tall light bar next to a near-empty dark bar means the model is barely being tested on darker skin, so any headline accuracy mostly describes light skin. Once every populated bin holds at least 10 images, a second chart adds the accuracy per bin and the gap between them.",
           "limits": "Coverage is not performance — this chart shows who is in the sample, not how well the model serves them. ITA is also an estimate from pixels, not a clinical Fitzpatrick assessment: lighting, vignetting and dermatoscope settings all shift it."
         },
@@ -16722,9 +16726,9 @@
           "x_title": "Estimated skin type",
           "y_title": "Top-1 accuracy",
           "hover": [
-            "0.684 [0.65-0.71] on 926 images",
-            "0.605 [0.45-0.74] on 38 images",
-            "0.590 [0.43-0.73] on 39 images"
+            "0.684 [0.65–0.71] on 926 images",
+            "0.605 [0.45–0.74] on 38 images",
+            "0.590 [0.43–0.73] on 39 images"
           ]
         },
         "baseline": {
@@ -16751,14 +16755,67 @@
     "label": "ISIC corpus — as deployed",
     "metric_versions": {
       "integrity.split_leakage": 2,
-      "performance.classification": 2,
-      "robustness.corruption": 2,
-      "fairness.skin_tone": 2
+      "performance.classification": 3,
+      "robustness.corruption": 3,
+      "fairness.skin_tone": 4
     },
     "checkpoint": {
       "path": "artifacts_training/skin_cancer_isic.pt",
       "sha256": "12fbb0335ce803a5"
-    }
+    },
+    "task": "classification",
+    "modality": "pixels",
+    "access": "training_data",
+    "coverage": [
+      {
+        "metric": "integrity.split_leakage",
+        "pillar": "integrity",
+        "finding": "split_leakage",
+        "requires": "labels",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "performance.classification",
+        "pillar": "performance",
+        "finding": "top1_accuracy",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "explainability.gradcam",
+        "pillar": "explainability",
+        "finding": "gradcam_faithfulness",
+        "requires": "gradients",
+        "status": "not_requested",
+        "reachable": true
+      },
+      {
+        "metric": "robustness.corruption",
+        "pillar": "robustness",
+        "finding": "corruption_stability",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "fairness.skin_tone",
+        "pillar": "fairness",
+        "finding": "skin_tone_ita",
+        "requires": "probs",
+        "status": "insufficient",
+        "reachable": true
+      },
+      {
+        "metric": "privacy.mia",
+        "pillar": "privacy",
+        "finding": "membership_inference_auc",
+        "requires": "training_data",
+        "status": "not_requested",
+        "reachable": true
+      }
+    ]
   },
-  "created_at": "2026-09-24T22:07:42.986579+00:00"
+  "created_at": "2026-09-25T11:43:42.162549+00:00"
 }

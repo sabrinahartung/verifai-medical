@@ -246,8 +246,31 @@ Access level
 :   How much of the model this evaluation actually has: `labels` · `probs` · `logits` ·
     `gradients` · `weights` · `training_data`, in increasing order, each level including the ones
     before it. It decides which metrics **can exist** for a run, and it is a fact about the
-    evaluation setup, never a judgement about the model. See
+    evaluation setup, never a judgement about the model. The ISIC model in this repository is at
+    `training_data`: it was trained here, so it can be opened, differentiated, and its training
+    manifests are known. The same weights behind a hosted API would be `probs`. See
     [The pillars](pillars.md#how-much-of-the-model-do-you-have).
+
+Capability gate
+:   The check the runner makes before calling a metric: does the model's access level reach the
+    level the metric needs? If not, the metric is never called and the report gets an
+    `unavailable` row under its name saying why — *"it needs gradients, and this model can only be
+    queried"*. A metric that cannot run is a row with a reason, never a gap. How it works:
+    [ADR 0001](adr/0001-capability-gating.md).
+
+Task and modality
+:   The **task** is what the model does — `classification` today, `generation` later — and decides
+    which metrics belong in an evaluation at all. The **modality** is what it takes in — `pixels`,
+    `tokens`, `rows`, `audio`. The skin-tone metric needs pixels; accuracy needs neither in
+    particular. A metric that does not fit the task is refused before the run starts.
+
+Not applicable · not requested
+:   Two ways a metric can be absent from a report without anything being wrong with the model.
+    *Not applicable*: it does not belong in an evaluation of this task. *Not requested*: it
+    applies, but this evaluation did not ask for it, so nothing is known either way. Both differ
+    from `unavailable`, which means it was asked for and could not run. On the Derm7pt report,
+    Grad-CAM and membership inference are *not requested* — before coverage was recorded, the
+    same report said they were *not evaluated*, which read as though something had failed.
 
 White-box / black-box
 :   White-box means the evaluation can reach inside the model — gradients, and sometimes the
@@ -259,7 +282,10 @@ White-box / black-box
 Coverage
 :   The only thing this project aggregates: how many applicable metrics were measured, how many
     came back `insufficient` or `unavailable`, and why. A completeness statement, never a
-    quality one — there is no composite score, and there will not be one.
+    quality one — there is no composite score, and there will not be one. Every report records
+    one coverage row per registered metric. The Derm7pt report reads *6 of the 6 metrics apply:
+    3 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
+    passed.
 
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content

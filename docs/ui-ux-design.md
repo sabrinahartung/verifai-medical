@@ -232,7 +232,7 @@ rating, and subject to the same rule.
 
 **A third status appears: stale.** *"Already evaluated"* has three answers, not two — evaluated
 under the current suite, evaluated under an older one, never evaluated. The metric `version`
-field from [Extending](extending.md#planned-the-conformance-checklist) makes the middle case
+field from [Extending](extending.md#the-conformance-checklist-partly-enforced) makes the middle case
 computable, and without it a reader will read an old evaluation as a current one.
 
 ### Navigation
@@ -311,8 +311,8 @@ rule is the mitigation and it is checkable, which makes this a managed risk rath
 
 | Tier | Contains | Renders as |
 |---|---|---|
-| **0 — gate** | integrity `invalid` / `unavailable` | a banner above everything; never a strip entry |
-| **1 — established** | `measured` **and** the interval clears a stated reference (`control` / `chance` / `criterion`) | the findings strip |
+| **0 — gate** | integrity `invalid` / `unavailable` | a banner above everything; never marked established |
+| **1 — established** | `measured` **and** the interval clears a stated reference (`control` / `chance` / `criterion`) | a **✓ Established** line on the pillar's card in *At a glance* |
 | **2 — computed** | `measured`, but no reference exists or the interval spans it | the pillar sections only |
 | **3 — absent** | `insufficient` · `not_assessed` · `unavailable`, each with its reason | the coverage map |
 
@@ -320,9 +320,17 @@ Within a tier, **fixed pillar order** — integrity, performance, fairness, robu
 explainability, privacy, safety. Stable, carries no judgement, and it keeps rows from moving
 when two reports are read side by side.
 
-This gives a clean division of labour that caps the strip however far the catalogue grows: **the
-strip says what was established; the [coverage map](ROADMAP.md#what-takes-its-place) says what
-was not, and why.**
+This gives a clean division of labour however far the catalogue grows: **the established marks
+say what was established; the [coverage map](ROADMAP.md#what-takes-its-place) says what was not,
+and why.**
+
+!!! note "The strip became a mark on each pillar's card (M3, 2026-09-25)"
+    Shipped in M2 as a separate list above *At a glance*, the strip named every pillar a second
+    time, directly above a list that named every pillar once more, and read as repetition. The two
+    are now one card per pillar, in fixed order: its status, its result, and one line saying what
+    it was compared with — **✓ Established** where the interval clears the reference, otherwise
+    why nothing is claimed (an ideal every model falls short of, a sample too small, an interval
+    spanning the reference).
 
 #### What it produces on the real artifacts
 
@@ -333,7 +341,7 @@ them as equals:
 |---|---|---|
 | 1 | Clean split — none of 1,493 test images shares a lesion with the 23,278 trained on | definitive |
 | 1 | **33-point accuracy gap** — dark 0.60 (n=60) against medium 0.93 (n=108) | *"their 95% intervals do not overlap"* |
-| 1 | **Membership is distinguishable** — MIA AUC 0.5388 [0.51–0.57] | *"the interval lies entirely above 0.5 (chance)"* |
+| 1 | **Membership is distinguishable** — MIA AUC 0.539 [0.51–0.57] | *"the interval lies entirely above 0.5 (chance)"* |
 | 2 | top-1 0.806 [0.79–0.83] · stability 76% · faithfulness 0.3 | real numbers with no reference to clear |
 
 The two findings currently buried four screens down rise to the top — **and nobody had to decide
@@ -531,7 +539,7 @@ listed last and sequenced early.
 | 59 | **Model registry** — committed declarations, never checkpoints on disk | second premise | — |
 | 60 | **Project level** in the Overview | second premise | 2, 3 |
 | 61 | **Model page** — provenance, configurations, siblings, predecessors, evaluations | second premise | — |
-| 62 | **Evaluation status** — evaluated · **stale** · never | second premise · [Extending](extending.md#planned-the-conformance-checklist) | 4 |
+| 62 | **Evaluation status** — evaluated · **stale** · never | second premise · [Extending](extending.md#the-conformance-checklist-partly-enforced) | 4 |
 | 63 | **Supersession** (`supersedes:`) replacing the flat archive flag | second premise · [Phase E](ROADMAP.md#phase-e-the-interface) | — |
 | 64 | **Configuration switcher** — one checkpoint, several decision rules | [Results](results.md) | — |
 | 65 | **Sibling trade-off entry point** — explicitly *no winner* | [Phase G](ROADMAP.md#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) | — |

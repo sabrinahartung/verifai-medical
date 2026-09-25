@@ -128,14 +128,26 @@ def run(model, dataset, ctx) -> Finding:
     )
 ```
 
-Then one line in `verifai/core/run.py`:
+Then one entry in `verifai/core/run.py`, saying what the metric needs before it can run:
 
 ```python
 METRIC_REGISTRY = {
     ...,
-    "performance.my_metric": "verifai.metrics.performance.my_metric:run",
+    "performance.my_metric": MetricSpec(
+        "verifai.metrics.performance.my_metric:run",
+        pillar="performance", finding="my_metric",   # the Finding it returns
+        tasks=("classification",),                   # which tasks it belongs to
+        modalities=None,                             # None = any payload; ("pixels",) for images
+        requires="probs"),                           # the lowest access level it needs
 }
 ```
+
+The runner checks `requires` against the model's access level **before** calling the metric.
+When the model falls short — Grad-CAM on a model that can only be queried — the metric is never
+called, and the report gets an `unavailable` finding under its name saying why. A metric whose
+`tasks` or `modalities` do not match the scenario is refused before anything runs. A bare
+`"module:function"` string is still accepted and taken at its most permissive (any task, any
+payload, `labels`), which is how every metric ran before the contracts existed.
 
 ### What `ctx` carries
 
@@ -191,19 +203,21 @@ The first three are the ones a non-specialist needs most and are the ones easies
 metric that cannot fill all five is not finished — the wording is part of the measurement, not
 decoration on top of it.
 
-## Planned — the conformance checklist
+## The conformance checklist — partly enforced
 
-**None of this is enforced yet.** It is what the registry will require once
-[Phase A](ROADMAP.md#phase-a-the-two-contracts-and-capability-gating) lands; today a metric is
-registered as a bare `"module:function"` string and nothing checks it. Written down here
+The first two rows are enforced since
+[Phase A](ROADMAP.md#phase-a-the-two-contracts-and-capability-gating) (2026-09-25): every
+registry entry is a `MetricSpec`, and a test fails otherwise. `version` lives in
+`verifai/core/suite.py`, the reference, `better`, `explain`, glossary and name rows are tested;
+`cost` and the method record are not yet. Written down here
 because the [catalogue](pillars.md) is heading for fifty-one metrics, and fifty hand-written
 tests would not survive contact with the first refactor. One test over the registry checks all
 of them instead, so a new metric will be *done* when every line below is true:
 
 | It will have to | Where | Why |
 |---|---|---|
-| declare `tasks`, `modalities`, `requires` | its registry entry | so the runner can report `unavailable` **with a reason** instead of crashing on a model that cannot support it |
-| declare the **access level** it needs | its registry entry | `labels` · `probs` · `logits` · `gradients` · `weights` · `training_data`. Half the catalogue cannot run against a hosted API, and a metric that silently did not run is indistinguishable from a model with nothing to report |
+| declare `tasks`, `modalities`, `requires` — **enforced** | its `MetricSpec` | so the runner can report `unavailable` **with a reason** instead of crashing on a model that cannot support it |
+| declare the **access level** it needs — **enforced** | `MetricSpec.requires` | `labels` · `probs` · `logits` · `gradients` · `weights` · `training_data`. Half the catalogue cannot run against a hosted API, and a metric that silently did not run is indistinguishable from a model with nothing to report |
 | record the **method and configuration** that produced its number | the `Finding.value` | an attribution method, an attack, a perturbation budget, a normalisation flag — each changes the result, so each is part of it. Two runs are only comparable when these match |
 | declare a `version` | its registry entry | a changed definition must not silently produce false deltas against older snapshots — the comparison view refuses across versions, exactly as it does across evaluation manifests |
 | declare a `cost` | its registry entry | forward passes per sample, so `preflight` can estimate a run before it starts rather than after |
@@ -212,6 +226,7 @@ of them instead, so a new metric will be *done* when every line below is true:
 | return `details["explain"]` with `what`, `how`, `limits`, `impact` | the `Finding` | the dashboard's wording ships with the metric, not with the app |
 | return a chart spec in `details["chart"]` | the `Finding` | a bare number tells a non-specialist nothing. A single scalar gets `kind: "scale"` so the reader sees whether it is a *good* number, not only what it is |
 | resolve to a `verifai/core/glossary.py` entry | the glossary | the comparison view reads flattened keys and never sees a finding, so it has no other way to explain the row |
+| have a human name in `METRIC_NAMES` | the glossary | the report's section heading; without one the reader sees the finding's identifier, `split_leakage` |
 | state `n` in the summary | the `Finding` | a number without its sample size is not a claim |
 
 A second test asserts that no glossary pattern is fully shadowed by an earlier one. The list

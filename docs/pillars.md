@@ -358,10 +358,12 @@ and net benefit already answer in full.
 
 ## How much of the model do you have?
 
-**Planned.** The ladder below is a design, not yet implemented — every scenario in this
-repository today is a local checkpoint, so the question has never had to be asked. It becomes
-load-bearing the moment a model arrives from a Hugging Face link
-([Phase A](ROADMAP.md#phase-a-the-two-contracts-and-capability-gating)).
+**Built in [Phase A](ROADMAP.md#phase-a-the-two-contracts-and-capability-gating)
+(2026-09-25)**: `verifai/models/base.py` holds the ladder, every model declares its level, every
+metric declares the one it needs, and each report records both. Every scenario in this repository
+today is a local checkpoint, so in the published reports the gate has never had to close; the
+tests exercise it with a model that returns only class scores. It becomes visible the moment a
+model arrives that can only be queried.
 
 Half the catalogue cannot run against a model you can only send requests to. That is not a
 limitation of this framework — gradients do not exist on the other side of an HTTP endpoint —
@@ -382,7 +384,7 @@ certainly read the predicted label.
 | `training_data` | the manifests it was trained on | a model trained here, where `<name>_training.json` records the split |
 
 A metric declares the **lowest** level it needs. The runner compares that against the adapter's
-level and reports `not_assessed` with the reason when it falls short — *"this model is reachable
+level and reports `unavailable` with the reason when it falls short — *"this model is reachable
 only through an API, so gradients do not exist for it"* — rather than omitting the row.
 
 ### Worked examples, from this repository

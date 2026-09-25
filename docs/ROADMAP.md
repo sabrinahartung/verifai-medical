@@ -109,14 +109,41 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **Reproducible tooling** · 2026-09-24 | uv, a lock reproducing the environment every artifact came from, CI on every pull request into `dev` | results meant to be recomputable were produced in the least reproducible part of the repository — see [Tooling](#tooling-moved-to-uv-done-2026-09-24) |
 | ✅ | **M1 — Release 1** · 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): both of the above, public at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/) and on the docs site | the public demo still showed the old twenty-four-tile gallery and the sample fixture. Streamlit Cloud's Python version was confirmed ≥ 3.12 before the merge, as the pinned `showcase/requirements.txt` needs |
 | ✅ | **M2 — The findings strip** · 2026-09-25 | Every finding carries `details["baseline"]` — an ideal, chance, or a control measured in the same run — and the report opens with what cleared it, in pillar order. Grad-CAM scores every test image against a random-region control. Scenarios are **active** (re-run when a metric changes, `scripts/run_active.py`) or **archived** (the record, frozen); metrics carry versions and reports record them and their checkpoint, so a report left behind says so | a backfill of all 23 reports was planned; archiving made it unnecessary — only the two active configurations were re-run, and they reproduced every other published value exactly |
-| **M3** | **A usability pass** | the interface reworked from a reader's point of view, starting with the report: *What this evaluation established* and *At a glance* both list every pillar, which reads as repetition — they become one card per pillar, in fixed order, carrying its status, its result and, where it applies, what it established and against which reference. Then whatever else a walkthrough finds unintuitive | raised on review of M2 (2026-09-25). Before Phase A because M4 and M5 put new things on screen — a coverage map, access badges, *not applicable* states, the integrity-gate checks, the run pages — and they should land in the reworked layout rather than be built into this one and reworked after. A view change only: the references and the reports stay as they are |
-| **M4** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
+| ✅ | **M3 — A usability pass** · 2026-09-25 | The report's two pillar lists became one card per pillar: status, result, and what it was compared with — **established** where the interval clears the reference, otherwise why nothing is claimed. Metrics are headed by name, classes and datasets read as words, counts say what they count, and charts no longer overlap their own labels. Metric summaries were rewritten for a reader (version 3; fairness 4) and a test now holds every active one to an image count and an interval; robustness gained the interval it lacked | the walkthrough found eleven problems and all were fixed; re-running the two active configurations reproduced every value exactly, so only wording changed. Left as is: Streamlit prints `None` for a missing value in the comparison table |
+| ✅ | **M4 — Phase A**, the two contracts and capability gating · 2026-09-25 | `verifai/models/base.py`: the model contract and the access ladder. Every registry entry is a `MetricSpec` declaring its pillar, tasks, modalities and the access it needs; the runner never calls a metric the model cannot support and writes an `unavailable` finding with the reason instead. Scenarios declare `task:`. Each report records its task, access and a coverage row per registered metric, and the showcase reads it: a coverage map at the top of the report, *not applicable* and *not requested* told apart from *not evaluated*, and an access column and statement in the comparison | every published model is a local checkpoint, so the gate is proven by tests with a model that returns only class scores, not by a published report. Two items of the Phase A text moved: the adapter's `metadata` (provenance, preprocessing fingerprint) belongs with Phase B, which consumes it, and the per-metric `cost` with Phase D's `preflight` |
 | **M5** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
 | M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
 **Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). One item
 sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
 the full run are nevi — because M2 is where Explainability's status on the report changes.
+
+**Under consideration, not scheduled (raised 2026-09-25):** an additional pillar from the
+earlier VERIFAI paper, still being worked out, with **human-in-the-loop** functionality as part
+of it: a clinician or other medical reviewer looks at the results and gives feedback, and that
+feedback informs retraining. Whether it is useful enough to build is itself open. Questions to
+settle before it gets a milestone:
+
+- **Where the feedback lives.** The showcase has no server and no database on purpose, so
+  collecting reviews needs either a separate write path or an offline step whose output is a
+  file the engine reads.
+- **Which cases a reviewer sees.** Reviewed cases that go back into training must never come
+  from the test manifest. If they did, the split-integrity check would reject the next run,
+  because it compares by `image_id` and `lesion_id`.
+- **What the feedback is.** Corrected labels, a verdict on an explanation, or a judgement of
+  whether a finding matters clinically: each feeds a different place, and only the first feeds
+  retraining directly.
+- **Framing.** This is an educational proof of concept, so a clinician's review is feedback on
+  an evaluation. It is not a clinical sign-off.
+
+**Due with the paper's metrics (Phase F, raised 2026-09-25): sources for the metric wording.**
+Every metric's `summary` and `explain` text is a template written into the metric itself, not
+generated, so it says only what its author put there — and today none of it cites where a
+method or a reading of it comes from. When the paper's metrics are added, each metric's
+wording gets its source, the metrics already shipped included. Two forms, to be chosen then:
+cite `[n]` from [the references](references.md) inside the texts, or link each metric to its
+entry in [the catalogue](pillars.md), which already carries the citations. Either way it is a
+change to what a metric reports, so it bumps the metric's version.
 
 ---
 
@@ -167,6 +194,8 @@ product, not a gap in it.
 | **11** Reproducible tooling | 2026-09-24 | uv with a lock reproducing the artifacts' environment version for version; three undeclared imports declared; CI on pull requests into `dev`, with twenty showcase tests that had always been skipped now run | [Tooling](#tooling-moved-to-uv-done-2026-09-24) · PR #2 |
 | **12** First release | 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): the interface and the tooling, public — the app at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/), the docs on GitHub Pages | PR #4 |
 | **13** The findings strip | 2026-09-25 | every finding compared with a stated reference; the report opens with what cleared it, in pillar order. Scenarios are active or archived, metrics versioned, and re-running the two active ones reproduced all 274 other published values exactly | `verifai/metrics/_baseline.py` · `verifai/core/suite.py` |
+| **14** A usability pass | 2026-09-25 | one card per pillar instead of two lists; metric summaries written for a first-time reader and tested for n, interval and no identifiers | `showcase/views/report.py` · `verifai/core/glossary.py::METRIC_NAMES` |
+| **15** The two contracts | 2026-09-25 | models declare how much of themselves they expose, metrics what they need; a metric that cannot run says why, and every report records its coverage | `verifai/models/base.py` · `verifai/core/run.py::MetricSpec` |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -215,6 +244,13 @@ Nine phases, A to I. Phase A is the seam Phases B–D plug into; the order they 
 set by [Milestones](#milestones) — which put Phase E first, for the reason given there.
 
 ### Phase A — the two contracts, and capability gating
+
+!!! success "Built 2026-09-25 (M4)"
+    Everything below except the adapter's `metadata`, which moved to Phase B where the
+    provenance and preprocessing checks consume it, and the per-metric `cost`, which waits for
+    Phase D's `preflight`. The two refusals are split as the text intends: a metric that does not
+    *apply* to the task is refused before anything runs; one the model cannot *support* runs as
+    an `unavailable` finding with its reason.
 
 The model contract is *already* domain-neutral; nobody wrote it down. Read off the
 metrics: four of six need only `dataset.load(sample)` → payload and
@@ -447,6 +483,10 @@ robustness must never be merged into one "robustness" figure with corruption sta
 they answer different questions — whether a clinically irrelevant perturbation flips the
 call, versus whether a deliberate one can be constructed — and a reader shown one number
 will assume the wrong one.
+
+**Its wording is sourced.** A metric added from the literature arrives with the citation behind
+its method and its reading, and the shipped six get theirs in the same pass — see
+[the note under Milestones](#milestones).
 
 **Write it when it is short.** FGSM, PGD, additive noise and occlusion are tens of lines each
 in numpy/torch, and the wording has to be ours anyway. Take a dependency only where

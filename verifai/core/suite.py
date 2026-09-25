@@ -20,13 +20,17 @@ from __future__ import annotations
 # Version 2 (2026-09-25): every finding carries `details["baseline"]` — what its
 # number is compared with, and whether the interval clears it. Grad-CAM's 2 is
 # also a new measurement: every test image, against a random-region control.
+#
+# Version 3 (2026-09-25): summaries a first-time reader can read — class names in
+# words, three decimals, thousands separated, en-dash intervals. Robustness also
+# gains an interval on its mean and states n.
 METRIC_VERSIONS: dict[str, int] = {
     "integrity.split_leakage": 2,
-    "performance.classification": 2,
-    "explainability.gradcam": 2,        # 2: every test image, against a random control
-    "robustness.corruption": 2,
-    "fairness.skin_tone": 2,
-    "privacy.mia": 2,
+    "performance.classification": 3,
+    "explainability.gradcam": 3,        # 2: every test image, against a random control
+    "robustness.corruption": 3,         # 3: an interval on the mean, and n
+    "fairness.skin_tone": 4,           # 4: no dataset named in its text; intervals in the summary
+    "privacy.mia": 3,
 }
 
 

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._common import class_name
 
 FLAT_EPS = 1e-6
 
@@ -131,7 +132,8 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             fname = f"gradcam_{s.id}.png"
             out.save(plot_dir / fname)
             rel_plots.append(f"plots/{fname}")
-            captions.append(f"{s.id}: {top} ({probs[top]*100:.0f}%)")
+            # What the model called it first; the image id is for looking it up.
+            captions.append(f"Called {class_name(top)} ({probs[top]*100:.0f}%) · {s.id}")
 
         mask = _cam_mask(cam, img.size)
         if mask is None:          # a flat map highlights nothing: no region to test

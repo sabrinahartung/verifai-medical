@@ -141,7 +141,7 @@ def _project_card(project: dict, registry: dict, evaluated: set[str], cards_by_i
         # Counts, not a colour: this says what exists, never whether it is good.
         counts = [f"**{states.count(s)}** {STATUS_LABEL[s].lower()}"
                   for s in ("evaluated", "partly", "not_evaluated") if states.count(s)]
-        st.markdown(" · ".join(counts))
+        st.markdown(" · ".join(counts) + f" — of {len(models)} models")
         if st.button("Open project →", key=key):
             go_to_project(project["name"])
 

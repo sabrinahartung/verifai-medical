@@ -811,6 +811,17 @@ def test_every_metric_in_every_artifact_has_an_explanation():
     assert not missing, f"metric keys with no glossary entry: {missing}"
 
 
+def test_every_metric_in_every_artifact_has_a_human_name():
+    """A report heading names its metric in words, never by its identifier."""
+    from verifai.core.glossary import METRIC_NAMES
+    ids = set()
+    for f in (REPO / "showcase" / "artifacts").glob("*/report.json"):
+        ids |= {x["metric"] for x in json.loads(f.read_text(encoding="utf-8"))["findings"]}
+    assert ids, "no reports found — this test would pass vacuously"
+    missing = sorted(ids - set(METRIC_NAMES))
+    assert not missing, f"metric ids with no human name in METRIC_NAMES: {missing}"
+
+
 def test_an_unknown_metric_gets_no_explanation_rather_than_a_guess():
     """A confident explanation of the wrong quantity is worse than none."""
     from verifai.core.glossary import explain_metric
@@ -1083,8 +1094,8 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
     source = _showcase_source()
     assert "hidden_comparable" in source, \
         "the comparison view must track runs the lineage filter hides"
-    assert "were scored on these same images" in source, \
-        "and must say so on screen, next to the best column it undermines"
+    assert "scored on these same images" in source, \
+        "and must say so on screen, next to the leading cells it undermines"
 
 
 # --- linear probing and the learning curve -----------------------------------
@@ -1963,6 +1974,64 @@ def test_the_strip_holds_only_measured_findings_that_clear_in_pillar_order():
         "a report predating baselines has no strip, rather than an empty one"
 
 
+def test_each_pillar_card_says_what_it_was_compared_with_and_never_grades():
+    """The strip and the glance list became one card per pillar. What was
+    established is a mark on the card; what was not says why, in words that
+    speak about the evidence rather than the model."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import established, reference_line
+
+    def f(pillar, verdict, cleared, kind="chance"):
+        return {"pillar": pillar, "verdict": verdict,
+                "details": {"baseline": {"cleared": cleared, "claim": "the claim" if cleared else None,
+                                         "kind": kind, "basis": "the basis"}}}
+    perf, robust, thin = (f("performance", "measured", True), f("robustness", "measured", False, "ideal"),
+                          f("fairness", "insufficient", True, "control"))
+    hits = established([perf, robust, thin], "measured")
+    assert reference_line(perf, hits, "measured").startswith("✓ **Established against chance**")
+    assert "falls short of an ideal" in reference_line(robust, hits, "measured"), \
+        "an unreachable ideal must say why nothing is claimed, not vanish"
+    assert "does not support a claim" in reference_line(thin, hits, "measured")
+    assert reference_line({"pillar": "privacy", "verdict": "measured", "details": {}}, hits,
+                          "measured") is None, "no baseline, no line"
+    for word in ("pass", "fail", "good", "bad"):
+        for x in (perf, robust, thin):
+            assert word not in reference_line(x, hits, "measured").lower().split()
+
+    source = (REPO / "showcase" / "views" / "report.py").read_text(encoding="utf-8")
+    assert "What this evaluation established" not in source, \
+        "the separate strip is merged into the pillar cards; it must not come back as a second list"
+
+
+def test_every_measured_summary_states_n_and_an_interval():
+    """The summary is a template in the metric, so its rules can be checked: a
+    reader must learn how many images a number rests on, and how uncertain it is.
+
+    Integrity is exempt from the interval — a count of shared identifiers is
+    exact, not a sample estimate.
+    """
+    import re
+    from verifai.core.suite import METRIC_VERSIONS  # noqa: F401  (current reports only)
+    registry = json.loads((REPO / "showcase" / "artifacts" / "model_registry.json").read_text())
+    active = {c["scenario"] for m in registry["models"] for c in m["configurations"]
+              if c.get("status") == "active"}
+    assert active, "no active configuration — this test would pass vacuously"
+    n_images = re.compile(r"\d[\d,]*\s+(?:[\w-]+\s+)?images")
+    interval = re.compile(r"\[-?\d+\.\d+–-?\d+\.\d+\]")
+    for scenario in active:
+        report = json.loads((REPO / "showcase" / "artifacts" / scenario / "report.json").read_text())
+        for f in report["findings"]:
+            if f["verdict"] not in ("measured", "insufficient") or not f.get("value"):
+                continue
+            s_ = f["summary"]
+            assert n_images.search(s_), f"{scenario}/{f['metric']}: no image count in {s_!r}"
+            if f["pillar"] != "integrity" and (f["details"] or {}).get("enough_per_bin", True):
+                assert interval.search(s_), f"{scenario}/{f['metric']}: no interval in {s_!r}"
+            assert "_" not in re.sub(r"`[^`]*`", "", s_), \
+                f"{scenario}/{f['metric']}: an identifier leaked into {s_!r}"
+
+
 def test_every_finding_in_a_current_active_report_carries_a_baseline():
     """The runner attaches one to every finding; a current active report without
     one means a metric is missing from BY_FINDING."""
@@ -1986,3 +2055,147 @@ def test_the_random_control_moves_the_region_without_changing_it():
     mask = np.zeros((40, 60), dtype=bool); mask[5:15, 10:30] = True
     moved = _shifted(mask, np.random.default_rng(0))
     assert moved.shape == mask.shape and moved.sum() == mask.sum()
+
+
+# --- Phase A: the model contract and capability gating ------------------------
+class _ProbsOnlyModel:
+    """A model reachable only through an API: scores for every class, nothing more."""
+    classes = ["a", "b"]
+    access = "probs"
+    modality = "pixels"
+
+    def predict_probs(self, payload):
+        return {"a": 0.7, "b": 0.3}
+
+    def decide(self, probs, meta=None):
+        return max(probs, key=probs.get)
+
+    def rank(self, probs, meta=None):
+        return sorted(probs, key=probs.get, reverse=True)
+
+
+class _TinyDataset:
+    meta: dict = {}
+
+    def __iter__(self):
+        return iter([])
+
+    def __len__(self):
+        return 0
+
+
+def _gated_run(monkeypatch, metrics, model=None, **scenario_extra):
+    from verifai.core import run as R
+    from verifai.core.findings import Finding
+    called = []
+
+    def fake_metric(spec):
+        def fn(model, dataset, ctx):
+            called.append(spec.finding)
+            return Finding(pillar=spec.pillar, metric=spec.finding, domain="image",
+                           value={"x": 1.0}, summary="ran")
+        return fn
+    monkeypatch.setattr(R, "_build_model", lambda spec: model or _ProbsOnlyModel())
+    monkeypatch.setattr(R, "_build_dataset", lambda spec: _TinyDataset())
+    monkeypatch.setattr(R, "_load", lambda target: fake_metric(target))
+    scenario = {"name": "gate", "domain": "image", "model": {}, "dataset": {},
+                "metrics": metrics, **scenario_extra}
+    return R.run_scenario(scenario), called
+
+
+def test_every_registered_metric_declares_what_it_needs():
+    from verifai.core.run import METRIC_REGISTRY, MetricSpec
+    from verifai.models.base import ACCESS_LEVELS
+    for metric_id, spec in METRIC_REGISTRY.items():
+        assert isinstance(spec, MetricSpec), f"{metric_id} is still a bare string"
+        assert spec.requires in ACCESS_LEVELS, f"{metric_id}: unknown level {spec.requires!r}"
+        assert spec.pillar == metric_id.split(".", 1)[0]
+
+
+def test_a_bare_string_registry_entry_still_works(monkeypatch):
+    from verifai.core import run as R
+    monkeypatch.setitem(R.METRIC_REGISTRY, "privacy.legacy", "verifai.metrics.privacy.mia:run")
+    spec = R.spec_of("privacy.legacy")
+    assert spec.requires == "labels" and spec.modalities is None and spec.pillar == "privacy"
+    assert R.applies(spec, "generation", "tokens"), "an undeclared metric runs as it always did"
+
+
+def test_the_access_ladder_is_a_total_order():
+    from verifai.models.base import ACCESS_LEVELS, reaches
+    for i, has in enumerate(ACCESS_LEVELS):
+        for j, needs in enumerate(ACCESS_LEVELS):
+            assert reaches(has, needs) == (i >= j)
+    with pytest.raises(ValueError):
+        reaches("everything", "probs")
+
+
+def test_a_metric_the_model_cannot_support_is_reported_not_dropped(monkeypatch):
+    """Grad-CAM on an API model: a row saying why, never a shorter report."""
+    report, called = _gated_run(monkeypatch, ["performance.classification",
+                                              "explainability.gradcam"])
+    assert called == ["top1_accuracy"], "the gated metric must never be called"
+    cam = next(f for f in report.findings if f.metric == "gradcam_faithfulness")
+    assert cam.verdict == "unavailable" and cam.value is None
+    assert "gradients" in cam.summary and "probs" in cam.summary
+    assert report.meta["access"] == "probs" and report.meta["task"] == "classification"
+    status = {r["metric"]: r["status"] for r in report.meta["coverage"]}
+    assert status["explainability.gradcam"] == "unavailable"
+    assert status["performance.classification"] == "measured"
+    assert status["privacy.mia"] == "not_requested"
+
+
+def test_a_metric_that_does_not_apply_to_the_task_is_refused_up_front(monkeypatch):
+    with pytest.raises(ValueError, match="do not apply to task 'generation'"):
+        _gated_run(monkeypatch, ["performance.classification"], task="generation")
+
+
+def test_coverage_counts_what_was_measured_never_what_passed(monkeypatch):
+    report, _ = _gated_run(monkeypatch, ["performance.classification"])
+    statuses = {r["status"] for r in report.meta["coverage"]}
+    assert statuses <= {"measured", "insufficient", "unavailable", "invalid", "mixed",
+                        "not_applicable", "not_requested"}
+    assert not statuses & {"pass", "fail", "warn"}
+
+
+def test_training_data_is_a_fact_about_the_scenario_not_the_module():
+    from verifai.core.run import model_access
+
+    class Local:
+        access = "weights"
+    trained_here = {"training": {"manifest_prefix": "isic"}}
+    assert model_access(Local(), trained_here) == "training_data"
+    assert model_access(Local(), {}) == "weights"
+    assert model_access(_ProbsOnlyModel(), trained_here) == "probs", \
+        "declared training data cannot give an API model gradients"
+    assert model_access(object(), {}) == "labels", "a model that declares nothing is not trusted"
+
+
+def test_the_image_classifier_declares_its_access_and_payload():
+    from verifai.models.base import ModelAdapter
+    from verifai.models.image import ImageClassifier
+    assert ImageClassifier.access == "weights" and ImageClassifier.modality == "pixels"
+    assert isinstance(_ProbsOnlyModel(), ModelAdapter)
+
+
+def test_a_pillar_with_no_finding_says_whether_it_was_skipped_or_does_not_apply():
+    """"Not evaluated in this run" was false for a pillar nobody asked for."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import _empty_pillar, coverage_counts
+    rows = [{"pillar": "privacy", "finding": "membership_inference_auc", "status": "not_requested"},
+            {"pillar": "safety", "finding": "harm_rate", "status": "not_applicable"},
+            {"pillar": "performance", "finding": "top1_accuracy", "status": "measured"}]
+    assert "Not requested" in _empty_pillar("privacy", rows)
+    assert "Membership inference" in _empty_pillar("privacy", rows)
+    assert "Not applicable" in _empty_pillar("safety", rows)
+    assert "Not evaluated" in _empty_pillar("privacy", None), "older reports keep the old words"
+    assert coverage_counts(rows) == {"not_requested": 1, "not_applicable": 1, "measured": 1}
+
+
+def test_the_showcase_reads_the_access_ladder_without_torch():
+    """The compare view orders access levels; that must not drag torch in."""
+    import ast
+    tree = ast.parse((REPO / "verifai" / "models" / "base.py").read_text(encoding="utf-8"))
+    imported = {n.names[0].name.split(".")[0] if isinstance(n, ast.Import) else (n.module or "")
+                for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))}
+    assert not imported & {"torch", "torchvision", "numpy", "PIL"}
