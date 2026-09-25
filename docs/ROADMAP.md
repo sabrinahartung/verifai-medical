@@ -136,6 +136,15 @@ settle before it gets a milestone:
 - **Framing.** This is an educational proof of concept, so a clinician's review is feedback on
   an evaluation. It is not a clinical sign-off.
 
+**Due with the paper's metrics (Phase F, raised 2026-09-25): sources for the metric wording.**
+Every metric's `summary` and `explain` text is a template written into the metric itself, not
+generated, so it says only what its author put there — and today none of it cites where a
+method or a reading of it comes from. When the paper's metrics are added, each metric's
+wording gets its source, the metrics already shipped included. Two forms, to be chosen then:
+cite `[n]` from [the references](references.md) inside the texts, or link each metric to its
+entry in [the catalogue](pillars.md), which already carries the citations. Either way it is a
+change to what a metric reports, so it bumps the metric's version.
+
 ---
 
 ## Why this exists
@@ -465,6 +474,10 @@ robustness must never be merged into one "robustness" figure with corruption sta
 they answer different questions — whether a clinically irrelevant perturbation flips the
 call, versus whether a deliberate one can be constructed — and a reader shown one number
 will assume the wrong one.
+
+**Its wording is sourced.** A metric added from the literature arrives with the citation behind
+its method and its reading, and the shipped six get theirs in the same pass — see
+[the note under Milestones](#milestones).
 
 **Write it when it is short.** FGSM, PGD, additive noise and occlusion are tens of lines each
 in numpy/torch, and the wording has to be ours anyway. Take a dependency only where
