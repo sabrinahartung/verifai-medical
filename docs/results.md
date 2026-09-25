@@ -9,13 +9,22 @@ verdict gate is active, so the first whose verdicts claim anything.
 
 ## Summary
 
-| Pillar | Verdict | Result |
+Statuses in the project's own vocabulary — what is *known* about each number, never whether it
+is good. This table once read pass · warn · fail; those words were retired because no threshold
+here can be justified (see [the glossary](glossary.md)).
+
+| Pillar | Status | Result |
 |---|---|---|
-| Integrity | :material-check: **pass** | 0 shared lesions, 0 shared images across 1,493 test images |
-| Performance | :material-check: **pass** | 79.6% top-1, 72.8% balanced |
-| Privacy | :material-check: **pass** | membership-inference AUC 0.558 (0.5 = ideal) |
-| Robustness | :material-alert: **warn** | 71.7% of predictions survive corruption |
-| Fairness | :material-close: **fail** | 21.3-point accuracy gap across ITA skin-tone bins |
+| Integrity | **measured** | 0 shared lesions, 0 shared images across 1,493 test images |
+| Performance | **measured** | top-1 0.796 [0.78–0.82], balanced 0.728 |
+| Fairness | **measured** | a 21-point accuracy gap across ITA skin-tone bins, dark (V–VI) 0.75 against medium (III–IV) 0.96 — intervals separate, so the gap is supported |
+| Robustness | **measured** | 71.7% of predictions unchanged under corruption on average |
+| Explainability | **measured** | on the 7 images scored at the time; Grad-CAM now scores every test image against a random control, on the active configurations only |
+| Privacy | **measured** | membership-inference AUC 0.558 [0.53–0.59] — the interval lies above 0.5, so membership is distinguishable |
+
+`skin_cancer_clean` is **archived**: this is the record of its run, with the metrics of its day.
+The configurations kept current are the ISIC model on this same test set and on Derm7pt, and
+the original Hub checkpoint ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)).
 
 ## What the headline number hides
 

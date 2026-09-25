@@ -34,7 +34,7 @@ uv run python scripts/run_active.py
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (128 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (151 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -124,11 +124,13 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   `weights`, raised to `training_data` by the runner when the scenario declares training
   manifests. A model that declares nothing is taken at `labels`, never trusted upward.
 - `verifai/core/run.py` — `run_scenario(dict) -> Report`. Holds `METRIC_REGISTRY`
-  (metric id → `"module:function"`), seeds RNGs, builds model/dataset by importing the
-  `loader:` string from the scenario, and calls each metric. Before any metric runs it
-  calls `_enforce_split_integrity` and raises `SplitLeakageError` if the test manifest
-  overlaps the training manifests — a contaminated split fails loudly instead of
-  reporting a high number.
+  (metric id → `MetricSpec`), seeds RNGs, builds model/dataset by importing the
+  `loader:` string from the scenario, and calls each metric through the capability gate
+  ([ADR 0001](docs/adr/0001-capability-gating.md)). Before any metric runs it applies a declared
+  `dataset.label_map`, refuses a disjoint label space, and calls `_enforce_split_integrity`,
+  which raises `SplitLeakageError` if the test manifest overlaps the training manifests — a
+  contaminated split fails loudly instead of reporting a high number. `docs/adr/` records why
+  the built parts are the way they are; read the ADR before changing what it describes.
 - `verifai/core/integrity.py` — the one implementation of that check. The runner uses it
   as a precondition and `metrics/integrity/split_leakage.py` publishes the same result as
   a finding, so the guard and the report cannot drift apart. Splits are compared by

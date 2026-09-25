@@ -314,8 +314,8 @@ Coverage
 :   The only thing this project aggregates: how many applicable metrics were measured, how many
     came back `insufficient` or `unavailable`, and why. A completeness statement, never a
     quality one — there is no composite score, and there will not be one. Every report records
-    one coverage row per registered metric. The Derm7pt report reads *6 of the 6 metrics apply:
-    3 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
+    one coverage row per registered metric. The Derm7pt report reads *9 of the 9 metrics apply:
+    6 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
     passed.
 
 Snapshot

@@ -62,7 +62,7 @@ common families to a sensible Grad-CAM target.
 ## The contract a metric may rely on today
 
 Worth writing down, because it is narrower than it looks and is what makes a second
-domain possible at all. Read off the six metrics as they stand:
+domain possible at all. Read off the metrics as they stand:
 
 | A metric may call | On | Used by |
 |---|---|---|
@@ -73,8 +73,10 @@ domain possible at all. Read off the six metrics as they stand:
 | `model.decide(probs, meta=None)`, `model.rank(probs, meta=None)` | model | all |
 | `model.torch_module`, `model.cam_layer`, `model.to_tensor(payload)` | model | Grad-CAM only |
 | the payload being *pixels* | dataset | the ITA fairness metric only |
+| the scenario (`ctx["scenario"]`) and the manifests — never the model's outputs | scenario | the four integrity checks |
 
-So **four of six metrics never touch anything image-specific**: they need a payload, a
+So **four of the six original metrics never touch anything image-specific**, and the four
+integrity checks do not touch the model's outputs at all: they need a payload, a
 probability vector and a decision rule. A text or audio adapter that returns
 `{class: probability}` from `predict_probs` would run them unchanged.
 
