@@ -256,7 +256,7 @@
         }
       },
       "verdict": "measured",
-      "summary": "Top-1 accuracy 0.806 [0.79–0.83] on 1493 labeled examples; balanced 0.7127. Weakest class actinic_keratoses: sensitivity 0.358 [0.24–0.49] on 53 images.",
+      "summary": "Top-1 accuracy 0.806 [0.79–0.83] on 1,493 labeled images; balanced accuracy 0.713. Weakest class actinic keratoses: sensitivity 0.358 [0.24–0.49] on 53 images.",
       "details": {
         "explain": {
           "what": "Top-1 accuracy is the share of images whose most confident class is correct. Reported per class as well, because one averaged number hides the classes that matter most: a model can look strong overall while missing most melanomas, since melanoma is rare in the data.",
@@ -12429,9 +12429,9 @@
         "baseline": {
           "kind": "chance",
           "value": 0.6758,
-          "basis": "always answering the most common class, melanocytic_Nevi (1,009 of 1,493)",
+          "basis": "always answering the most common class, melanocytic nevi (1,009 of 1,493)",
           "cleared": true,
-          "claim": "Accuracy 0.806 [0.79–0.83] is above what always answering the most common class scores (melanocytic_Nevi, 0.676).",
+          "claim": "Accuracy 0.806 [0.79–0.83] is above what always answering the most common class scores (melanocytic nevi, 0.676).",
           "gap": 0.1306
         }
       },
@@ -15468,13 +15468,13 @@
             "plots/gradcam_ISIC_0024362.png"
           ],
           "captions": [
-            "ISIC_0024342: melanocytic_Nevi (94%)",
-            "ISIC_0024348: melanocytic_Nevi (95%)",
-            "ISIC_0024353: melanocytic_Nevi (100%)",
-            "ISIC_0024354: melanocytic_Nevi (98%)",
-            "ISIC_0024359: melanocytic_Nevi (100%)",
-            "ISIC_0024360: basal_cell_carcinoma (99%)",
-            "ISIC_0024362: melanocytic_Nevi (100%)"
+            "Called melanocytic nevi (94%) · ISIC_0024342",
+            "Called melanocytic nevi (95%) · ISIC_0024348",
+            "Called melanocytic nevi (100%) · ISIC_0024353",
+            "Called melanocytic nevi (98%) · ISIC_0024354",
+            "Called melanocytic nevi (100%) · ISIC_0024359",
+            "Called basal cell carcinoma (99%) · ISIC_0024360",
+            "Called melanocytic nevi (100%) · ISIC_0024362"
           ]
         },
         "chart2": {
@@ -15552,10 +15552,14 @@
           ]
         },
         "mean_stability": 0.765,
+        "mean_stability_ci": [
+          0.7512,
+          0.7793
+        ],
         "n": 1493
       },
       "verdict": "measured",
-      "summary": "The prediction stays stable under corruptions for 76% of the images on average.",
+      "summary": "The top-1 prediction stays the same under a corruption in 0.765 [0.75–0.78] of cases on average, over 1,493 images and 4 corruptions (noise, blur, brightness, jpeg). Least stable under noise: 0.722 [0.70–0.74].",
       "details": {
         "better": {
           "mean_stability": "higher",
@@ -15595,10 +15599,10 @@
             0.7961
           ],
           "hover": [
-            "0.722 [0.70-0.74] of 1493",
-            "0.741 [0.72-0.76] of 1493",
-            "0.822 [0.80-0.84] of 1493",
-            "0.776 [0.75-0.80] of 1493"
+            "0.722 [0.70–0.74] of 1,493",
+            "0.741 [0.72–0.76] of 1,493",
+            "0.822 [0.80–0.84] of 1,493",
+            "0.776 [0.75–0.80] of 1,493"
           ],
           "x_title": "Corruption",
           "y_title": "Share of unchanged top-1"
@@ -15648,10 +15652,10 @@
         "gap_is_separated": true
       },
       "verdict": "measured",
-      "summary": "Subgroup accuracy by ITA skin type; largest gap 33 points between dark (V–VI) (0.60, n=60) and medium (III–IV) (0.93, n=108), n=1493. Their 95% intervals do not overlap, so the difference is supported.",
+      "summary": "Accuracy by ITA-estimated skin type over 1,493 images; the largest gap is 33 points, between dark (V–VI) (0.600 [0.47–0.71] on 60 images) and medium (III–IV) (0.926 [0.86–0.96] on 108). Their 95% intervals do not overlap, so the difference is supported.",
       "details": {
         "explain": {
-          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. HAM10000 carries no skin-type labels, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
+          "what": "A skin-lesion model that was only ever tested on light skin cannot be trusted on dark skin. Skin-type labels are rarely recorded with dermoscopy images, so the skin tone is estimated from the image itself: the ITA (Individual Typology Angle) is measured on the healthy skin around the lesion and sorted into light, medium and dark bins.",
           "how": "The bars show how many images fall into each skin-tone bin. What matters is the shape: a tall light bar next to a near-empty dark bar means the model is barely being tested on darker skin, so any headline accuracy mostly describes light skin. Once every populated bin holds at least 10 images, a second chart adds the accuracy per bin and the gap between them.",
           "limits": "Coverage is not performance — this chart shows who is in the sample, not how well the model serves them. ITA is also an estimate from pixels, not a clinical Fitzpatrick assessment: lighting, vignetting and dermatoscope settings all shift it."
         },
@@ -27650,9 +27654,9 @@
           "x_title": "Estimated skin type",
           "y_title": "Top-1 accuracy",
           "hover": [
-            "0.806 [0.78-0.83] on 1325 images",
-            "0.926 [0.86-0.96] on 108 images",
-            "0.600 [0.47-0.71] on 60 images"
+            "0.806 [0.78–0.83] on 1,325 images",
+            "0.926 [0.86–0.96] on 108 images",
+            "0.600 [0.47–0.71] on 60 images"
           ]
         },
         "baseline": {
@@ -27682,7 +27686,7 @@
         "mean_confidence_non_members": 0.7768
       },
       "verdict": "measured",
-      "summary": "Membership is distinguishable: the interval lies entirely above 0.5 (chance). Membership-inference AUC 0.5388 [0.51-0.57] from 750 training and 750 held-out images (0.5 = an attacker cannot tell them apart). Mean confidence in the true class was 0.8366 on training images against 0.7768 on unseen ones.",
+      "summary": "Membership is distinguishable: the interval lies entirely above 0.5 (chance). Membership-inference AUC 0.539 [0.51–0.57] from 750 training and 750 held-out images (0.5 = an attacker cannot tell them apart). Mean confidence in the true class was 0.837 on training images against 0.777 on unseen ones.",
       "details": {
         "better": {
           "mia_auc": "lower"
@@ -27755,16 +27759,16 @@
     "label": "ISIC corpus",
     "metric_versions": {
       "integrity.split_leakage": 2,
-      "performance.classification": 2,
-      "explainability.gradcam": 2,
-      "robustness.corruption": 2,
-      "fairness.skin_tone": 2,
-      "privacy.mia": 2
+      "performance.classification": 3,
+      "explainability.gradcam": 3,
+      "robustness.corruption": 3,
+      "fairness.skin_tone": 4,
+      "privacy.mia": 3
     },
     "checkpoint": {
       "path": "artifacts_training/skin_cancer_isic.pt",
       "sha256": "12fbb0335ce803a5"
     }
   },
-  "created_at": "2026-09-24T22:09:19.514823+00:00"
+  "created_at": "2026-09-25T10:42:30.487428+00:00"
 }

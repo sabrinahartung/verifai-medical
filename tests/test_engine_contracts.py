@@ -811,6 +811,17 @@ def test_every_metric_in_every_artifact_has_an_explanation():
     assert not missing, f"metric keys with no glossary entry: {missing}"
 
 
+def test_every_metric_in_every_artifact_has_a_human_name():
+    """A report heading names its metric in words, never by its identifier."""
+    from verifai.core.glossary import METRIC_NAMES
+    ids = set()
+    for f in (REPO / "showcase" / "artifacts").glob("*/report.json"):
+        ids |= {x["metric"] for x in json.loads(f.read_text(encoding="utf-8"))["findings"]}
+    assert ids, "no reports found — this test would pass vacuously"
+    missing = sorted(ids - set(METRIC_NAMES))
+    assert not missing, f"metric ids with no human name in METRIC_NAMES: {missing}"
+
+
 def test_an_unknown_metric_gets_no_explanation_rather_than_a_guess():
     """A confident explanation of the wrong quantity is worse than none."""
     from verifai.core.glossary import explain_metric
@@ -1083,8 +1094,8 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
     source = _showcase_source()
     assert "hidden_comparable" in source, \
         "the comparison view must track runs the lineage filter hides"
-    assert "were scored on these same images" in source, \
-        "and must say so on screen, next to the best column it undermines"
+    assert "scored on these same images" in source, \
+        "and must say so on screen, next to the leading cells it undermines"
 
 
 # --- linear probing and the learning curve -----------------------------------
@@ -1961,6 +1972,64 @@ def test_the_strip_holds_only_measured_findings_that_clear_in_pillar_order():
     assert established(findings, "invalid") == [], "nothing is established on a contaminated split"
     assert established([{"pillar": "performance", "verdict": "measured", "details": {}}], "measured") is None, \
         "a report predating baselines has no strip, rather than an empty one"
+
+
+def test_each_pillar_card_says_what_it_was_compared_with_and_never_grades():
+    """The strip and the glance list became one card per pillar. What was
+    established is a mark on the card; what was not says why, in words that
+    speak about the evidence rather than the model."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import established, reference_line
+
+    def f(pillar, verdict, cleared, kind="chance"):
+        return {"pillar": pillar, "verdict": verdict,
+                "details": {"baseline": {"cleared": cleared, "claim": "the claim" if cleared else None,
+                                         "kind": kind, "basis": "the basis"}}}
+    perf, robust, thin = (f("performance", "measured", True), f("robustness", "measured", False, "ideal"),
+                          f("fairness", "insufficient", True, "control"))
+    hits = established([perf, robust, thin], "measured")
+    assert reference_line(perf, hits, "measured").startswith("✓ **Established against chance**")
+    assert "falls short of an ideal" in reference_line(robust, hits, "measured"), \
+        "an unreachable ideal must say why nothing is claimed, not vanish"
+    assert "does not support a claim" in reference_line(thin, hits, "measured")
+    assert reference_line({"pillar": "privacy", "verdict": "measured", "details": {}}, hits,
+                          "measured") is None, "no baseline, no line"
+    for word in ("pass", "fail", "good", "bad"):
+        for x in (perf, robust, thin):
+            assert word not in reference_line(x, hits, "measured").lower().split()
+
+    source = (REPO / "showcase" / "views" / "report.py").read_text(encoding="utf-8")
+    assert "What this evaluation established" not in source, \
+        "the separate strip is merged into the pillar cards; it must not come back as a second list"
+
+
+def test_every_measured_summary_states_n_and_an_interval():
+    """The summary is a template in the metric, so its rules can be checked: a
+    reader must learn how many images a number rests on, and how uncertain it is.
+
+    Integrity is exempt from the interval — a count of shared identifiers is
+    exact, not a sample estimate.
+    """
+    import re
+    from verifai.core.suite import METRIC_VERSIONS  # noqa: F401  (current reports only)
+    registry = json.loads((REPO / "showcase" / "artifacts" / "model_registry.json").read_text())
+    active = {c["scenario"] for m in registry["models"] for c in m["configurations"]
+              if c.get("status") == "active"}
+    assert active, "no active configuration — this test would pass vacuously"
+    n_images = re.compile(r"\d[\d,]*\s+(?:[\w-]+\s+)?images")
+    interval = re.compile(r"\[-?\d+\.\d+–-?\d+\.\d+\]")
+    for scenario in active:
+        report = json.loads((REPO / "showcase" / "artifacts" / scenario / "report.json").read_text())
+        for f in report["findings"]:
+            if f["verdict"] not in ("measured", "insufficient") or not f.get("value"):
+                continue
+            s_ = f["summary"]
+            assert n_images.search(s_), f"{scenario}/{f['metric']}: no image count in {s_!r}"
+            if f["pillar"] != "integrity" and (f["details"] or {}).get("enough_per_bin", True):
+                assert interval.search(s_), f"{scenario}/{f['metric']}: no interval in {s_!r}"
+            assert "_" not in re.sub(r"`[^`]*`", "", s_), \
+                f"{scenario}/{f['metric']}: an identifier leaked into {s_!r}"
 
 
 def test_every_finding_in_a_current_active_report_carries_a_baseline():

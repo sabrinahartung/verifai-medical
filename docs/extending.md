@@ -212,6 +212,7 @@ of them instead, so a new metric will be *done* when every line below is true:
 | return `details["explain"]` with `what`, `how`, `limits`, `impact` | the `Finding` | the dashboard's wording ships with the metric, not with the app |
 | return a chart spec in `details["chart"]` | the `Finding` | a bare number tells a non-specialist nothing. A single scalar gets `kind: "scale"` so the reader sees whether it is a *good* number, not only what it is |
 | resolve to a `verifai/core/glossary.py` entry | the glossary | the comparison view reads flattened keys and never sees a finding, so it has no other way to explain the row |
+| have a human name in `METRIC_NAMES` | the glossary | the report's section heading; without one the reader sees the finding's identifier, `split_leakage` |
 | state `n` in the summary | the `Finding` | a number without its sample size is not a claim |
 
 A second test asserts that no glossary pattern is fully shadowed by an earlier one. The list

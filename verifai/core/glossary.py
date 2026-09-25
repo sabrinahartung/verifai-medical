@@ -434,6 +434,26 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 ]
 
 
+# What a finding's heading calls it, keyed by the finding's `metric` id. The id
+# is an identifier, and a reader who has never seen one should not have to decode
+# `split_leakage` to know which section they are in. Keyed by the finding rather
+# than a flattened key because a heading names the whole finding, not one of the
+# numbers inside it.
+METRIC_NAMES: dict[str, str] = {
+    "split_leakage": "Overlap between test and training data",
+    "top1_accuracy": "Classification accuracy",
+    "skin_tone_ita": "Accuracy across skin tones",
+    "corruption_stability": "Stability under image corruption",
+    "gradcam_faithfulness": "Grad-CAM faithfulness",
+    "membership_inference_auc": "Membership inference",
+}
+
+
+def metric_name(metric_id: str) -> str:
+    """The human name for a finding's metric id, or the id itself if it has none."""
+    return METRIC_NAMES.get(metric_id, metric_id)
+
+
 def explain_metric(key: str) -> dict[str, str] | None:
     """Plain-language entry for a flattened metric key, or None if unknown.
 
