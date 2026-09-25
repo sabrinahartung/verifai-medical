@@ -232,7 +232,7 @@ rating, and subject to the same rule.
 
 **A third status appears: stale.** *"Already evaluated"* has three answers, not two — evaluated
 under the current suite, evaluated under an older one, never evaluated. The metric `version`
-field from [Extending](extending.md#planned-the-conformance-checklist) makes the middle case
+field from [Extending](extending.md#the-conformance-checklist-partly-enforced) makes the middle case
 computable, and without it a reader will read an old evaluation as a current one.
 
 ### Navigation
@@ -539,7 +539,7 @@ listed last and sequenced early.
 | 59 | **Model registry** — committed declarations, never checkpoints on disk | second premise | — |
 | 60 | **Project level** in the Overview | second premise | 2, 3 |
 | 61 | **Model page** — provenance, configurations, siblings, predecessors, evaluations | second premise | — |
-| 62 | **Evaluation status** — evaluated · **stale** · never | second premise · [Extending](extending.md#planned-the-conformance-checklist) | 4 |
+| 62 | **Evaluation status** — evaluated · **stale** · never | second premise · [Extending](extending.md#the-conformance-checklist-partly-enforced) | 4 |
 | 63 | **Supersession** (`supersedes:`) replacing the flat archive flag | second premise · [Phase E](ROADMAP.md#phase-e-the-interface) | — |
 | 64 | **Configuration switcher** — one checkpoint, several decision rules | [Results](results.md) | — |
 | 65 | **Sibling trade-off entry point** — explicitly *no winner* | [Phase G](ROADMAP.md#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) | — |

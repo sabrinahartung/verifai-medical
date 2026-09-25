@@ -49,6 +49,9 @@ nav:
       - Overview: architecture.md
       - Data model: data-model.md
       - The pipeline: pipeline.md
+      - Decisions (ADRs):
+          - adr/index.md
+          - "0001 · Capability gating": adr/0001-capability-gating.md
   - Evaluation:
       - The pillars: pillars.md
       - Split integrity: integrity.md
