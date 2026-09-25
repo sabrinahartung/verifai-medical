@@ -1,0 +1,38 @@
+# Which image archives contain which — the ancestry table behind
+# `integrity.corpus_ancestry`.
+#
+# A row-level split check needs both sides' manifests. For a model this project
+# did not train there are none, and this table is the only leakage check left:
+# if the model's declared training corpus contains the evaluation images'
+# corpus (or the other way round), leakage cannot be ruled out.
+#
+# Only containment that is documented goes here, each with the reference that
+# documents it (docs/references.md). An archive missing from the table is
+# treated as unknown, never as independent.
+#
+#   name      how the archive is published
+#   contains  archives distributed as part of this one
+#   refs      entries in docs/references.md
+corpora:
+  isic2019:
+    name: ISIC 2019
+    # The 2019 challenge training set is HAM10000, BCN20000 and the MSK images.
+    contains: [ham10000, bcn20000, msk]
+    refs: [1, 2, 3]
+  ham10000:
+    name: HAM10000
+    contains: []
+    refs: [1]
+  bcn20000:
+    name: BCN20000
+    contains: []
+    refs: [2]
+  msk:
+    name: MSK (Memorial Sloan Kettering) images of ISIC 2019
+    contains: []
+    refs: [3]
+  derm7pt:
+    name: Derm7pt
+    # A separate clinic, camera and population; distributed on its own.
+    contains: []
+    refs: [4]

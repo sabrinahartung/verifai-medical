@@ -17,7 +17,7 @@ from typing import Any, Callable
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 from verifai.core.findings import Report, Finding
-from verifai.core.integrity import audit_split, train_manifests_from_scenario
+from verifai.core.integrity import audit_split, label_space, train_manifests_from_scenario
 from verifai.core.suite import suite_for
 from verifai.metrics._baseline import attach as attach_baseline
 from verifai.models.base import DEFAULT_TASK, WHY_UNREACHABLE, reaches
@@ -50,6 +50,13 @@ METRIC_REGISTRY: dict[str, MetricSpec | str] = {
     # needs the manifests, not the model at all
     "integrity.split_leakage": MetricSpec(
         "verifai.metrics.integrity.split_leakage:run", "integrity", "split_leakage"),
+    "integrity.provenance": MetricSpec(
+        "verifai.metrics.integrity.provenance:run", "integrity", "provenance"),
+    "integrity.corpus_ancestry": MetricSpec(
+        "verifai.metrics.integrity.corpus_ancestry:run", "integrity", "corpus_ancestry"),
+    # needs the model's class list, which every adapter declares
+    "integrity.label_space": MetricSpec(
+        "verifai.metrics.integrity.label_space:run", "integrity", "label_space"),
     "performance.classification": MetricSpec(
         "verifai.metrics.performance.classification:run", "performance", "top1_accuracy",
         requires="probs"),
@@ -168,6 +175,34 @@ def _safe_len(dataset) -> int | None:
         return None
 
 
+def _apply_label_map(scenario: dict[str, Any], dataset) -> None:
+    """Read the data's labels through the scenario's explicit `dataset.label_map`.
+
+    Only a declared map is applied. A mapping between two label vocabularies is
+    a clinical claim, so the runner never infers one from similar names.
+    """
+    mapping = (scenario.get("dataset") or {}).get("label_map") or {}
+    if not mapping or not hasattr(dataset, "samples"):
+        return
+    for s in dataset.samples:
+        if s.label in mapping:
+            s.label = mapping[s.label]
+    dataset.classes = sorted({mapping.get(c, c) for c in dataset.classes})
+
+
+def _enforce_label_space(model, dataset) -> None:
+    """Refuse to score a model on data that shares none of its class names."""
+    classes = getattr(dataset, "classes", None)
+    if not classes or not getattr(model, "classes", None):
+        return
+    ls = label_space(list(model.classes), list(classes))
+    if ls["relation"] == "disjoint":
+        raise ValueError(
+            f"the model's classes {sorted(model.classes)} and the data's {sorted(classes)} "
+            f"share no name. Declare dataset.label_map to say which data label is which "
+            f"model class; it is never guessed.")
+
+
 def _enforce_split_integrity(scenario: dict[str, Any], dataset) -> None:
     """Refuse to evaluate a test set the model was trained on.
 
@@ -235,6 +270,8 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
         raise ValueError(f"metric(s) {misplaced} do not apply to task {task!r} on "
                          f"{modality!r} payloads; remove them from the scenario")
     access = model_access(model, scenario)
+    _apply_label_map(scenario, dataset)
+    _enforce_label_space(model, dataset)
     _enforce_split_integrity(scenario, dataset)
 
     report = Report(
@@ -256,7 +293,9 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
               # What this evaluation could reach, and what it covered. Kept
               # beside the findings so the showcase can tell "not applicable to
               # this task" from "not requested" from "unavailable, because …".
-              "task": task, "modality": modality, "access": access},
+              "task": task, "modality": modality, "access": access,
+              # how the model turns a payload into input — Phase B's fingerprint
+              "model": dict(getattr(model, "metadata", None) or {})},
     )
 
     ctx = {"scenario": scenario, "seed": seed, "plot_dir": scenario.get("_plot_dir", "plots")}
@@ -273,12 +312,14 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
             attach_baseline(f)
             report.add(f)
             outcome.setdefault(metric_id, []).append(f.verdict)
-    report.meta["coverage"] = coverage(task, modality, access, scenario["metrics"], outcome)
+    report.meta["coverage"] = coverage(task, modality, access, scenario["metrics"], outcome,
+                                       scenario.get("not_requested") or {})
     return report
 
 
 def coverage(task: str, modality: str | None, access: str, requested: list[str],
-             outcome: dict[str, list[str]]) -> list[dict[str, Any]]:
+             outcome: dict[str, list[str]],
+             reasons: dict[str, str] | None = None) -> list[dict[str, Any]]:
     """Every registered metric, and where it stands in this evaluation.
 
     A completeness statement, never a quality one: it counts what was measured
@@ -296,7 +337,12 @@ def coverage(task: str, modality: str | None, access: str, requested: list[str],
         else:
             verdicts = outcome.get(metric_id) or ["unavailable"]
             status = verdicts[0] if len(set(verdicts)) == 1 else "mixed"
-        rows.append({"metric": metric_id, "pillar": spec.pillar, "finding": spec.finding,
-                     "requires": spec.requires, "status": status,
-                     "reachable": reaches(access, spec.requires)})
+        row = {"metric": metric_id, "pillar": spec.pillar, "finding": spec.finding,
+               "requires": spec.requires, "status": status,
+               "reachable": reaches(access, spec.requires)}
+        # A scenario may say why it leaves an applicable metric out — Derm7pt's
+        # licence forbids publishing a derived image, so Grad-CAM is not asked for.
+        if status == "not_requested" and (reasons or {}).get(metric_id):
+            row["reason"] = reasons[metric_id]
+        rows.append(row)
     return rows

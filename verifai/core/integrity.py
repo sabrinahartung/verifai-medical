@@ -102,3 +102,93 @@ def train_manifests_from_scenario(scenario: dict[str, Any]) -> list[str]:
     d = tcfg.get("manifest_dir", "data/manifests")
     # validation counts as seen: the model was selected on it
     return [f"{d}/{prefix}_train.csv", f"{d}/{prefix}_val.csv"]
+
+
+# --- corpus ancestry -----------------------------------------------------------
+# The row-level check above needs both sides' manifests. For a model this project
+# did not train there are none; what is left is whether its declared training
+# *corpus* could contain the evaluation images at all. `data/corpora.yaml` holds
+# the documented containment, and nothing outside it is assumed independent.
+CORPORA_FILE = REPO_ROOT / "data" / "corpora.yaml"
+
+
+def load_corpora(path: Path = CORPORA_FILE) -> dict[str, dict[str, Any]]:
+    import yaml
+    return (yaml.safe_load(path.read_text(encoding="utf-8")) or {}).get("corpora") or {}
+
+
+def descendants(corpus: str, corpora: dict[str, dict[str, Any]]) -> set[str]:
+    """The corpus itself and everything distributed as part of it, transitively."""
+    out, todo = set(), [corpus]
+    while todo:
+        c = todo.pop()
+        if c in out:
+            continue
+        out.add(c)
+        todo.extend((corpora.get(c) or {}).get("contains") or [])
+    return out
+
+
+def shared_corpora(trained_on: list[str], evaluated_on: str,
+                   corpora: dict[str, dict[str, Any]]) -> list[str]:
+    """Training corpora that could hold the evaluation images, or be held by them.
+
+    Related means one contains the other, in either direction: a model trained on
+    ISIC 2019 has seen HAM10000 images, and a model trained on HAM10000 has seen
+    part of an ISIC 2019 test set.
+    """
+    ev = descendants(evaluated_on, corpora)
+    return sorted(t for t in trained_on
+                  if evaluated_on in descendants(t, corpora) or t in ev)
+
+
+def declared_training(scenario: dict[str, Any]) -> dict[str, Any]:
+    """What the scenario says the model was trained on: corpora, and on what basis.
+
+    `model.trained_on` is either a list of corpus ids or
+    `{corpora: [...], basis: "why this is believed"}`. The basis matters for a
+    third-party model, whose training data is often only inferred.
+    """
+    raw = (scenario.get("model") or {}).get("trained_on")
+    if isinstance(raw, dict):
+        return {"corpora": list(raw.get("corpora") or []), "basis": raw.get("basis")}
+    return {"corpora": list(raw or []), "basis": None}
+
+
+def row_check(scenario: dict[str, Any], test_manifest: str | None) -> dict[str, Any] | None:
+    """The row-level audit if it can run for this scenario, else None."""
+    train = train_manifests_from_scenario(scenario)
+    if not test_manifest or not train:
+        return None
+    cfg = scenario.get("integrity") or {}
+    a = audit_split(test_manifest, train, group_key=cfg.get("group_key", "lesion_id"),
+                    id_key=cfg.get("id_key", "image_id"))
+    return a if a["verifiable"] else None
+
+
+# --- label space ----------------------------------------------------------------
+def label_space(model_classes: list[str], dataset_classes: list[str]) -> dict[str, Any]:
+    """How the model's output classes relate to the classes the data is labelled with.
+
+    identical        the same set
+    dataset_subset   the data lacks some of the model's classes; those go unscored
+    model_subset     the data holds classes the model cannot output; those images
+                     can only ever be wrong
+    partial          each has classes the other lacks
+    disjoint         nothing in common — needs an explicit `label_map`, never a guess
+    """
+    m, d = set(model_classes), set(dataset_classes)
+    if m == d:
+        relation = "identical"
+    elif not m & d:
+        relation = "disjoint"
+    elif d < m:
+        relation = "dataset_subset"
+    elif m < d:
+        relation = "model_subset"
+    else:
+        relation = "partial"
+    return {"relation": relation,
+            "n_model_classes": len(m), "n_dataset_classes": len(d),
+            "unscored": sorted(m - d),             # the model predicts, the data never holds
+            "unpredictable": sorted(d - m)}        # the data holds, the model cannot output

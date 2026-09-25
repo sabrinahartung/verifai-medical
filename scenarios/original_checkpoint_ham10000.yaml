@@ -1,0 +1,67 @@
+# The project's one real third-party model, evaluated on the full HAM10000 test set.
+#
+# This checkpoint was not trained here. It came from the Hugging Face Hub, and its
+# author published weights, not a list of training images. Its training set is only
+# inferred: the model card names marmal88/skin_cancer, a repackaging of HAM10000, and
+# the audit in docs/ROADMAP.md found that data covers 9,964 of HAM10000's 10,015
+# images — this test set included.
+#
+# So this configuration exists to show what an evaluation can and cannot say about a
+# model it did not train (Phase B):
+#   - provenance: no training manifests, so no split check is possible
+#   - corpus ancestry: HAM10000 training data, HAM10000 test images, and no
+#     image-by-image check -> leakage cannot be ruled out
+#   - the membership attack needs known training members -> unavailable, by the gate
+# Read its accuracy as an upper bound, not as generalisation.
+#
+# The archived skin_cancer.yaml is the same checkpoint on 7 example images, kept as
+# the record of the project's first run.
+name: original_checkpoint_ham10000
+label: "Original checkpoint — HAM10000 test"
+project: "Skin lesion classification"
+status: active
+domain: image
+seed: 42
+sample_size: null          # the whole test manifest (1,493 images)
+
+model:
+  loader: "verifai.models.image:load"
+  id: "skin-lesion-resnet18"
+  repo_id: "sabrinahartung1010/skin-lesion-resnet18"
+  filename: "resnet18_ham10000_classweights.pt"
+  arch: "resnet18"
+  cam_layer: "layer4[-1]"
+  device: "auto"
+  trained_on:
+    corpora: [ham10000]
+    basis: "inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000"
+
+dataset:
+  loader: "verifai.datasets.loaders:load_image_manifest"
+  id: "ham10000-clean-test"
+  # The same file and pixels the ISIC model is scored on, so the two land in one
+  # comparison group. This run is listed there as excluded: a split that cannot be
+  # checked is not compared with one that was.
+  manifest: "data/manifests/ham10000_test.csv"
+  images_dir: "data/raw/ham10000"
+  source: "HAM10000 (evaluation); training data inferred, not declared"
+  corpus: ham10000
+
+card:
+  group: "Internal test — HAM10000 (split not checkable)"
+  lineage: "ResNet18 · original checkpoint"
+  name: "Skin-Lesion ResNet18 (original checkpoint)"
+  emoji: "🔬"
+  description: "The original Hub checkpoint on the full HAM10000 test set. Its training data is only inferred, and very likely includes these images: what an evaluation can and cannot say about a model it did not train."
+  hf_url: "https://huggingface.co/sabrinahartung1010/skin-lesion-resnet18"
+
+metrics:
+  - "integrity.split_leakage"
+  - "integrity.provenance"
+  - "integrity.corpus_ancestry"
+  - "integrity.label_space"
+  - "performance.classification"
+  - "explainability.gradcam"
+  - "robustness.corruption"
+  - "fairness.skin_tone"
+  - "privacy.mia"            # needs training members; the gate reports it unavailable

@@ -59,6 +59,37 @@ def split_leakage(value: dict) -> dict | None:
         f"with the {value.get('n_train', 0):,} the model trained on.")
 
 
+def provenance(value: dict) -> dict | None:
+    if "checkable" not in value:
+        return None
+    return _reference("ideal", True, "a declared training record the split can be checked against",
+                      value["checkable"],
+                      "The model's training data is on record, so the split could be checked "
+                      "image by image.")
+
+
+def corpus_ancestry(value: dict) -> dict | None:
+    if not value.get("trained_on") or not value.get("evaluated_on") or value.get("unknown"):
+        return None
+    separate = not value.get("shared")
+    held_back = value.get("held_back_row_by_row") is True
+    return _reference("ideal", "separate",
+                      "no archive shared with the training data, or one held back image by image",
+                      separate or held_back,
+                      "The test images come from an archive the model did not train on."
+                      if separate else
+                      "The archive the test images come from is part of the training corpus, "
+                      "and it was held back image by image.")
+
+
+def label_space_(value: dict) -> dict | None:
+    if "relation" not in value:
+        return None
+    return _reference("ideal", "identical", "the model and the data naming the same classes",
+                      value["relation"] == "identical",
+                      "The model and the test images use the same classes.")
+
+
 def classification(value: dict) -> dict | None:
     per_class, n, acc = value.get("per_class") or {}, value.get("n") or 0, value.get("accuracy")
     supports = {c: v.get("support") or 0 for c, v in per_class.items()}
@@ -135,6 +166,9 @@ def gradcam(value: dict) -> dict | None:
 # Keyed by the *finding's* metric name, since that is what a report stores.
 BY_FINDING = {
     "split_leakage": split_leakage,
+    "provenance": provenance,
+    "corpus_ancestry": corpus_ancestry,
+    "label_space": label_space_,
     "top1_accuracy": classification,
     "skin_tone_ita": skin_tone,
     "corruption_stability": corruption,

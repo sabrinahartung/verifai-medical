@@ -103,7 +103,8 @@ class ImageClassifier:
                  cam_layer: str = "layer4[-1]", preprocess=None,
                  decision_weights: dict[str, float] | None = None,
                  context_prior: dict | None = None,
-                 prior_strength: float = 1.0):
+                 prior_strength: float = 1.0,
+                 preprocess_spec: dict | None = None):
         import torch
         self.device = device if device is not None else torch.device("cpu")
         self.model = model.to(self.device)
@@ -113,6 +114,27 @@ class ImageClassifier:
         self.decision_weights = dict(decision_weights or {})
         self.context_prior = context_prior or None
         self.prior_strength = float(prior_strength)
+        self.preprocess_spec = dict(preprocess_spec or
+                                    {"resize": [224, 224], "mean": MEAN, "std": STD})
+
+    @property
+    def metadata(self) -> dict:
+        """What a report records about how this model reads an image.
+
+        The preprocessing must be byte-for-byte the training-time one, or every
+        metric measures a different model. Recording it, with a fingerprint,
+        is what lets a later run — or a Hub model's own preprocessor config —
+        be compared against it rather than trusted.
+        """
+        import hashlib
+        import json as _json
+        spec = {"resize": list(self.preprocess_spec["resize"]),
+                "to_tensor": True,
+                "mean": [float(x) for x in self.preprocess_spec["mean"]],
+                "std": [float(x) for x in self.preprocess_spec["std"]]}
+        blob = _json.dumps(spec, sort_keys=True).encode()
+        return {"classes": list(self.classes), "preprocessing": spec,
+                "preprocessing_sha256": hashlib.sha256(blob).hexdigest()[:16]}
 
     @property
     def torch_module(self):
@@ -274,4 +296,6 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
         decision_weights=spec.get("decision_weights"),
         context_prior=prior,
         prior_strength=float(spec.get("prior_strength", 1.0)),
+        preprocess_spec={"resize": [size, size], "mean": spec.get("mean") or MEAN,
+                         "std": spec.get("std") or STD},
     )

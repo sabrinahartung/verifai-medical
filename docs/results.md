@@ -9,13 +9,22 @@ verdict gate is active, so the first whose verdicts claim anything.
 
 ## Summary
 
-| Pillar | Verdict | Result |
+Statuses in the project's own vocabulary — what is *known* about each number, never whether it
+is good. This table once read pass · warn · fail; those words were retired because no threshold
+here can be justified (see [the glossary](glossary.md)).
+
+| Pillar | Status | Result |
 |---|---|---|
-| Integrity | :material-check: **pass** | 0 shared lesions, 0 shared images across 1,493 test images |
-| Performance | :material-check: **pass** | 79.6% top-1, 72.8% balanced |
-| Privacy | :material-check: **pass** | membership-inference AUC 0.558 (0.5 = ideal) |
-| Robustness | :material-alert: **warn** | 71.7% of predictions survive corruption |
-| Fairness | :material-close: **fail** | 21.3-point accuracy gap across ITA skin-tone bins |
+| Integrity | **measured** | 0 shared lesions, 0 shared images across 1,493 test images |
+| Performance | **measured** | top-1 0.796 [0.78–0.82], balanced 0.728 |
+| Fairness | **measured** | a 21-point accuracy gap across ITA skin-tone bins, dark (V–VI) 0.75 against medium (III–IV) 0.96 — intervals separate, so the gap is supported |
+| Robustness | **measured** | 71.7% of predictions unchanged under corruption on average |
+| Explainability | **measured** | on the 7 images scored at the time; Grad-CAM now scores every test image against a random control, on the active configurations only |
+| Privacy | **measured** | membership-inference AUC 0.558 [0.53–0.59] — the interval lies above 0.5, so membership is distinguishable |
+
+`skin_cancer_clean` is **archived**: this is the record of its run, with the metrics of its day.
+The configurations kept current are the ISIC model on this same test set and on Derm7pt, and
+the original Hub checkpoint ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)).
 
 ## What the headline number hides
 
@@ -578,6 +587,36 @@ at the internal prevalence it collapses — 0.502 → **0.282** for ISIC, 0.259 
     Balanced accuracy is averaged over six classes externally and seven internally. The
     finding states this; the two figures are not comparable. Melanoma sensitivity,
     specificity and J do not depend on which other classes exist.
+
+## Experiment 8 — a model this project did not train
+
+The original checkpoint on the Hugging Face Hub, scored on the same 1,493 HAM10000 test images
+as the ISIC model (configuration `original_checkpoint_ham10000`, Phase B). Its author published
+weights, not a list of training images; its training data is only *inferred* as HAM10000 from the
+model card, and the leakage audit behind this project found that data covers 9,964 of HAM10000's
+10,015 images.
+
+| | Original checkpoint (split not checkable) | ISIC model (split verified) |
+|---|---|---|
+| Top-1 accuracy | **0.867** [0.85–0.88] | 0.806 [0.79–0.83] |
+| Balanced accuracy | **0.878** | 0.713 |
+| Melanoma sensitivity | 0.650 [0.57–0.72] | 0.620 [0.54–0.69] |
+| Mean prediction stability | 0.766 | 0.765 |
+| Largest skin-tone accuracy gap | 17 points | 33 points |
+
+The integrity checks say what can be said: **provenance** — no training manifests, so no split
+check is possible; **corpus ancestry** — trained on HAM10000, tested on HAM10000, with no
+image-by-image check, so leakage *cannot be ruled out*; the **membership attack** is unavailable,
+because it needs known training members. The report carries the provisional banner, and every
+*established* mark on it reads *on a split that could not be checked*.
+
+!!! warning "Read the 0.878 as an upper bound, not a result"
+    Two explanations fit the gap, and nothing in this evaluation can separate them. The original
+    checkpoint trained on HAM10000 itself, the same distribution as the test set, where the ISIC
+    model trained on a mix of three archives — an in-distribution model is expected to score
+    higher. And it very likely saw most of these test images. The honest statement
+    is the one the report makes: the number is measured correctly and may not describe
+    generalisation at all.
 
 ## Training run
 

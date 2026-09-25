@@ -36,17 +36,19 @@ four cannot:
 
 !!! tip "How to read this page"
     **Running today** means implemented, registered, and producing findings in the published
-    artifacts — six metrics. **Planned** means designed and argued for, and not yet written.
+    artifacts — nine metrics. **Planned** means designed and argued for, and not yet written.
     Every table row carries its own status, and the [roadmap](ROADMAP.md) holds the order.
     The distinction is kept visible on purpose: a catalogue that reads as though it all exists
     would be the same kind of overclaim this project was built to catch.
 
 ---
 
-## Running today — six metrics
+## Running today — nine metrics
 
 Everything in this section is implemented, registered, and producing findings in the published
-artifacts. One metric per pillar. Each states its own evidence gate, and none of them scores the
+artifacts. One metric per pillar, and four for integrity — the split check, plus the three checks
+added for models this project did not train
+([ADR 0002](adr/0002-verifying-a-foreign-model.md)). Each states its own evidence gate, and none of them scores the
 model against a threshold — the vocabulary is `measured` · `insufficient` · `unavailable` ·
 `invalid`, which says what is *known*, not whether it is good.
 
@@ -68,6 +70,27 @@ Reports `measured` when nothing is shared, `invalid` on **any** overlap — the 
 no longer means what it appears to — and `unavailable` when the manifests carry no
 identifier to compare on, which is **not** a clean bill of health but an unanswered
 question.
+
+### Integrity — `provenance`, `corpus_ancestry`, `label_space`
+
+For a model this project did not train there are no training manifests, so the split check
+above cannot run. Three further checks say what *can* be known:
+
+- **`provenance`** — where the weights came from (a local file, or a Hub repository with its
+  revision pinned or not) and whether a training record exists. `measured` when the training
+  manifests are on disk; `unavailable` otherwise, with *"no split check is possible; that is not
+  the same as a clean split."*
+- **`corpus_ancestry`** — whether the model's declared training archive and the test images'
+  archive overlap, from `data/corpora.yaml` (HAM10000 ⊂ ISIC 2019, each containment with its
+  reference). A shared archive with no image-by-image check is `insufficient`: leakage cannot be
+  ruled out. On the ISIC model it reports the overlap with HAM10000 *and* that the split check
+  shows it was held back; on the original Hub checkpoint it reports that it cannot be ruled out.
+- **`label_space`** — how the model's classes relate to the data's: identical, the data lacking
+  some (Derm7pt has no actinic keratoses), the model lacking some, or disjoint — which the runner
+  refuses unless the scenario declares a `label_map`.
+
+A report whose split cannot be checked carries a *read as provisional* banner, and every
+*established* mark outside integrity reads *on a split that could not be checked*.
 
 ### Performance — `top1_accuracy`
 
@@ -242,10 +265,10 @@ reason, never a silent absence and never an invented number.
 | Metric | Sub-aspect | What it establishes | Status |
 |---|---|---|---|
 | `split_leakage` | row overlap | shared `image_id` / `lesion_id` between the evaluation manifest and everything the model trained on | **shipped** |
-| `provenance` | declared origin | what is *known* about a checkpoint's training data — `unavailable`, never "clean", when it is undeclared | tier 1 |
-| `label_space` | compatibility | model classes against dataset classes; a mismatch requires an explicit `label_map`, and is never guessed | tier 1 |
-| `preprocessing_fingerprint` | compatibility | the transform actually used, recorded and compared against what the checkpoint declares | tier 1 |
-| `corpus_ancestry` | corpus overlap | the model's declared datasets against the evaluation corpus, via an ancestry table (HAM10000 ⊂ ISIC 2019). The only leakage check possible for a model whose row ids we do not hold | tier 2 |
+| `provenance` | declared origin | what is *known* about a checkpoint's training data — `unavailable`, never "clean", when it is undeclared | **shipped** |
+| `label_space` | compatibility | model classes against dataset classes; a disjoint pair requires an explicit `label_map`, and is never guessed | **shipped** |
+| `preprocessing_fingerprint` | compatibility | the transform actually used, recorded with a hash in every report — **shipped**; compared against what a Hub checkpoint declares in its `preprocessor_config.json` — Phase C | recorded |
+| `corpus_ancestry` | corpus overlap | the model's declared datasets against the evaluation corpus, via an ancestry table (`data/corpora.yaml`: HAM10000 ⊂ ISIC 2019). The only leakage check possible for a model whose row ids we do not hold | **shipped** |
 | `near_duplicates` | row overlap | perceptual hashing (images) or shingling (text) across splits — catches the second photograph of one lesion that identifier matching misses | tier 2 |
 | `benchmark_contamination` | corpus overlap | was the evaluation benchmark inside the training corpus? n-gram and canary overlap where the corpus is known; perplexity on the benchmark against a paraphrase where it is not [[30]](references.md#ref-30) | tier 5 |
 

@@ -99,7 +99,10 @@ run had over the model (`labels` … `training_data`), because that decides whic
 exist at all, and `coverage`: one row per registered metric with its status —
 `not_applicable`, `not_requested`, or the verdict it came back with. That is what lets the report
 tell *not asked* from *could not*, and the comparison view say when a missing cell means *could
-not be measured* rather than a worse model.
+not be measured* rather than a worse model. Since Phase B it also records `model`: the model's class list, its preprocessing (resize,
+normalisation) and `preprocessing_sha256`, a fingerprint of that preprocessing — so a report says
+exactly how its images were prepared, and a later run or a Hub checkpoint's own configuration can
+be compared against it ([ADR 0002](adr/0002-verifying-a-foreign-model.md)).
 
 ## The `explain` contract
 

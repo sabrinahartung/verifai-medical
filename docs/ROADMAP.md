@@ -7,8 +7,9 @@
 
 !!! abstract "This page is the plan"
     Everything below the "What has been built" table is **planned, not built**. For what runs
-    today, read [The pillars → Running today](pillars.md#running-today-six-metrics) — six
-    metrics — or [Current results](results.md) for the numbers they produced.
+    today, read [The pillars → Running today](pillars.md#running-today-nine-metrics) — nine
+    metrics — or [Current results](results.md) for the numbers they produced. How the parts
+    already built work in detail: the [architecture decisions](adr/index.md).
 
 Written 2026-09-07 after the leakage audit below; restructured 2026-09-16 around a
 larger target. The history that motivates all of it is compressed into
@@ -21,7 +22,8 @@ larger target. The history that motivates all of it is compressed into
 
 Today VERIFAI evaluates **one problem** (skin lesions), with **one model adapter**
 (a torchvision `state_dict`), against **one modality** (images). Fifteen models in
-twenty-three configurations, all dermatology.
+twenty-four configurations, all dermatology — one of them a checkpoint this project did not
+train, loaded from the Hugging Face Hub.
 
 The target is a **model-agnostic, domain-agnostic evaluation service for medical AI**:
 
@@ -32,7 +34,9 @@ The target is a **model-agnostic, domain-agnostic evaluation service for medical
 Four things have to become true for that:
 
 1. **Any model.** A declared adapter contract, not one hardcoded loader. Third-party
-   checkpoints arrive in formats this repo has never seen.
+   checkpoints arrive in formats this repo has never seen. *The contract and the access gate
+   are built (M4), and so is what can be verified about a model someone else trained (M5,
+   Phase B); resolving a Hub link into an adapter is next (Phase C).*
 2. **Any medical domain.** Images, text, later speech and generated text — with the
    metric catalogue expanded far beyond the six metrics that exist today.
 3. **Two honest entry states.** *The model is trained and ready to load*, or *the
@@ -40,7 +44,8 @@ Four things have to become true for that:
 4. **An interface a reader can follow.** Built on `dev` (2026-09-24) — projects, models
    and their configurations in place of twenty-four tiles that expected a reader to know
    what a lineage was — public since [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0)
-   at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/).
+   at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/), and reworked
+   from a reader's point of view in M3.
 
 What does **not** change: the engine runs offline and writes static artifacts, the
 Streamlit app reads them, the public deploy stays free and always-on, and no number
@@ -48,12 +53,14 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 
 ---
 
-## Where things stand (2026-09-24)
+## Where things stand (2026-09-25)
 
-**23 artifact folders — 15 models in 23 configurations — 107 contract tests, three evaluation
-sets.** [Current results](results.md) has the measurements; this is what they add up to. The
-scientific picture below has not moved since 2026-09-16; what changed since is the interface
-and the tooling around it, recorded in [What has been built](#what-has-been-built).
+**24 artifact folders — 15 models in 24 configurations, 3 of them active — 151 contract
+tests, three evaluation sets, nine metrics.** [Current results](results.md) has the
+measurements; this is what they add up to. Released: [v0.2.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.2.0)
+(M2). On `dev`, awaiting release 0.3.0: M3 and M4. In review: M5 Phase B. The four findings
+below have not moved since 2026-09-16; the fifth is new with Phase B. What else changed is
+recorded in [What has been built](#what-has-been-built).
 
 ### The four things that have been learned
 
@@ -76,6 +83,12 @@ at all (+0.009): frozen features never specialised, so there is nothing to unlea
 
 **4. A tuned threshold does not transfer.** `melanoma ×30` reports 0.964 external
 sensitivity and that number is worthless on its own — see below.
+
+**5. A model you did not train can only be bounded.** The original Hub checkpoint scores 0.867
+on the HAM10000 test set, where the ISIC model with a verified split scores 0.806 — and nothing
+in the evaluation can say how much of that gap is skill and how much is memory, because its
+training images are only inferred and cannot be compared row by row. Its report says so, and
+reads as an upper bound ([Experiment 8](results.md#experiment-8-a-model-this-project-did-not-train)).
 
 ### The trap in this project's own numbers
 
@@ -111,12 +124,15 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **M2 — The findings strip** · 2026-09-25 | Every finding carries `details["baseline"]` — an ideal, chance, or a control measured in the same run — and the report opens with what cleared it, in pillar order. Grad-CAM scores every test image against a random-region control. Scenarios are **active** (re-run when a metric changes, `scripts/run_active.py`) or **archived** (the record, frozen); metrics carry versions and reports record them and their checkpoint, so a report left behind says so | a backfill of all 23 reports was planned; archiving made it unnecessary — only the two active configurations were re-run, and they reproduced every other published value exactly |
 | ✅ | **M3 — A usability pass** · 2026-09-25 | The report's two pillar lists became one card per pillar: status, result, and what it was compared with — **established** where the interval clears the reference, otherwise why nothing is claimed. Metrics are headed by name, classes and datasets read as words, counts say what they count, and charts no longer overlap their own labels. Metric summaries were rewritten for a reader (version 3; fairness 4) and a test now holds every active one to an image count and an interval; robustness gained the interval it lacked | the walkthrough found eleven problems and all were fixed; re-running the two active configurations reproduced every value exactly, so only wording changed. Left as is: Streamlit prints `None` for a missing value in the comparison table |
 | ✅ | **M4 — Phase A**, the two contracts and capability gating · 2026-09-25 | `verifai/models/base.py`: the model contract and the access ladder. Every registry entry is a `MetricSpec` declaring its pillar, tasks, modalities and the access it needs; the runner never calls a metric the model cannot support and writes an `unavailable` finding with the reason instead. Scenarios declare `task:`. Each report records its task, access and a coverage row per registered metric, and the showcase reads it: a coverage map at the top of the report, *not applicable* and *not requested* told apart from *not evaluated*, and an access column and statement in the comparison | every published model is a local checkpoint, so the gate is proven by tests with a model that returns only class scores, not by a published report. Two items of the Phase A text moved: the adapter's `metadata` (provenance, preprocessing fingerprint) belongs with Phase B, which consumes it, and the per-metric `cost` with Phase D's `preflight` |
-| **M5** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
+| ⏳ | **Release 0.3.0** | M3 and M4 on `main` and the public app: one card per pillar, text written for a reader, the coverage map, capability gating ([#11](https://github.com/sabrinahartung/verifai-medical/pull/11), after the version bump [#10](https://github.com/sabrinahartung/verifai-medical/pull/10)) | the public app still shows 0.2.0. Phase B joins this release if #12 is merged before #11 |
+| **M5** | **Someone else's model** — Phases B, C, D | **B ✅ 2026-09-25** (in review, #12): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C**: the Hub resolver and the adapter catalogue; the fingerprint compared against a checkpoint's own `preprocessor_config.json`. **D**: `verifai resolve / preflight / run`, and the per-metric `cost` moved here from M4 | the integrity-gate placeholder is filled; the studio and preflight placeholders wait for C and D. The first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible |
 | M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
-**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). One item
-sits most naturally right after M2 — Grad-CAM's sample, where six of the seven images scored on
-the full run are nevi — because M2 is where Explainability's status on the report changes.
+**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). The item
+that sat right after M2 — Grad-CAM's sample — is done; none of the rest is scheduled yet.
+Experiment 8 adds one worth doing: score the original checkpoint on **Derm7pt**, which it cannot
+have seen. Beside the ISIC model's Derm7pt result it separates at least part of the 0.867 against
+0.806 gap into skill and memory — the one comparison on these data that no leakage can inflate.
 
 **Under consideration, not scheduled (raised 2026-09-25):** an additional pillar from the
 earlier VERIFAI paper, still being worked out, with **human-in-the-loop** functionality as part
@@ -196,6 +212,7 @@ product, not a gap in it.
 | **13** The findings strip | 2026-09-25 | every finding compared with a stated reference; the report opens with what cleared it, in pillar order. Scenarios are active or archived, metrics versioned, and re-running the two active ones reproduced all 274 other published values exactly | `verifai/metrics/_baseline.py` · `verifai/core/suite.py` |
 | **14** A usability pass | 2026-09-25 | one card per pillar instead of two lists; metric summaries written for a first-time reader and tested for n, interval and no identifiers | `showcase/views/report.py` · `verifai/core/glossary.py::METRIC_NAMES` |
 | **15** The two contracts | 2026-09-25 | models declare how much of themselves they expose, metrics what they need; a metric that cannot run says why, and every report records its coverage | `verifai/models/base.py` · `verifai/core/run.py::MetricSpec` |
+| **16** What can be verified about someone else's model | 2026-09-25 | provenance, corpus ancestry and label space as integrity findings; a preprocessing fingerprint in every report; the original Hub checkpoint evaluated on the full test set as the first model this project did not train — its split cannot be checked, leakage cannot be ruled out, and its report says so | `verifai/metrics/integrity/` · `data/corpora.yaml` · [ADR 0002](adr/0002-verifying-a-foreign-model.md) |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -229,6 +246,9 @@ Unfinished, and still ranked by what it would establish:
       the first seven filenames of a sorted manifest, six of them nevi. It now scores every test
       image against a random-region control [[42]](references.md#ref-42): on the ISIC model the
       highlight costs 0.192 [0.178–0.205] more confidence than a random region of the same size.
+- [ ] **Score the original checkpoint on Derm7pt.** Experiment 8 cannot say how much of its
+      0.867 on HAM10000 is memory. On Derm7pt, which it cannot have seen, it can be set beside the
+      ISIC model's external result with no leakage in either number.
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97
@@ -281,6 +301,15 @@ metrics: four of six need only `dataset.load(sample)` → payload and
   `kind: "gauge"` and the pass/warn/fail verdicts were retired, by going on reading it.
 
 ### Phase B — what you can, and cannot, verify about someone else's model
+
+!!! success "Built 2026-09-25 (M5, first part)"
+    `integrity.provenance`, `integrity.corpus_ancestry` and `integrity.label_space` ship, with
+    the ancestry table in `data/corpora.yaml` and a preprocessing fingerprint in every report.
+    Two items stay open: comparing the fingerprint against a Hub checkpoint's own
+    `preprocessor_config.json` needs the resolver (Phase C), and `privacy.mia_shadow` waits for
+    the privacy metrics in Phase F — until then the access gate already reports any membership
+    attack as unavailable for a model without known training data. How it works:
+    [ADR 0002](adr/0002-verifying-a-foreign-model.md).
 
 For a third-party checkpoint there is no training manifest, so the split check —
 this project's strongest claim — cannot run. The honest answer is a finding, not silence.
@@ -378,7 +407,8 @@ checkpoint is missing, then evaluates and exports.
   stays a renderer. Today the first two are inline and the rest are behind "How to read this
   chart", which buries the two that a non-specialist most needs. The reader this is aimed at has
   never seen a Responsible-AI report; a number with no box is a number they cannot use.
-- ◐ *Holds for all six metrics; not yet enforced for a seventh.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
+- ◐ *Holds for the six original metrics; the three integrity checks added in Phase B render text
+  only, which a check with no number to plot may. Not yet enforced for the next one.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
   a reader sees whether it is a *good* number rather than only what it is. A metric that returns
   a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
 - ◐ *Placeholder pages only; filled by [M5](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata

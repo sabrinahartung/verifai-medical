@@ -34,7 +34,7 @@ uv run python scripts/run_active.py
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (128 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (151 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -124,16 +124,26 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   `weights`, raised to `training_data` by the runner when the scenario declares training
   manifests. A model that declares nothing is taken at `labels`, never trusted upward.
 - `verifai/core/run.py` — `run_scenario(dict) -> Report`. Holds `METRIC_REGISTRY`
-  (metric id → `"module:function"`), seeds RNGs, builds model/dataset by importing the
-  `loader:` string from the scenario, and calls each metric. Before any metric runs it
-  calls `_enforce_split_integrity` and raises `SplitLeakageError` if the test manifest
-  overlaps the training manifests — a contaminated split fails loudly instead of
-  reporting a high number.
+  (metric id → `MetricSpec`), seeds RNGs, builds model/dataset by importing the
+  `loader:` string from the scenario, and calls each metric through the capability gate
+  ([ADR 0001](docs/adr/0001-capability-gating.md)). Before any metric runs it applies a declared
+  `dataset.label_map`, refuses a disjoint label space, and calls `_enforce_split_integrity`,
+  which raises `SplitLeakageError` if the test manifest overlaps the training manifests — a
+  contaminated split fails loudly instead of reporting a high number. `docs/adr/` records why
+  the built parts are the way they are; read the ADR before changing what it describes.
 - `verifai/core/integrity.py` — the one implementation of that check. The runner uses it
   as a precondition and `metrics/integrity/split_leakage.py` publishes the same result as
   a finding, so the guard and the report cannot drift apart. Splits are compared by
   `lesion_id` as well as `image_id`, because a second photo of a memorised lesion is not
-  a fair test question.
+  a fair test question. It also holds what Phase B checks for a model this project did not
+  train: `corpus ancestry` against `data/corpora.yaml` (which archive contains which, each
+  with its reference — an archive missing there is unknown, never independent), and the
+  `label_space` relation, which the runner checks before any metric and refuses when disjoint
+  unless `dataset.label_map` is declared. A scenario states `model.trained_on` (corpus ids, or
+  `{corpora, basis}` when only inferred) and `dataset.corpus`. A shared corpus with no
+  row-level check is `insufficient` — leakage cannot be ruled out — never `invalid`, which
+  stays reserved for contamination that was found. On such a provisional report every
+  *established* mark outside integrity reads *on a split that could not be checked*.
 - `verifai/models/image.py` — `ImageClassifier` wrapper (`SkinLesionModel` is kept as an alias).
   Metrics use `.torch_module` and `.cam_layer` (hooks/Grad-CAM), `.to_tensor()`,
   `.predict_probs()`. Classes, architecture, Grad-CAM layer, image size and device all come from
@@ -201,9 +211,12 @@ it is presentation: it never widens what may be compared.
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
 experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
-day. Archived is not *wrong*; it lacks what was added since. Today two are active — the ISIC
-model on its internal test and on Derm7pt "as deployed" — and twenty-one archived. Re-running
-those two reproduced all 274 published values exactly, which is what makes freezing the rest safe.
+day. Archived is not *wrong*; it lacks what was added since. Today three are active — the ISIC
+model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint on the
+HAM10000 test set, the project's one model it did not train — and twenty-one archived. Re-running
+the ISIC two reproduced all 274 published values exactly, which is what makes freezing the rest
+safe. A scenario may say why it leaves an applicable metric out, in `not_requested:
+{metric id: reason}`; the report shows the reason instead of a bare "not requested".
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed

@@ -87,10 +87,12 @@ showcase/           SHOP WINDOW (deploys for free on Streamlit Community Cloud)
   requirements.txt  exported from uv.lock, deliberately LIGHT (free-tier friendly)
 ```
 
-## What the `skin_cancer` run measures (all really computed)
+## What an evaluation measures (all really computed)
 
 | Pillar | Metric | What it does |
 |---|---|---|
+| Integrity | `split_leakage` | Were any test images, or any lesion in them, seen in training? Compared image by image and lesion by lesion |
+| Integrity | `provenance` · `corpus_ancestry` · `label_space` | For a model this project did not train: where it came from, whether its training archive could contain the test images, and whether both name the same classes. Never reports an uncheckable split as clean |
 | Performance | `top1_accuracy` | Top-1 hits + confidence per example (green=correct / red=wrong) |
 | Explainability | `gradcam_faithfulness` | Grad-CAM overlays (ported from your `streamlit_app.py`) + deletion faithfulness |
 | Robustness | `corruption_stability` | Does the prediction stay stable under noise/blur/brightness/JPEG? |
@@ -151,8 +153,9 @@ That is a deliberate design decision, not obfuscation:
 - [x] External validation on a second archive (Derm7pt) — the internal ranking inverts
 - [x] An interface a first-time reader can follow: projects → models → reports, every finding explained in the open, the comparison with runs as rows
 - [x] A reproducible environment: uv with a lock matching the one every result was produced in; CI on every pull request
-- [ ] Adapter contract + capability gating, so a metric skips with a reason instead of assuming pixels
-- [ ] Provenance & label-space preflight, for models whose training data we cannot inspect
+- [x] A usability pass: one card per pillar, every summary written for a reader and tested for its sample size and interval
+- [x] Adapter contract + capability gating, so a metric that cannot run says why instead of vanishing ([ADR 0001](docs/adr/0001-capability-gating.md))
+- [x] Provenance, corpus ancestry and label-space checks, for models whose training data we cannot inspect — the original Hub checkpoint is the first ([ADR 0002](docs/adr/0002-verifying-a-foreign-model.md))
 - [ ] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapters
 - [ ] A far larger metric catalogue: calibration, subgroup fairness, adversarial robustness, XAI evaluation
 - [ ] A second domain (chest X-ray), then text

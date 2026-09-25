@@ -3,6 +3,9 @@
   "metric_versions": {
     "explainability.gradcam": 3,
     "fairness.skin_tone": 4,
+    "integrity.corpus_ancestry": 1,
+    "integrity.label_space": 1,
+    "integrity.provenance": 1,
     "integrity.split_leakage": 2,
     "performance.classification": 3,
     "privacy.mia": 3,
@@ -491,6 +494,25 @@
       "key": "resnet18_ham10000_classweights",
       "configurations": [
         {
+          "scenario": "original_checkpoint_ham10000",
+          "label": "Original checkpoint — HAM10000 test",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        },
+        {
           "scenario": "skin_cancer",
           "label": "Original checkpoint (split unverified)",
           "status": "archived",
@@ -509,10 +531,10 @@
       ],
       "project": "Skin lesion classification",
       "trained_by": null,
-      "name": "Original checkpoint (split unverified)",
+      "name": "Original checkpoint — HAM10000 test",
       "provenance": null,
       "identified": true,
-      "active": false
+      "active": true
     },
     {
       "identity": "sha256:68c29910a0c197b0",
@@ -697,6 +719,9 @@
           "dataset_id": "derm7pt-external",
           "metrics": [
             "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
             "performance.classification",
             "robustness.corruption",
             "fairness.skin_tone"
@@ -743,6 +768,9 @@
           "dataset_id": "ham10000-clean-test",
           "metrics": [
             "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
             "performance.classification",
             "explainability.gradcam",
             "robustness.corruption",
