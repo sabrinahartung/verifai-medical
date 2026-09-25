@@ -1974,6 +1974,36 @@ def test_the_strip_holds_only_measured_findings_that_clear_in_pillar_order():
         "a report predating baselines has no strip, rather than an empty one"
 
 
+def test_each_pillar_card_says_what_it_was_compared_with_and_never_grades():
+    """The strip and the glance list became one card per pillar. What was
+    established is a mark on the card; what was not says why, in words that
+    speak about the evidence rather than the model."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import established, reference_line
+
+    def f(pillar, verdict, cleared, kind="chance"):
+        return {"pillar": pillar, "verdict": verdict,
+                "details": {"baseline": {"cleared": cleared, "claim": "the claim" if cleared else None,
+                                         "kind": kind, "basis": "the basis"}}}
+    perf, robust, thin = (f("performance", "measured", True), f("robustness", "measured", False, "ideal"),
+                          f("fairness", "insufficient", True, "control"))
+    hits = established([perf, robust, thin], "measured")
+    assert reference_line(perf, hits, "measured").startswith("✓ **Established against chance**")
+    assert "falls short of an ideal" in reference_line(robust, hits, "measured"), \
+        "an unreachable ideal must say why nothing is claimed, not vanish"
+    assert "does not support a claim" in reference_line(thin, hits, "measured")
+    assert reference_line({"pillar": "privacy", "verdict": "measured", "details": {}}, hits,
+                          "measured") is None, "no baseline, no line"
+    for word in ("pass", "fail", "good", "bad"):
+        for x in (perf, robust, thin):
+            assert word not in reference_line(x, hits, "measured").lower().split()
+
+    source = (REPO / "showcase" / "views" / "report.py").read_text(encoding="utf-8")
+    assert "What this evaluation established" not in source, \
+        "the separate strip is merged into the pillar cards; it must not come back as a second list"
+
+
 def test_every_finding_in_a_current_active_report_carries_a_baseline():
     """The runner attaches one to every finding; a current active report without
     one means a metric is missing from BY_FINDING."""

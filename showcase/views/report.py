@@ -4,10 +4,10 @@ Laid out for the reader this project settled on: someone who has never seen a
 Responsible-AI report and will spend twenty minutes, not five. Two rules follow
 from that (docs/ui-ux-design.md, "Two settled decisions"):
 
-* **The first screen says what was found.** The "At a glance" list is every
-  pillar's result in the engine's own words, in fixed pillar order, each a link
-  down to its section. Above it, *What this evaluation established* lists only
-  the findings whose interval clears a stated reference, also in pillar order.
+* **The first screen says what was found.** "At a glance" is one card per
+  pillar, in fixed order: its status, its result in the engine's own words, and
+  what it was compared with — marked **established** where the interval clears
+  that reference. Each card links down to its section.
 * **Depth by scrolling, never by clicking.** Each finding's five-question box is
   rendered open; only the reference definitions sit behind a click.
 
@@ -129,30 +129,51 @@ REFERENCE_KIND = {"ideal": "against its ideal", "chance": "against chance",
                   "control": "against a control measured in the same run"}
 
 
-def _findings_strip(findings: list[dict], integrity: str):
+def reference_line(f: dict, hits: list[dict] | None, integrity: str) -> str | None:
+    """One line under a pillar's result: what it was compared with, and the outcome.
+
+    `None` where there is nothing to say — no baseline (a report from before
+    baselines), or an integrity finding on a split the banner already calls
+    unusable. The wording never grades: established or not is a statement about
+    the evidence, in either direction.
+    """
+    b = (f.get("details") or {}).get("baseline")
+    if not b:
+        return None
+    against = REFERENCE_KIND.get(b.get("kind"), "")
+    if hits is not None and any(h is f for h in hits):
+        # A claim the result sentence already contains (a clean split says the
+        # same thing twice) is replaced by what it was compared with.
+        repeats = b["claim"].rstrip(".").lower() in (f.get("summary") or "").lower()
+        said = b["basis"] if repeats else b["claim"]
+        return f"✓ **Established {against}** — {said}"
+    if f.get("pillar") == "integrity":
+        return None
+    if normalise_verdict(f.get("verdict"), f.get("pillar")) != "measured":
+        return (f"– Compared {against}: {b['basis']}. The sample does not support a claim "
+                f"yet, so nothing is established.")
+    if b.get("kind") == "ideal":
+        return (f"– Compared {against}: {b['basis']}. Every model falls short of an ideal, "
+                f"so the gap is reported and nothing is claimed.")
+    return (f"– Compared {against}: {b['basis']}. The interval does not clear it, so "
+            f"nothing is established.")
+
+
+def _pillar_cards(by_pillar: dict[str, list], findings: list[dict], integrity: str):
+    """Every pillar once, in fixed order: its status, its result, its reference.
+
+    This replaces two lists that named every pillar one after the other — what
+    was established, then every result — and read as the same list twice. What
+    was established is now a mark on the pillar's own card, so a clean split and
+    a 33-point fairness gap still stand side by side, in pillar order, never
+    ranked by how good or bad they are.
+    """
     hits = established(findings, integrity)
-    if hits is None:
-        return                 # predates baselines; the archived banner already says so
-    st.subheader("What this evaluation established")
-    st.caption("Only results whose interval clears a stated reference — an ideal, chance, or a "
-               "control measured in the same run. Ordered by pillar, never by how good or bad "
-               "the number is.")
-    if not hits:
-        st.markdown(":gray[Nothing in this report clears its reference at this sample size.]")
-        return
-    with st.container(border=True):
-        for f in hits:
-            b = f["details"]["baseline"]
-            p = f["pillar"]
-            st.markdown(f"**[{p.capitalize()}](#{p})** — {b['claim']}")
-            st.caption(f"Compared {REFERENCE_KIND.get(b['kind'], '')}: {b['basis']}.")
-
-
-def _at_a_glance(by_pillar: dict[str, list]):
     st.subheader("At a glance", anchor="at-a-glance")
     st.caption("Every pillar's result in the engine's own words, in fixed order. A status says "
-               "what is known about a number — never whether it is good. Hover a status for "
-               "what it means; select a pillar to jump to its section.")
+               "what is known about a number — never whether it is good. **✓ Established** "
+               "marks a result whose interval clears a stated reference: an ideal, chance, or a "
+               "control measured in the same run. Select a pillar to jump to its section.")
     for p in PILLARS:
         items = by_pillar.get(p, [])
         with st.container(border=True):
@@ -166,6 +187,9 @@ def _at_a_glance(by_pillar: dict[str, list]):
                 for f in items:
                     icon, label, meaning = VERDICT[normalise_verdict(f.get("verdict"), p)]
                     st.markdown(f"{icon} **{label}** — {f.get('summary', '')}", help=meaning)
+                    line = reference_line(f, hits, integrity)
+                    if line:
+                        st.caption(line)
 
 
 def dashboard(card: dict):
@@ -211,12 +235,11 @@ def dashboard(card: dict):
                    f"intervals are reported, and what counts as good enough is your call.")
 
     placeholder("coverage_map")
-    _findings_strip(findings, state)
 
     by_pillar: dict[str, list] = {p: [] for p in PILLARS}
     for f in findings:
         by_pillar.setdefault(f["pillar"], []).append(f)
-    _at_a_glance(by_pillar)
+    _pillar_cards(by_pillar, findings, state)
 
     # Per-finding slots that no metric can fill yet, drawn once rather than
     # under every finding — six identical boxes would be a wall, not a skeleton.
