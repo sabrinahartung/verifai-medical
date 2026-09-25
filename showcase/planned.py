@@ -36,15 +36,6 @@ PLANNED: dict[str, dict[str, str]] = {
                       "when it fails is built; the other three checks are not",
         "phase": "ROADMAP.md#phase-b-what-you-can-and-cannot-verify-about-someone-elses-model",
     },
-    "coverage_map": {
-        "title": "Coverage map",
-        "shows": "how many applicable metrics were measured, how many came back "
-                 "inconclusive or not assessed, and why",
-        "blocked_by": "Phase A: nothing knows the *applicable* set until tasks, "
-                      "modalities and access are declared, so the denominator "
-                      "would have to be invented",
-        "phase": "ROADMAP.md#what-takes-its-place",
-    },
     "impact": {
         "title": "Why it matters",
         "shows": "who is affected by this number being what it is, in this clinical "
@@ -81,19 +72,11 @@ PLANNED: dict[str, dict[str, str]] = {
         "title": "Export as an evaluation card",
         "shows": "the report as a readable document — coverage, every metric with "
                  "its interval, and what the evaluation does not tell you",
-        "blocked_by": "the coverage map and the info box it would be built from",
+        "blocked_by": "the document itself: the coverage map it would open with exists "
+                      "since Phase A, the export does not",
         "phase": "ROADMAP.md#what-takes-its-place",
     },
     # ---- compare ------------------------------------------------------------
-    "access_statement": {
-        "title": "Access levels in this group",
-        "shows": "which runs could be opened and which could only be queried, which "
-                 "columns are therefore compared at the weaker level, and which findings "
-                 "were measured for one model only and are not used in the comparison",
-        "blocked_by": "Phase A: every model here is a local checkpoint, so the "
-                      "question has never had to be asked",
-        "phase": "ROADMAP.md#comparing-models-that-were-not-evaluated-under-the-same-suite",
-    },
     "delta_view": {
         "title": "Against the previous version",
         "shows": "what changed since the version you shipped, on the same images "

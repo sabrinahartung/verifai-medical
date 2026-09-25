@@ -63,6 +63,23 @@ VERDICT = {
                                               "contaminated, so these numbers measure "
                                               "memory rather than generalisation."),
 }
+# Where a metric stands when it produced no finding. Deliberately apart from
+# VERDICT: these are statements about the evaluation's scope, not about a
+# number, and a reader must be able to tell "not asked" from "could not".
+COVERAGE = {
+    "not_applicable": ("▫️", "Not applicable", "This metric does not belong in an evaluation "
+                                              "of this task or kind of data, so it is not "
+                                              "counted as missing."),
+    "not_requested":  ("◻️", "Not requested", "This metric applies, but this evaluation did "
+                                             "not ask for it. Nothing is known either way."),
+}
+
+ACCESS_LABEL = {
+    "labels": "predicted label only", "probs": "class scores", "logits": "raw outputs",
+    "gradients": "gradients", "weights": "full weights",
+    "training_data": "full weights and training data",
+}
+
 VERDICT_ORDER = {"measured": 0, "insufficient": 1, "unavailable": 2, "invalid": 3}
 
 # Artifacts written before the vocabulary changed still carry pass/warn/fail.

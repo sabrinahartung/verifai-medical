@@ -89,7 +89,15 @@ class ImageClassifier:
 
     Metrics use `.torch_module` and `.cam_layer` (for hooks / Grad-CAM) and the
     convenience `.predict_probs(pil_image)` / `.to_tensor(pil_image)` helpers.
+
+    A local module can be opened, differentiated and modified, so it declares
+    `weights`. Whether its training data is known is a fact about the scenario,
+    not the module; the runner raises the level to `training_data` when the
+    scenario declares training manifests (see `verifai.models.base`).
     """
+
+    access = "weights"
+    modality = "pixels"
 
     def __init__(self, model, classes: list[str], device=None,
                  cam_layer: str = "layer4[-1]", preprocess=None,

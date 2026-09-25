@@ -21,10 +21,11 @@ import json
 
 import streamlit as st
 
-from catalog import PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER, normalise_verdict
+from catalog import (ACCESS_LABEL, COVERAGE, PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER,
+                     normalise_verdict)
 from registry import (dataset_name, decision_rule, is_archived, load_registry,
                       model_of_scenario, out_of_date)
-from render import breadcrumb, placeholder, render_finding
+from render import breadcrumb, metric_name, placeholder, render_finding
 from routing import go_to_model, go_to_overview, go_to_project
 
 
@@ -97,6 +98,12 @@ def _identity(card: dict, report: dict, model: dict | None, config: dict | None)
         # An evaluation no registered model claims keeps the identifiers it has.
         st.markdown(f"**Model:** `{report['model_id']}` · **Dataset:** `{report['dataset_id']}`"
                     + (f" ({n:,} images)" if n else ""))
+    if meta.get("access"):
+        st.caption(f"Task: {meta.get('task', 'classification')} · the evaluation could reach "
+                   f"the model's **{ACCESS_LABEL.get(meta['access'], meta['access'])}**",
+                   help="How much of the model an evaluation can reach decides which metrics "
+                        "can run at all. A model that can only be queried has no gradients, so "
+                        "Grad-CAM cannot run on it — and says so rather than disappearing.")
     if card.get("hf_url"):
         st.markdown(f"[🤗 Model on Hugging Face]({card['hf_url']})")
 
@@ -159,7 +166,65 @@ def reference_line(f: dict, hits: list[dict] | None, integrity: str) -> str | No
             f"nothing is established.")
 
 
-def _pillar_cards(by_pillar: dict[str, list], findings: list[dict], integrity: str):
+MODALITY_WORD = {"pixels": "images", "tokens": "text", "rows": "tables", "audio": "audio"}
+
+
+def coverage_counts(rows: list[dict]) -> dict[str, int]:
+    """How many registered metrics stand where. Counts completeness, never quality."""
+    out: dict[str, int] = {}
+    for r in rows:
+        out[r["status"]] = out.get(r["status"], 0) + 1
+    return out
+
+
+def _coverage_map(meta: dict):
+    """What this evaluation could measure, and what it did not, with the reason.
+
+    A completeness statement: it counts what was measured and what was not —
+    never what passed, which would be a rating by another name.
+    """
+    rows = meta.get("coverage")
+    if not rows:
+        return                 # predates coverage records; the pillar cards say what exists
+    counts = coverage_counts(rows)
+    applicable = [r for r in rows if r["status"] != "not_applicable"]
+    order = ("measured", "insufficient", "unavailable", "invalid", "mixed", "not_requested")
+    label = {**{k: v[1] for k, v in VERDICT.items()}, **{k: v[1] for k, v in COVERAGE.items()},
+             "mixed": "Mixed"}
+    with st.container(border=True):
+        st.markdown(
+            f"**Coverage** — {len(applicable)} of the {len(rows)} metrics this framework has "
+            f"apply to {meta.get('task', 'classification')} on "
+            f"{MODALITY_WORD.get(meta.get('modality'), 'this data')}: "
+            + " · ".join(f"**{counts[k]}** {label[k].lower()}" for k in order if counts.get(k)),
+            help="How much of what could be measured was measured. It says nothing about "
+                 "whether any result is good.")
+        missing = [r for r in applicable if r["status"] not in ("measured",)]
+        for r in missing:
+            name = metric_name(r["finding"])
+            if r["status"] == "not_requested":
+                why = "not requested in this run" + (
+                    "" if r.get("reachable", True) else
+                    f"; it could not have run anyway, as it needs {r['requires']}")
+            else:
+                why = label.get(r["status"], r["status"]).lower() + " — see its section below"
+            st.caption(f"{r['pillar'].capitalize()} · {name}: {why}.")
+
+
+def _empty_pillar(p: str, rows: list[dict] | None) -> str:
+    """What to say for a pillar with no finding, from the coverage record if there is one."""
+    mine = [r for r in (rows or []) if r["pillar"] == p]
+    if not mine:
+        return ":gray[Not evaluated in this run.]"
+    if all(r["status"] == "not_applicable" for r in mine):
+        return f":gray[{COVERAGE['not_applicable'][0]} Not applicable to this task.]"
+    names = ", ".join(metric_name(r["finding"]) for r in mine if r["status"] == "not_requested")
+    return (f":gray[{COVERAGE['not_requested'][0]} Not requested in this run"
+            + (f", though {names} would apply." if names else ".") + "]")
+
+
+def _pillar_cards(by_pillar: dict[str, list], findings: list[dict], integrity: str,
+                  coverage_rows: list[dict] | None = None):
     """Every pillar once, in fixed order: its status, its result, its reference.
 
     This replaces two lists that named every pillar one after the other — what
@@ -183,7 +248,7 @@ def _pillar_cards(by_pillar: dict[str, list], findings: list[dict], integrity: s
                 st.caption(PILLAR_QUESTION[p])
             with result:
                 if not items:
-                    st.markdown(":gray[Not evaluated in this run.]")
+                    st.markdown(_empty_pillar(p, coverage_rows))
                 for f in items:
                     icon, label, meaning = VERDICT[normalise_verdict(f.get("verdict"), p)]
                     st.markdown(f"{icon} **{label}** — {f.get('summary', '')}", help=meaning)
@@ -234,12 +299,12 @@ def dashboard(card: dict):
                    f"such. Nothing here is scored against a threshold: the numbers and their "
                    f"intervals are reported, and what counts as good enough is your call.")
 
-    placeholder("coverage_map")
+    _coverage_map(report.get("meta") or {})
 
     by_pillar: dict[str, list] = {p: [] for p in PILLARS}
     for f in findings:
         by_pillar.setdefault(f["pillar"], []).append(f)
-    _pillar_cards(by_pillar, findings, state)
+    _pillar_cards(by_pillar, findings, state, (report.get("meta") or {}).get("coverage"))
 
     # Per-finding slots that no metric can fill yet, drawn once rather than
     # under every finding — six identical boxes would be a wall, not a skeleton.

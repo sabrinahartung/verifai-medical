@@ -110,7 +110,7 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **M1 — Release 1** · 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): both of the above, public at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/) and on the docs site | the public demo still showed the old twenty-four-tile gallery and the sample fixture. Streamlit Cloud's Python version was confirmed ≥ 3.12 before the merge, as the pinned `showcase/requirements.txt` needs |
 | ✅ | **M2 — The findings strip** · 2026-09-25 | Every finding carries `details["baseline"]` — an ideal, chance, or a control measured in the same run — and the report opens with what cleared it, in pillar order. Grad-CAM scores every test image against a random-region control. Scenarios are **active** (re-run when a metric changes, `scripts/run_active.py`) or **archived** (the record, frozen); metrics carry versions and reports record them and their checkpoint, so a report left behind says so | a backfill of all 23 reports was planned; archiving made it unnecessary — only the two active configurations were re-run, and they reproduced every other published value exactly |
 | ✅ | **M3 — A usability pass** · 2026-09-25 | The report's two pillar lists became one card per pillar: status, result, and what it was compared with — **established** where the interval clears the reference, otherwise why nothing is claimed. Metrics are headed by name, classes and datasets read as words, counts say what they count, and charts no longer overlap their own labels. Metric summaries were rewritten for a reader (version 3; fairness 4) and a test now holds every active one to an image count and an interval; robustness gained the interval it lacked | the walkthrough found eleven problems and all were fixed; re-running the two active configurations reproduced every value exactly, so only wording changed. Left as is: Streamlit prints `None` for a missing value in the comparison table |
-| **M4** | **Phase A** — the two contracts and capability gating | the adapter contract; access level, task and modality declared; metrics that cannot run say why instead of vanishing | the seam Phases B–D plug into. Unlocks the coverage map, access badges and *not applicable to this task* — three slots already placed |
+| ✅ | **M4 — Phase A**, the two contracts and capability gating · 2026-09-25 | `verifai/models/base.py`: the model contract and the access ladder. Every registry entry is a `MetricSpec` declaring its pillar, tasks, modalities and the access it needs; the runner never calls a metric the model cannot support and writes an `unavailable` finding with the reason instead. Scenarios declare `task:`. Each report records its task, access and a coverage row per registered metric, and the showcase reads it: a coverage map at the top of the report, *not applicable* and *not requested* told apart from *not evaluated*, and an access column and statement in the comparison | every published model is a local checkpoint, so the gate is proven by tests with a model that returns only class scores, not by a published report. Two items of the Phase A text moved: the adapter's `metadata` (provenance, preprocessing fingerprint) belongs with Phase B, which consumes it, and the per-metric `cost` with Phase D's `preflight` |
 | **M5** | **Someone else's model** — Phases B, C, D | provenance, corpus ancestry, label space; the Hub resolver; `verifai resolve / preflight / run` | fills the integrity-gate and studio placeholders; the first model this repository did not train |
 | M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
@@ -195,6 +195,7 @@ product, not a gap in it.
 | **12** First release | 2026-09-24 | [v0.1.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.1.0): the interface and the tooling, public — the app at [verifai-medical.streamlit.app](https://verifai-medical.streamlit.app/), the docs on GitHub Pages | PR #4 |
 | **13** The findings strip | 2026-09-25 | every finding compared with a stated reference; the report opens with what cleared it, in pillar order. Scenarios are active or archived, metrics versioned, and re-running the two active ones reproduced all 274 other published values exactly | `verifai/metrics/_baseline.py` · `verifai/core/suite.py` |
 | **14** A usability pass | 2026-09-25 | one card per pillar instead of two lists; metric summaries written for a first-time reader and tested for n, interval and no identifiers | `showcase/views/report.py` · `verifai/core/glossary.py::METRIC_NAMES` |
+| **15** The two contracts | 2026-09-25 | models declare how much of themselves they expose, metrics what they need; a metric that cannot run says why, and every report records its coverage | `verifai/models/base.py` · `verifai/core/run.py::MetricSpec` |
 
 **Top-3 accuracy sits at 0.975–0.977 across all eight internal configurations** — two
 corpora, two architectures, two loss functions, a sampling scheme, three decision
@@ -243,6 +244,13 @@ Nine phases, A to I. Phase A is the seam Phases B–D plug into; the order they 
 set by [Milestones](#milestones) — which put Phase E first, for the reason given there.
 
 ### Phase A — the two contracts, and capability gating
+
+!!! success "Built 2026-09-25 (M4)"
+    Everything below except the adapter's `metadata`, which moved to Phase B where the
+    provenance and preprocessing checks consume it, and the per-metric `cost`, which waits for
+    Phase D's `preflight`. The two refusals are split as the text intends: a metric that does not
+    *apply* to the task is refused before anything runs; one the model cannot *support* runs as
+    an `unavailable` finding with its reason.
 
 The model contract is *already* domain-neutral; nobody wrote it down. Read off the
 metrics: four of six need only `dataset.load(sample)` → payload and
