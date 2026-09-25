@@ -6,9 +6,15 @@ import plotly.graph_objects as go
 
 from catalog import (_blocked_reason, comparability_key, direction_for,
                      best_run, dominated_by, group_snapshots, run_label)
-from registry import find_model, load_registry
+from registry import dataset_name, find_model, load_registry
 from render import GLOSSARY, breadcrumb, explain_metric, placeholder, render_metric_legend
 from routing import current, go_to_compare, go_to_model, go_to_overview, go_to_project
+
+
+def plural(n: int, word: str, many: str | None = None) -> str:
+    """`1 run`, `3 runs` — never `3 run(s)`."""
+    return f"{n:,} {word if n == 1 else (many or word + 's')}"
+
 
 def scope_ids(cards: list[dict] | None, registry: dict | None,
               lineage: str | None = None, model: str | None = None
@@ -71,7 +77,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         # A filter can outlive the click that set it — the sidebar reopens this
         # page with the last one still applied — so it is always stated, and
         # always one click from undone.
-        st.caption(f"Filtered to the {len(ids)} configuration(s) of *{scope}*. "
+        st.caption(f"Filtered to the {plural(len(ids), 'configuration')} of *{scope}*. "
                    f"Comparability is still decided by the evaluation set, not by this filter.")
         if st.button("Show all runs"):
             go_to_compare()
@@ -97,7 +103,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             "its probabilities. They are not competitors in a race with a winner; "
             "together they map a **trade-off**.\n\n"
             "Two things here *are* decidable from the data:\n\n"
-            "- **Which run leads on a given metric** — shown in the `best` column.\n"
+            "- **Which run leads on a given metric** — its cell is bold and tinted.\n"
             "- **Whether a run is beaten on everything.** If another run is at least as "
             "good on every selected metric, the loser can be dropped with no judgement "
             "call at all.\n\n"
@@ -118,16 +124,21 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
     order = sorted(groups.items(), key=lambda kv: -len(kv[1]))
     for gi, (key, runs) in enumerate(order):
         ev = runs[0].get("eval_set") or {}
-        name = (ev.get("manifest") or "unknown evaluation set").split("/")[-1]
-        st.subheader(f"{name}  ·  {ev.get('n') or '?'} images")
-        st.caption(f"content hash `{ev.get('sha256') or 'none'}`  ·  {len(runs)} run(s)")
+        n_images = ev.get("n")
+        st.subheader(f"{dataset_name(ev.get('manifest'))}  ·  "
+                     + (plural(n_images, "image") if n_images else "? images"),
+                     help=f"Manifest `{(ev.get('manifest') or 'unknown').split('/')[-1]}` · "
+                          f"fingerprint `{ev.get('sha256') or 'none'}`. Runs are grouped by the "
+                          f"fingerprint, a hash of the manifest's content, not by its name.")
 
         also = sorted(hidden_comparable.get(key, ()))
         if also:
             st.warning(
-                f"**{len(also)} further run(s) were scored on these same images** and are "
-                f"hidden by this filter: {', '.join(f'*{a}*' for a in also)}. "
-                f"The **best** column below ranks only what is shown, so it may not name "
+                f"**{plural(len(also), 'further run')} "
+                f"{'was' if len(also) == 1 else 'were'} scored on these same images** and "
+                f"{'is' if len(also) == 1 else 'are'} hidden by this filter: "
+                f"{', '.join(f'*{a}*' for a in also)}. "
+                f"The leading cells below rank only what is shown, so they may not name "
                 f"the strongest configuration you have. **Show all runs**, above, puts "
                 f"them back.", icon="🔎")
 
@@ -144,9 +155,15 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         for r in sorted(usable, key=lambda r: r.get("created_at", "")):
             by_label.setdefault(run_label(r), []).append(r)
         repeats = sum(len(v) - 1 for v in by_label.values())
+        # One sentence for the counts, so "31 runs", "14 repeats" and "17 runs"
+        # are visibly the same runs counted three ways, not three claims.
+        st.caption(f"{plural(len(runs), 'recorded run')} of "
+                   f"{plural(len({r.get('scenario') for r in runs}), 'configuration')}"
+                   + (f". The table shows the newest run of each; "
+                      f"{plural(repeats, 'earlier repeat')} {'is' if repeats == 1 else 'are'} "
+                      f"hidden unless you ask for them." if repeats else "."))
         if repeats and not st.checkbox(
-                f"Show every recorded run ({repeats} repeat(s) of a configuration hidden)",
-                key=f"all_{gi}"):
+                f"Also show the {plural(repeats, 'earlier repeat')}", key=f"all_{gi}"):
             usable = [v[-1] for v in by_label.values()]
 
         # Excluded runs are named the way the table names runs, and dated. Most
@@ -163,7 +180,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             when = (dates[0] if len(dates) == 1 else f"{dates[0]} to {dates[-1]}") if dates else "undated"
             label = run_label(rs[-1])
             if scen in usable_scenarios:
-                st.caption(f"↳ {len(rs)} earlier run(s) of **{label}** ({when}) left out — {why}. "
+                st.caption(f"↳ {plural(len(rs), 'earlier run')} of **{label}** ({when}) left out — {why}. "
                            f"A later, verified run of the same configuration is included.")
             else:
                 st.warning(f"**{label}** ({when}) is excluded — {why}.")
@@ -207,7 +224,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                        f"selected metrics. On this evidence it is the one to keep.")
         else:
             st.info(
-                f"**No single best run.** {len(survivors)} of {len(labels)} runs trade off "
+                f"**No single best run.** {len(survivors)} of the {len(labels)} runs shown trade off "
                 "against each other: each is better on some selected metric and worse on "
                 "another. Which one is *right* depends on what the model is for — a triage "
                 "tool and a rule-out tool want opposite ends of this table. That is a "
@@ -258,7 +275,8 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             x=labels, y=[r["metrics"].get(metric) for r in usable],
             marker_color=["#2E9E5B" if l == leader else "#5B3FD6" for l in labels]))
         fig.update_layout(title=names[metric]
-                                + (f"  ·  best: {leader}" if leader else "  ·  unranked"),
+                                + (f"  ·  {'highest' if dirs.get(metric) == 'higher' else 'lowest'}: "
+                                   f"{leader}" if leader else "  ·  not ranked"),
                           xaxis_title="Run", yaxis_title=names[metric])
         st.plotly_chart(fig, width="stretch")
         st.divider()
@@ -333,8 +351,14 @@ def style_leaders(table, leaders: dict[str, str | None]):
     def mark(col):
         lead = leaders.get(col.name)
         return [LEADER_STYLE if lead and run == lead else "" for run in table["Run"]]
+    def fmt(k):
+        # Three decimals, like every other number in the showcase; counts print
+        # as counts rather than as 1493.000.
+        vals = table[k].dropna()
+        return "{:,.0f}" if len(vals) and (vals == vals.round()).all() and vals.abs().max() > 1 \
+            else "{:.3f}"
     return (table.style.apply(mark, axis=0)
-            .format({k: "{:.4f}" for k in leaders}, na_rep="—"))
+            .format({k: fmt(k) for k in leaders}, na_rep="—"))
 
 
 def table_columns(keys: list[str], names: dict[str, str], dirs: dict[str, str | None]) -> dict:
@@ -351,8 +375,10 @@ def table_columns(keys: list[str], names: dict[str, str], dirs: dict[str, str | 
         rank = (f"{d.capitalize()} is better." if d else
                 "Not ranked: this metric declares no direction, and none is inferred from "
                 "its name.")
+        # The arrow leads: a long name is cut off at the column's edge, and the
+        # direction is the part the reader needs to rank by.
         cols[k] = st.column_config.NumberColumn(
-            f"{names[k]} {ARROW.get(d, '')}".strip(),
+            f"{ARROW.get(d, '')} {names[k]}".strip(),
             help=f"`{k}` — {entry.get('measures', 'No definition recorded.')} {rank}")
     return cols
 
@@ -378,6 +404,28 @@ def pareto_front(points: list[tuple[str, float | None, float | None]],
     return front
 
 
+def label_offsets(labelled: list[tuple[str, float, float]], dx: str, dy: str,
+                  span: float) -> list[tuple[int, int]]:
+    """Pixel offset (ax, ay) of each frontier label from its point.
+
+    Labels go into the quadrant *better* on both axes. On a trade-off frontier
+    that quadrant is empty by definition — no run beats a frontier point on both
+    — so a label there can cover no point. Only labels can still collide, when
+    neighbours sit close in x (three runs within 0.05 on the real data): those
+    are pushed one step further out along the diagonal, alternately.
+    """
+    sx = 1 if dx == "higher" else -1               # plotly: positive ax is right
+    sy = -1 if dy == "higher" else 1               # plotly: negative ay is up
+    out, level, prev_x = [], 0, None
+    for _, x, _y in labelled:
+        close = prev_x is not None and abs(x - prev_x) / (span or 1.0) < 0.08
+        level = (level + 1) % 3 if close else 0
+        d = 18 + 22 * level
+        out.append((sx * d, sy * d))
+        prev_x = x
+    return out
+
+
 def tradeoff_figure(runs, xk, yk, dirs, names):
     pts = [(run_label(r), r["metrics"].get(xk), r["metrics"].get(yk)) for r in runs]
     front = pareto_front(pts, dirs[xk], dirs[yk])
@@ -390,16 +438,22 @@ def tradeoff_figure(runs, xk, yk, dirs, names):
             marker=dict(size=10, color="rgba(130, 130, 130, 0.55)"),
             hovertext=[p[0] for p in off], hoverinfo="text", name="beaten on both axes"))
     fig.add_trace(go.Scatter(
-        x=[p[1] for p in on], y=[p[2] for p in on], mode="lines+markers+text",
+        x=[p[1] for p in on], y=[p[2] for p in on], mode="lines+markers",
         line=dict(dash="dot", width=1.5, color="#2E9E5B"),
-        marker=dict(size=14, color="#2E9E5B"), text=[p[0] for p in on],
-        # Neighbours on the frontier sit close together — three runs within
-        # 0.05 of each other here — so labels alternate above and below.
-        textposition=["top center" if i % 2 == 0 else "bottom center" for i in range(len(on))],
+        marker=dict(size=14, color="#2E9E5B"),
         hovertext=[p[0] for p in on], hoverinfo="text",
         name="the trade-off"))
+    xs = [p[1] for p in pts if p[1] is not None]
+    span = (max(xs) - min(xs)) if xs else 1.0
+    for (label, x, y), (ax, ay) in zip(on, label_offsets(on, dirs[xk], dirs[yk], span)):
+        fig.add_annotation(x=x, y=y, text=label, showarrow=True, arrowhead=0,
+                           arrowwidth=1, arrowcolor="rgba(46, 158, 91, 0.6)",
+                           ax=ax, ay=ay, xanchor="left" if ax > 0 else "right",
+                           font=dict(size=12))
     fig.update_layout(
         title=f"{names[yk]} against {names[xk]} — each point is one run",
         xaxis_title=f"{names[xk]} ({dirs[xk]} is better)",
-        yaxis_title=f"{names[yk]} ({dirs[yk]} is better)", showlegend=False)
+        yaxis_title=f"{names[yk]} ({dirs[yk]} is better)", showlegend=False,
+        # room for the labels that lean out past the last point
+        height=520, margin=dict(r=170, t=90))
     return fig

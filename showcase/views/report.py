@@ -22,7 +22,8 @@ import json
 import streamlit as st
 
 from catalog import PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER, normalise_verdict
-from registry import decision_rule, is_archived, load_registry, model_of_scenario, out_of_date
+from registry import (dataset_name, decision_rule, is_archived, load_registry,
+                      model_of_scenario, out_of_date)
 from render import breadcrumb, placeholder, render_finding
 from routing import go_to_model, go_to_overview, go_to_project
 
@@ -84,15 +85,14 @@ def _status_banner(card: dict, report: dict, registry: dict | None, model: dict 
 def _identity(card: dict, report: dict, model: dict | None, config: dict | None):
     meta = report.get("meta") or {}
     ev = meta.get("eval_set") or {}
-    manifest = (ev.get("manifest") or "").rsplit("/", 1)[-1]
     n = ev.get("n") or meta.get("sample_size")
     if card.get("description"):
         st.caption(card["description"])
     if model and config:
         st.markdown(
             f"A configuration of **{model['name']}** · decision rule: "
-            f"{decision_rule(config['decision_weights'])} · scored on `{manifest or '?'}`"
-            + (f" ({n:,} images)" if n else ""))
+            f"{decision_rule(config['decision_weights'])} · scored on the "
+            f"{dataset_name(ev.get('manifest'))}" + (f" ({n:,} images)" if n else ""))
     else:
         # An evaluation no registered model claims keeps the identifiers it has.
         st.markdown(f"**Model:** `{report['model_id']}` · **Dataset:** `{report['dataset_id']}`"
@@ -206,7 +206,7 @@ def dashboard(card: dict):
 
     n = (report.get("meta") or {}).get("sample_size")
     if n:
-        st.caption(f"Everything below was computed on {n:,} image(s). Small samples are marked as "
+        st.caption(f"Everything below was computed on {n:,} {'image' if n == 1 else 'images'}. Small samples are marked as "
                    f"such. Nothing here is scored against a threshold: the numbers and their "
                    f"intervals are reported, and what counts as good enough is your call.")
 

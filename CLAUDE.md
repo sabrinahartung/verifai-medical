@@ -242,7 +242,9 @@ also add an entry to `verifai/core/glossary.py`, keyed by an `fnmatch` pattern o
 Each entry carries `term` (the human name shown as the card's heading — never a raw key),
 `measures` / `ideal` / `reading` and optionally `tension`, written **generally**
 — about the concept, not about this dataset, so it stays true when the numbers change. A test
-asserts that every metric key present in any artifact resolves to an entry. Keep the module free of
+asserts that every metric key present in any artifact resolves to an entry. The same module holds
+`METRIC_NAMES`, the human name each finding's `metric` id is headed with in a report; a test asserts
+every id in any artifact has one. Keep the module free of
 heavy imports: `showcase/app.py` imports it, and the showcase must not need torch.
 
 `ctx` carries `{"scenario": ..., "seed": ..., "plot_dir": ...}`. Metrics that write images must

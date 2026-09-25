@@ -10,7 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from render import breadcrumb, placeholder
-from registry import (decision_rule, describe, evaluated_ids, find_model,
+from registry import (dataset_name, decision_rule, describe, evaluated_ids, find_model,
                       load_registry)
 from routing import (current, go_to_compare, go_to_overview, go_to_project,
                      go_to_report)
@@ -36,7 +36,9 @@ def by_evaluation_set(model: dict) -> list[tuple[str | None, list[dict]]]:
 def _identity(model: dict):
     ck = model["checkpoint"]
     if ck["kind"] == "local" and model.get("sha256"):
-        st.caption(f"Checkpoint `{ck['path']}` · content hash `{model['sha256']}`")
+        st.caption(f"Weights file `{ck['path']}` · fingerprint `{model['sha256']}`",
+                   help="The fingerprint is a hash of the file's bytes. Two reports with the same "
+                        "fingerprint were made from exactly the same weights.")
     elif ck["kind"] == "local":
         st.caption(f"Checkpoint `{ck['path']}` · never hashed — no machine this registry was "
                    f"built on had the file, so it is identified by its path only.")
@@ -61,12 +63,10 @@ def _training_record(model: dict):
     st.markdown(describe(prov))
     m = prov.get("manifests") or {}
     bits = []
-    if m.get("train"):
-        bits.append(f"train `{m['train'].rsplit('/', 1)[-1]}`"
-                    + (f" ({prov['train_images']:,})" if prov.get("train_images") else ""))
+    # The training set is already named in the line above; only what it adds.
     if m.get("val"):
-        bits.append(f"validation `{m['val'].rsplit('/', 1)[-1]}`"
-                    + (f" ({prov['val_images']:,})" if prov.get("val_images") else ""))
+        bits.append(f"checkpoint chosen on the {dataset_name(m['val'])}"
+                    + (f" ({prov['val_images']:,} images)" if prov.get("val_images") else ""))
     for k, label in (("epochs", "epochs"), ("image_size", "px"), ("seed", "seed")):
         if prov.get(k) is not None:
             bits.append(f"{prov[k]} {label}" if k != "seed" else f"seed {prov[k]}")
@@ -75,7 +75,7 @@ def _training_record(model: dict):
     if prov.get("note"):
         st.caption(f"Trainer's note: *{prov['note']}*")
     if model.get("trained_by"):
-        st.caption(f"Trained by scenario `{model['trained_by']}`.")
+        st.caption(f"Training recipe: `scenarios/{model['trained_by']}.yaml`.")
 
 
 def _configuration_row(c: dict, done: bool, key: str):
@@ -129,7 +129,8 @@ def page():
                "configurations under the same heading were scored on the same images, so "
                "only those can be compared directly.")
     for manifest, group in by_evaluation_set(model):
-        st.markdown(f"**Scored on** `{(manifest or 'unknown').rsplit('/', 1)[-1]}`")
+        st.markdown(f"**Scored on the {dataset_name(manifest)}**",
+                    help=f"Manifest: `{(manifest or 'unknown').rsplit('/', 1)[-1]}`")
         for c in group:
             _configuration_row(c, c["scenario"] in evaluated, key=f"cfg_{c['scenario']}")
 

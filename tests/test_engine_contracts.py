@@ -811,6 +811,17 @@ def test_every_metric_in_every_artifact_has_an_explanation():
     assert not missing, f"metric keys with no glossary entry: {missing}"
 
 
+def test_every_metric_in_every_artifact_has_a_human_name():
+    """A report heading names its metric in words, never by its identifier."""
+    from verifai.core.glossary import METRIC_NAMES
+    ids = set()
+    for f in (REPO / "showcase" / "artifacts").glob("*/report.json"):
+        ids |= {x["metric"] for x in json.loads(f.read_text(encoding="utf-8"))["findings"]}
+    assert ids, "no reports found — this test would pass vacuously"
+    missing = sorted(ids - set(METRIC_NAMES))
+    assert not missing, f"metric ids with no human name in METRIC_NAMES: {missing}"
+
+
 def test_an_unknown_metric_gets_no_explanation_rather_than_a_guess():
     """A confident explanation of the wrong quantity is worse than none."""
     from verifai.core.glossary import explain_metric
@@ -1083,8 +1094,8 @@ def test_a_lineage_filter_must_disclose_comparable_runs_it_hides():
     source = _showcase_source()
     assert "hidden_comparable" in source, \
         "the comparison view must track runs the lineage filter hides"
-    assert "were scored on these same images" in source, \
-        "and must say so on screen, next to the best column it undermines"
+    assert "scored on these same images" in source, \
+        "and must say so on screen, next to the leading cells it undermines"
 
 
 # --- linear probing and the learning curve -----------------------------------

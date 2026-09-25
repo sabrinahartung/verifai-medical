@@ -61,7 +61,7 @@ def _model_row(model: dict, status: dict, invs: list[str], key: str):
             if status["state"] == "not_evaluated":
                 st.markdown(":gray[Not evaluated]")
             else:
-                st.markdown(f"{status['evaluated']} of {status['total']} evaluated")
+                st.markdown(f"{status['evaluated']} of {status['total']} configurations evaluated")
             tags = ([] if model.get("active") else ["Archived"]) + invs
             if tags:
                 st.caption(" · ".join(tags))
@@ -111,7 +111,12 @@ def page():
     for i, model in enumerate(sorted(shown, key=lambda m: natural_key(m["name"]))):
         _model_row(model, model_status(model, evaluated), invs[model["key"]], key=f"model_{i}")
 
+    # The count covers every model in the project, so it says how many of them
+    # the list above is hiding — otherwise "15 evaluated" under one row reads
+    # as a miscount.
     states = [model_status(m, evaluated)["state"] for m in models]
-    st.caption(" · ".join(f"{states.count(s)} {STATUS_LABEL[s].lower()}"
-                          for s in ("evaluated", "partly", "not_evaluated") if states.count(s))
-               + f" — of {len(models)} models in this project.")
+    hidden = len(models) - len(shown)
+    st.caption("Across all " + f"{len(models)} models in this project: "
+               + " · ".join(f"{states.count(s)} {STATUS_LABEL[s].lower()}"
+                            for s in ("evaluated", "partly", "not_evaluated") if states.count(s))
+               + (f". {hidden} not shown above." if hidden else "."))
