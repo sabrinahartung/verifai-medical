@@ -118,6 +118,11 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
 - `verifai/core/findings.py` — the single data model for the whole pipeline. `Finding`
   (pillar, metric, domain, value, verdict, summary, details, plots) and `Report`. Everything
   downstream, including the app, is written against this shape.
+- `verifai/models/base.py` — the model contract (`ModelAdapter`) and the access ladder
+  `labels < probs < logits < gradients < weights < training_data`. Torch-free on purpose: the
+  showcase reads it. A model declares `access` and `modality`; `ImageClassifier` declares
+  `weights`, raised to `training_data` by the runner when the scenario declares training
+  manifests. A model that declares nothing is taken at `labels`, never trusted upward.
 - `verifai/core/run.py` — `run_scenario(dict) -> Report`. Holds `METRIC_REGISTRY`
   (metric id → `"module:function"`), seeds RNGs, builds model/dataset by importing the
   `loader:` string from the scenario, and calls each metric. Before any metric runs it
@@ -207,9 +212,16 @@ To list a model *before* evaluating it, run `scripts/build_model_registry.py`; i
 not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
-`METRIC_REGISTRY`, give it a version in `verifai/core/suite.py` (a test fails without one) and a
+`METRIC_REGISTRY` as a `MetricSpec` — `pillar`, the `finding` name it returns, `tasks`,
+`modalities` and the lowest access level it `requires` (a test fails on a bare string). The
+runner never calls a metric the model cannot support; it writes an `unavailable` finding under
+that name with the reason, and records every registered metric's status in
+`report.meta["coverage"]` (`not_applicable` · `not_requested` · the verdict). A scenario's
+`task:` defaults to `classification`; a requested metric that does not apply to it is refused
+before anything runs. Then give it a version in `verifai/core/suite.py` (a test fails without one) and a
 reference function in `verifai/metrics/_baseline.py::BY_FINDING` — what its number is compared
-with, and the claim when the interval clears it; the report's first section lists only those. List its
+with, and the claim when the interval clears it; only those are marked established on the
+report's pillar cards. List its
 id under `metrics:` in the scenario. **Bump that version whenever what the metric reports
 changes** — a new sample, a field, a fixed bug, a verdict's wording — then run
 `scripts/run_active.py`. Each report records the versions and the checkpoint hash that produced it,

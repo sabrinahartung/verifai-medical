@@ -97,7 +97,7 @@ detect and would otherwise produce a full report of flattering numbers.
 | Module | Owns | Must not |
 |---|---|---|
 | `core/findings.py` | `Finding`, `Report`, the pillar, sub-aspect and verdict vocabularies | know about any specific metric |
-| `core/run.py` | `METRIC_REGISTRY`, seeding, the integrity guard | import a metric directly |
+| `core/run.py` | `METRIC_REGISTRY`, seeding, the integrity guard, the capability gate | import a metric directly |
 | `core/integrity.py` | `audit_split()` — the one leakage implementation | be duplicated anywhere |
 | `models/image.py` | `ImageClassifier`, device resolution, Grad-CAM layer lookup | hardcode a class list |
 | `datasets/loaders.py` | manifest → `ImageDataset`, extra columns → `ImageSample.meta` | import from `verifai.models` |
@@ -119,7 +119,7 @@ module directly, so a scenario picks its own subset and a new metric is one dict
 ```mermaid
 flowchart LR
     Y["scenario.yaml<br/>metrics:<br/>- integrity.split_leakage<br/>- performance.classification"]
-    REG{{"METRIC_REGISTRY<br/><i>id → 'module:function'</i>"}}
+    REG{{"METRIC_REGISTRY<br/><i>id → MetricSpec: target, tasks,<br/>modalities, requires</i>"}}
     L["_load()<br/><i>importlib</i>"]
     FN["run(model, dataset, ctx)"]
     Y --> REG --> L --> FN

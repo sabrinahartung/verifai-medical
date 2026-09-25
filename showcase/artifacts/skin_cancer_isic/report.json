@@ -27768,7 +27768,60 @@
     "checkpoint": {
       "path": "artifacts_training/skin_cancer_isic.pt",
       "sha256": "12fbb0335ce803a5"
-    }
+    },
+    "task": "classification",
+    "modality": "pixels",
+    "access": "training_data",
+    "coverage": [
+      {
+        "metric": "integrity.split_leakage",
+        "pillar": "integrity",
+        "finding": "split_leakage",
+        "requires": "labels",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "performance.classification",
+        "pillar": "performance",
+        "finding": "top1_accuracy",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "explainability.gradcam",
+        "pillar": "explainability",
+        "finding": "gradcam_faithfulness",
+        "requires": "gradients",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "robustness.corruption",
+        "pillar": "robustness",
+        "finding": "corruption_stability",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "fairness.skin_tone",
+        "pillar": "fairness",
+        "finding": "skin_tone_ita",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
+        "metric": "privacy.mia",
+        "pillar": "privacy",
+        "finding": "membership_inference_auc",
+        "requires": "training_data",
+        "status": "measured",
+        "reachable": true
+      }
+    ]
   },
-  "created_at": "2026-09-25T10:42:30.487428+00:00"
+  "created_at": "2026-09-25T11:45:18.802391+00:00"
 }

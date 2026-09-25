@@ -4,7 +4,7 @@ from __future__ import annotations
 import streamlit as st
 import plotly.graph_objects as go
 
-from catalog import (_blocked_reason, comparability_key, direction_for,
+from catalog import (ACCESS_LABEL, _blocked_reason, comparability_key, direction_for,
                      best_run, dominated_by, group_snapshots, run_label)
 from registry import dataset_name, find_model, load_registry
 from render import GLOSSARY, breadcrumb, explain_metric, placeholder, render_metric_legend
@@ -142,7 +142,7 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                 f"the strongest configuration you have. **Show all runs**, above, puts "
                 f"them back.", icon="🔎")
 
-        placeholder("access_statement", compact=True)
+        _access_statement(runs)
 
         usable = [r for r in runs if _blocked_reason(r) is None]
         blocked = [(r, _blocked_reason(r)) for r in runs if _blocked_reason(r) is not None]
@@ -289,6 +289,27 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
         )
 
 
+def _access_statement(runs: list[dict]):
+    """Say when runs in one group could reach different amounts of their models.
+
+    A run that could only query its model reports gradient-based metrics as
+    unavailable, so its cells in those columns are empty rather than low — the
+    comparison on those columns is between the runs that could be opened only.
+    """
+    levels = {r.get("access") for r in runs if r.get("access")}
+    if len(levels) < 2:
+        return
+    from verifai.models.base import access_rank
+    lowest = min(levels, key=access_rank)
+    weaker = sorted({run_label(r) for r in runs if r.get("access") == lowest})
+    st.info(f"**Not every run here could reach its whole model.** "
+            f"{', '.join(f'*{w}*' for w in weaker)} could reach only its "
+            f"{ACCESS_LABEL.get(lowest, lowest)}. Metrics that need more are unavailable for "
+            f"{'it' if len(weaker) == 1 else 'them'}, so those columns compare the other runs "
+            f"only — an empty cell there means *could not be measured*, not a low value.",
+            icon="🔓")
+
+
 def page():
     """Route entry: every recorded run, grouped by the images it was scored on."""
     from catalog import load_catalog, load_snapshots
@@ -336,6 +357,11 @@ def comparison_table(runs: list[dict], keys: list[str], dirs: dict[str, str | No
         # An archived run is measured with the metrics of its day; shown beside
         # an active one it says so, rather than passing for a current result.
         data["Status"] = [statuses.get(r.get("scenario"), "—").capitalize() for r in runs]
+    if len({r.get("access") for r in runs if r.get("access")}) > 1:
+        # Only when the runs differ: a column saying the same thing on every row
+        # is noise. Runs recorded before access was declared show a dash — they
+        # were local checkpoints, but the table says only what the record says.
+        data["Access"] = [ACCESS_LABEL.get(r.get("access"), "—") for r in runs]
     if dated:
         data["Recorded"] = [(r.get("created_at") or "")[:10] for r in runs]
     for k in keys:
@@ -363,6 +389,9 @@ def style_leaders(table, leaders: dict[str, str | None]):
 
 def table_columns(keys: list[str], names: dict[str, str], dirs: dict[str, str | None]) -> dict:
     cols = {"Run": st.column_config.TextColumn("Run", pinned=True),
+            "Access": st.column_config.TextColumn(
+                "Access", help="How much of the model the run could reach. A run that could "
+                               "only query its model cannot run gradient-based metrics."),
             "Status": st.column_config.TextColumn(
                 "Status", help="Active: re-run as the metrics change. Archived: the record of an "
                                "experiment, evaluated with the metrics of its day."),

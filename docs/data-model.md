@@ -94,10 +94,12 @@ inline — nothing here is aspirational unless it is labelled.
 
 `Report.meta` records `seed`, `sample_size` (what was actually evaluated, not what the YAML
 declared) and `device` — the last because results are bit-identical *per device*, not across
-devices. It will also record the **access level** the run had over the model
-(`labels` … `training_data`), because that decides which metrics could exist at all and is what
-lets the comparison view level two runs down to the weakest access they share rather than
-reading a missing row as a worse model.
+devices. Since Phase A it also records the `task`, the `modality` and the **access level** the
+run had over the model (`labels` … `training_data`), because that decides which metrics could
+exist at all, and `coverage`: one row per registered metric with its status —
+`not_applicable`, `not_requested`, or the verdict it came back with. That is what lets the report
+tell *not asked* from *could not*, and the comparison view say when a missing cell means *could
+not be measured* rather than a worse model.
 
 ## The `explain` contract
 
