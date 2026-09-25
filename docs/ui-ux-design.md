@@ -333,7 +333,7 @@ them as equals:
 |---|---|---|
 | 1 | Clean split — none of 1,493 test images shares a lesion with the 23,278 trained on | definitive |
 | 1 | **33-point accuracy gap** — dark 0.60 (n=60) against medium 0.93 (n=108) | *"their 95% intervals do not overlap"* |
-| 1 | **Membership is distinguishable** — MIA AUC 0.5388 [0.51–0.57] | *"the interval lies entirely above 0.5 (chance)"* |
+| 1 | **Membership is distinguishable** — MIA AUC 0.539 [0.51–0.57] | *"the interval lies entirely above 0.5 (chance)"* |
 | 2 | top-1 0.806 [0.79–0.83] · stability 76% · faithfulness 0.3 | real numbers with no reference to clear |
 
 The two findings currently buried four screens down rise to the top — **and nobody had to decide

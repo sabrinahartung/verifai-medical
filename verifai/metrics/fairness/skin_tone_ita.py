@@ -122,13 +122,14 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             "y_lo": [ci[b][0] for b in populated_bins],
             "y_hi": [ci[b][1] for b in populated_bins],
             "x_title": "Estimated skin type", "y_title": "Top-1 accuracy",
-            "hover": [f"{acc[b]:.3f} [{ci[b][0]:.2f}-{ci[b][1]:.2f}] on "
-                      f"{per_bin_total[b]} images" for b in populated_bins],
+            "hover": [f"{acc[b]:.3f} [{ci[b][0]:.2f}–{ci[b][1]:.2f}] on "
+                      f"{per_bin_total[b]:,} images" for b in populated_bins],
         }
         summary = (
-            f"Subgroup accuracy by ITA skin type; largest gap {gap*100:.0f} points "
-            f"between {worst} ({acc[worst]:.2f}, n={per_bin_total[worst]}) and {best} "
-            f"({acc[best]:.2f}, n={per_bin_total[best]}), n={n}. "
+            f"Accuracy by ITA-estimated skin type over {n:,} images; the largest gap is "
+            f"{gap*100:.0f} points, between {worst} ({acc[worst]:.2f} on "
+            f"{per_bin_total[worst]:,} images) and {best} ({acc[best]:.2f} on "
+            f"{per_bin_total[best]:,}). "
             + ("Their 95% intervals do not overlap, so the difference is supported."
                if separated else
                "Their 95% intervals overlap, so this gap is not yet distinguishable from "

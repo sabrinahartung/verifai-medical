@@ -32,6 +32,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from verifai.metrics._common import class_name
+
 
 def _reference(kind: str, value: Any, basis: str, cleared: bool,
                claim: str | None = None, gap: float | None = None) -> dict:
@@ -67,9 +69,10 @@ def classification(value: dict) -> dict | None:
     side = _versus(value.get("accuracy_ci"), majority)
     lo, hi = value.get("accuracy_ci") or (None, None)
     claim = side and (f"Accuracy {acc:.3f} [{lo:.2f}–{hi:.2f}] is {side} what always answering "
-                      f"the most common class scores ({majority_class}, {majority:.3f}).")
+                      f"the most common class scores ({class_name(majority_class)}, "
+                      f"{majority:.3f}).")
     return _reference("chance", majority,
-                      f"always answering the most common class, {majority_class} "
+                      f"always answering the most common class, {class_name(majority_class)} "
                       f"({count:,} of {n:,})", bool(side), claim, gap=round(acc - majority, 4))
 
 

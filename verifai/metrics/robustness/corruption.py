@@ -18,7 +18,7 @@ import numpy as np
 
 from verifai.core.findings import Finding
 from verifai.metrics._common import CORRUPTIONS
-from verifai.metrics._stats import fmt, wilson
+from verifai.metrics._stats import fmt, mean_ci, wilson
 
 
 def run(model, dataset, ctx: dict[str, Any]) -> Finding:
@@ -28,6 +28,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     names = list(CORRUPTIONS)
     stable = {c: 0 for c in names}
     conf_after = {c: [] for c in names}
+    per_image: list[float] = []      # share of corruptions each image survived
     n = 0
 
     for s in dataset:
@@ -35,16 +36,23 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         clean = model.predict_probs(img)
         clean_top = model.decide(clean, getattr(s, "meta", None))
         n += 1
+        kept = 0
         for c in names:
             corrupted = CORRUPTIONS[c](img, rng=rng) if c == "noise" else CORRUPTIONS[c](img)
             probs = model.predict_probs(corrupted)
             if model.decide(probs, getattr(s, "meta", None)) == clean_top:
                 stable[c] += 1
+                kept += 1
             conf_after[c].append(probs[clean_top])
+        per_image.append(kept / len(names))
 
     stability = {c: round(stable[c] / n, 3) for c in names} if n else {}
     stability_ci = {c: wilson(stable[c], n) for c in names} if n else {}
     mean_stability = round(float(np.mean(list(stability.values()))), 3) if stability else None
+    # The mean over corruptions equals the mean over images of the share each
+    # survived, so the interval is taken over images — the unit that varies.
+    mean_stability_ci = mean_ci(per_image)
+    weakest = min(names, key=lambda c: stability[c]) if stability else None
 
     # No stability threshold. What counts as robust enough depends on the
     # deployment, and this metric cannot see it — a model that is confidently and
@@ -56,11 +64,15 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     return Finding(
         pillar="robustness", metric="corruption_stability", domain="image",
         value={"prediction_stability": stability, "stability_ci": stability_ci,
-               "mean_stability": mean_stability, "n": n},
+               "mean_stability": mean_stability, "mean_stability_ci": mean_stability_ci,
+               "n": n},
         verdict=verdict,
-        summary=(f"The prediction stays stable under corruptions for {mean_stability*100:.0f}% "
-                 f"of the images on average.{note}" if mean_stability is not None
-                 else "No images evaluated."),
+        summary=(f"The top-1 prediction stays the same under a corruption in "
+                 f"{fmt(mean_stability, mean_stability_ci)} of cases on average, over "
+                 f"{n:,} images and {len(names)} corruptions ({', '.join(names)}). "
+                 f"Least stable under {weakest}: "
+                 f"{fmt(stability[weakest], stability_ci[weakest])}.{note}"
+                 if mean_stability is not None else "No images evaluated."),
         details={
             "better": {"mean_stability": "higher", "prediction_stability.*": "higher"},
             "explain": {
@@ -83,7 +95,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
                 "y_lo": [stability_ci[c][0] for c in names],
                 "y_hi": [stability_ci[c][1] for c in names],
                 "hover": [f"{stability[c]:.3f} "
-                          f"[{stability_ci[c][0]:.2f}-{stability_ci[c][1]:.2f}] of {n}"
+                          f"[{stability_ci[c][0]:.2f}–{stability_ci[c][1]:.2f}] of {n:,}"
                           for c in names],
                 "x_title": "Corruption", "y_title": "Share of unchanged top-1",
             },
