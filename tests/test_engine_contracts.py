@@ -1999,6 +1999,12 @@ def test_each_pillar_card_says_what_it_was_compared_with_and_never_grades():
         for x in (perf, robust, thin):
             assert word not in reference_line(x, hits, "measured").lower().split()
 
+    provisional = reference_line(perf, hits, "unavailable")
+    assert "on a split that could not be checked" in provisional, \
+        "an unverified split qualifies every claim that could include memory"
+    integ = f("integrity", "measured", True)
+    assert "could not be checked" not in reference_line(integ, [integ], "unavailable")
+
     source = (REPO / "showcase" / "views" / "report.py").read_text(encoding="utf-8")
     assert "What this evaluation established" not in source, \
         "the separate strip is merged into the pillar cards; it must not come back as a second list"
@@ -2199,3 +2205,101 @@ def test_the_showcase_reads_the_access_ladder_without_torch():
     imported = {n.names[0].name.split(".")[0] if isinstance(n, ast.Import) else (n.module or "")
                 for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))}
     assert not imported & {"torch", "torchvision", "numpy", "PIL"}
+
+
+# --- Phase B: what can and cannot be verified about someone else's model -------
+def test_corpus_ancestry_is_related_in_both_directions_and_never_guessed():
+    from verifai.core.integrity import load_corpora, shared_corpora
+    c = load_corpora()
+    assert shared_corpora(["isic2019"], "ham10000", c) == ["isic2019"], "ISIC 2019 contains HAM10000"
+    assert shared_corpora(["ham10000"], "isic2019", c) == ["ham10000"], "and the other way round"
+    assert shared_corpora(["isic2019"], "derm7pt", c) == []
+    for cid, entry in c.items():
+        assert entry.get("refs"), f"{cid}: every archive in the table cites its source"
+
+
+def test_label_space_names_every_relation():
+    from verifai.core.integrity import label_space
+    assert label_space(["a", "b"], ["a", "b"])["relation"] == "identical"
+    ds = label_space(["a", "b", "c"], ["a", "b"])
+    assert ds["relation"] == "dataset_subset" and ds["unscored"] == ["c"]
+    ms = label_space(["a"], ["a", "b"])
+    assert ms["relation"] == "model_subset" and ms["unpredictable"] == ["b"]
+    assert label_space(["a", "b"], ["b", "c"])["relation"] == "partial"
+    assert label_space(["a"], ["x"])["relation"] == "disjoint"
+
+
+def test_a_disjoint_label_space_is_refused_unless_mapped(monkeypatch):
+    """A mapping between vocabularies is a clinical claim: declared, never inferred."""
+    from verifai.core import run as R
+    from types import SimpleNamespace
+
+    class Data(_TinyDataset):
+        def __init__(self):
+            self.classes = ["x", "y"]
+            self.samples = [SimpleNamespace(label="x"), SimpleNamespace(label="y")]
+    monkeypatch.setattr(R, "_build_dataset", lambda spec: Data())
+    monkeypatch.setattr(R, "_build_model", lambda spec: _ProbsOnlyModel())
+    base = {"name": "ls", "domain": "image", "model": {}, "metrics": []}
+    with pytest.raises(ValueError, match="never guessed"):
+        R.run_scenario({**base, "dataset": {}})
+    report = R.run_scenario({**base, "dataset": {"label_map": {"x": "a", "y": "b"}}})
+    assert report.meta["access"] == "probs", "a declared map lets the run proceed"
+
+
+def _integrity_ctx(tmp_path, **model):
+    manifest = _manifest(tmp_path, [{"filename": "a.jpg", "label": "a", "image_id": "i1",
+                                     "lesion_id": "l1"}])
+    ds = SimpleDS(manifest)
+    return ds, {"scenario": {"domain": "image", "model": model,
+                             "dataset": {"corpus": "ham10000"}}}
+
+
+class SimpleDS:
+    def __init__(self, manifest):
+        self.meta = {"manifest": str(manifest)}
+        self.classes = ["a"]
+
+    def __len__(self):
+        return 1
+
+
+def test_a_downloaded_model_is_never_reported_as_having_a_clean_split(tmp_path):
+    from verifai.metrics.integrity import corpus_ancestry, provenance
+    ds, ctx = _integrity_ctx(tmp_path, repo_id="someone/model",
+                             trained_on={"corpora": ["ham10000"], "basis": "inferred"})
+    p = provenance.run(None, ds, ctx)
+    assert p.verdict == "unavailable" and "not the same as a clean split" in p.summary
+    assert "revision unpinned" in p.summary
+    c = corpus_ancestry.run(None, ds, ctx)
+    assert c.verdict == "insufficient", "a shared archive with no row check cannot be ruled out"
+    assert "cannot be ruled out" in c.summary
+
+
+def test_an_undeclared_training_corpus_is_unknown_not_independent(tmp_path):
+    from verifai.metrics.integrity import corpus_ancestry
+    (tmp_path / "one").mkdir(); (tmp_path / "two").mkdir()
+    ds, ctx = _integrity_ctx(tmp_path / "one", repo_id="someone/model")
+    assert corpus_ancestry.run(None, ds, ctx).verdict == "unavailable"
+    ds, ctx = _integrity_ctx(tmp_path / "two", repo_id="someone/model",
+                             trained_on=["an_unlisted_archive"])
+    f = corpus_ancestry.run(None, ds, ctx)
+    assert f.verdict == "unavailable" and "never assumed to be separate" in f.summary
+
+
+def test_the_preprocessing_fingerprint_changes_with_the_preprocessing():
+    torch = pytest.importorskip("torch")
+    from verifai.models.image import ImageClassifier
+    a = ImageClassifier(torch.nn.Linear(1, 2), ["a", "b"])
+    b = ImageClassifier(torch.nn.Linear(1, 2), ["a", "b"],
+                        preprocess_spec={"resize": [256, 256], "mean": [0.5] * 3, "std": [0.5] * 3})
+    assert a.metadata["preprocessing_sha256"] != b.metadata["preprocessing_sha256"]
+    assert a.metadata["preprocessing"]["resize"] == [224, 224]
+
+
+def test_a_scenario_can_say_why_it_left_an_applicable_metric_out():
+    from verifai.core.run import coverage
+    rows = coverage("classification", "pixels", "training_data", [], {},
+                    {"explainability.gradcam": "licence forbids derived images"})
+    cam = next(r for r in rows if r["metric"] == "explainability.gradcam")
+    assert cam["status"] == "not_requested" and cam["reason"] == "licence forbids derived images"

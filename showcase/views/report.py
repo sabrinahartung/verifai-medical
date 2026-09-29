@@ -99,13 +99,40 @@ def _identity(card: dict, report: dict, model: dict | None, config: dict | None)
         st.markdown(f"**Model:** `{report['model_id']}` · **Dataset:** `{report['dataset_id']}`"
                     + (f" ({n:,} images)" if n else ""))
     if meta.get("access"):
-        st.caption(f"Task: {meta.get('task', 'classification')} · the evaluation could reach "
-                   f"the model's **{ACCESS_LABEL.get(meta['access'], meta['access'])}**",
-                   help="How much of the model an evaluation can reach decides which metrics "
-                        "can run at all. A model that can only be queried has no gradients, so "
-                        "Grad-CAM cannot run on it — and says so rather than disappearing.")
+        _provenance_strip(meta)
     if card.get("hf_url"):
         st.markdown(f"[🤗 Model on Hugging Face]({card['hf_url']})")
+
+
+def weights_line(checkpoint: dict) -> str | None:
+    """Which weights produced this report, in the form a reader can look up."""
+    if checkpoint.get("sha256"):
+        return f"weights `{checkpoint['path'].rsplit('/', 1)[-1]}` · fingerprint `{checkpoint['sha256']}`"
+    if checkpoint.get("repo_id"):
+        rev = checkpoint.get("revision")
+        return (f"weights from the Hub, `{checkpoint['repo_id']}`"
+                + (f" at `{rev}`" if rev else " — revision **unpinned**"))
+    return None
+
+
+def _provenance_strip(meta: dict):
+    """One line on what was evaluated and how much of it the evaluation could reach."""
+    bits = [f"Task: {meta.get('task', 'classification')}",
+            f"the evaluation could reach the model's "
+            f"**{ACCESS_LABEL.get(meta['access'], meta['access'])}**"]
+    w = weights_line(meta.get("checkpoint") or {})
+    if w:
+        bits.append(w)
+    pre = (meta.get("model") or {}).get("preprocessing_sha256")
+    if pre:
+        bits.append(f"preprocessing `{pre}`")
+    st.caption(" · ".join(bits),
+               help="How much of the model an evaluation can reach decides which metrics can "
+                    "run at all: a model that can only be queried has no gradients, so Grad-CAM "
+                    "cannot run on it — and says so rather than disappearing. An unpinned Hub "
+                    "revision can change under the same name. The preprocessing fingerprint is "
+                    "a hash of how images were resized and normalised; a different one means "
+                    "the model was not scored the way it was trained.")
 
 
 def established(findings: list[dict], integrity: str) -> list[dict] | None:
@@ -153,7 +180,13 @@ def reference_line(f: dict, hits: list[dict] | None, integrity: str) -> str | No
         # same thing twice) is replaced by what it was compared with.
         repeats = b["claim"].rstrip(".").lower() in (f.get("summary") or "").lower()
         said = b["basis"] if repeats else b["claim"]
-        return f"✓ **Established {against}** — {said}"
+        # On a split nobody could check, the claim is still true of the
+        # measurement, but the measurement may include memory. Mark and caveat
+        # are one phrase, so they cannot be read apart. Integrity's own checks
+        # do not depend on the split and keep a plain mark.
+        caveat = ("" if integrity == "measured" or f.get("pillar") == "integrity"
+                  else ", on a split that could not be checked")
+        return f"✓ **Established {against}{caveat}** — {said}"
     if f.get("pillar") == "integrity":
         return None
     if normalise_verdict(f.get("verdict"), f.get("pillar")) != "measured":
@@ -202,7 +235,9 @@ def _coverage_map(meta: dict):
         missing = [r for r in applicable if r["status"] not in ("measured",)]
         for r in missing:
             name = metric_name(r["finding"])
-            if r["status"] == "not_requested":
+            if r["status"] == "not_requested" and r.get("reason"):
+                why = f"not requested — {r['reason']}"
+            elif r["status"] == "not_requested":
                 why = "not requested in this run" + (
                     "" if r.get("reachable", True) else
                     f"; it could not have run anyway, as it needs {r['requires']}")
@@ -218,7 +253,13 @@ def _empty_pillar(p: str, rows: list[dict] | None) -> str:
         return ":gray[Not evaluated in this run.]"
     if all(r["status"] == "not_applicable" for r in mine):
         return f":gray[{COVERAGE['not_applicable'][0]} Not applicable to this task.]"
-    names = ", ".join(metric_name(r["finding"]) for r in mine if r["status"] == "not_requested")
+    skipped = [r for r in mine if r["status"] == "not_requested"]
+    reasons = [r["reason"] for r in skipped if r.get("reason")]
+    if reasons:
+        # The scenario said why, and that is the sentence the reader needs.
+        return (f":gray[{COVERAGE['not_requested'][0]} Not requested: "
+                + "; ".join(reasons) + ".]")
+    names = ", ".join(metric_name(r["finding"]) for r in skipped)
     return (f":gray[{COVERAGE['not_requested'][0]} Not requested in this run"
             + (f", though {names} would apply." if names else ".") + "]")
 
@@ -286,12 +327,11 @@ def dashboard(card: dict):
     if card.get("sample"):
         st.warning("This view shows SAMPLE data — placeholder numbers, not an evaluation.")
     placeholder("export_card", compact=True)
-    placeholder("provenance_strip")
+    placeholder("intended_use", compact=True)
 
     findings = report["findings"]
     state, decided_by = integrity_state(findings)
     _integrity_banner(state, decided_by)
-    placeholder("integrity_gate")
 
     n = (report.get("meta") or {}).get("sample_size")
     if n:

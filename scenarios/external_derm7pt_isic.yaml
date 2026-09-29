@@ -34,6 +34,7 @@ dataset:
   loader: verifai.datasets.loaders:load_image_manifest
   manifest: data/manifests/derm7pt_test.csv
   source: Derm7pt (Kawahara et al. 2019) — external
+  corpus: derm7pt
 domain: image
 integrity:
   enforce: true
@@ -43,6 +44,9 @@ integrity:
   - data/manifests/isic_val.csv
 metrics:
 - integrity.split_leakage
+- integrity.provenance
+- integrity.corpus_ancestry
+- integrity.label_space
 - performance.classification
 - robustness.corruption
 - fairness.skin_tone
@@ -61,7 +65,17 @@ model:
   id: external-derm7pt-isic
   loader: verifai.models.image:load
   weights_path: artifacts_training/skin_cancer_isic.pt
+  trained_on: [isic2019]
 name: external_derm7pt_isic
+# Why the two applicable metrics above are not asked for; shown in the report's
+# coverage instead of a bare "not requested".
+not_requested:
+  explainability.gradcam: >-
+    Derm7pt's licence forbids redistributing its images, and a Grad-CAM overlay is a
+    derived image, so none is rendered
+  privacy.mia: >-
+    the membership attack asks about this model's own training members, a different
+    question from the one this external test asks
 label: "ISIC corpus — as deployed"
 project: "Skin lesion classification"
 status: active

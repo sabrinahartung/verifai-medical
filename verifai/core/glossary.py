@@ -364,6 +364,32 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
         "reading": "A leakage check is only as strong as the training manifest it "
                    "compares to. Unlisted training data cannot be detected.",
     }),
+    ("integrity.training_manifests", {
+        "term": "Training manifests on record",
+        "measures": "How many lists of training images were found for this model. Without at "
+                    "least one, nothing can check whether a test image was seen in training.",
+        "ideal": "Every manifest the model was trained on — so the split can be checked image "
+                 "by image.",
+        "reading": "Zero is the ordinary case for a downloaded model: its author published the "
+                   "weights, not the list of images. It means the split cannot be checked, "
+                   "not that it is clean.",
+    }),
+    ("integrity.n_model_classes", {
+        "term": "Classes the model can output",
+        "measures": "How many classes the model can answer with — the size of its fixed "
+                    "answer list, set when it was trained.",
+        "ideal": "Exactly the classes the test images are labelled with — no more, no fewer.",
+        "reading": "More than the data holds means some of the model's classes are never "
+                   "tested; fewer means some images can never be answered correctly.",
+    }),
+    ("integrity.n_dataset_classes", {
+        "term": "Classes in the test data",
+        "measures": "How many distinct labels the test images carry.",
+        "ideal": "Exactly the classes the model can output — no more, no fewer.",
+        "reading": "Read beside the model's count: an average over classes, such as balanced "
+                   "accuracy, is taken over the classes both have, so two runs with different "
+                   "counts are not averaging the same thing.",
+    }),
     ("integrity.affected_rows", {
         "term": "Affected test cases",
         "measures": "How many test cases are implicated by the overlap found.",
@@ -441,6 +467,9 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
 # numbers inside it.
 METRIC_NAMES: dict[str, str] = {
     "split_leakage": "Overlap between test and training data",
+    "provenance": "Where the model came from",
+    "corpus_ancestry": "Overlap between the archives",
+    "label_space": "Classes the model and the data share",
     "top1_accuracy": "Classification accuracy",
     "skin_tone_ita": "Accuracy across skin tones",
     "corruption_stability": "Stability under image corruption",

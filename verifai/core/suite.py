@@ -26,6 +26,9 @@ from __future__ import annotations
 # gains an interval on its mean and states n.
 METRIC_VERSIONS: dict[str, int] = {
     "integrity.split_leakage": 2,
+    "integrity.provenance": 1,
+    "integrity.corpus_ancestry": 1,
+    "integrity.label_space": 1,
     "performance.classification": 3,
     "explainability.gradcam": 3,        # 2: every test image, against a random control
     "robustness.corruption": 3,         # 3: an interval on the mean, and n
