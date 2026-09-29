@@ -55,7 +55,7 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 
 ## Where things stand (2026-09-25)
 
-**24 artifact folders — 15 models in 24 configurations, 3 of them active — 151 contract
+**25 artifact folders — 15 models in 25 configurations, 4 of them active — 151 contract
 tests, three evaluation sets, nine metrics.** [Current results](results.md) has the
 measurements; this is what they add up to. Released: [v0.2.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.2.0)
 (M2). Awaiting release 0.3.0 on `dev`: M3, M4 and M5 Phase B. The four findings
@@ -89,6 +89,10 @@ on the HAM10000 test set, where the ISIC model with a verified split scores 0.80
 in the evaluation can say how much of that gap is skill and how much is memory, because its
 training images are only inferred and cannot be compared row by row. Its report says so, and
 reads as an upper bound ([Experiment 8](results.md#experiment-8-a-model-this-project-did-not-train)).
+On Derm7pt, which shares no archive with what it trained on, its lead over the project's own
+HAM10000 model — same archive, same architecture, verified split — shrinks from 7.1 points with
+separated intervals to 3.7 with overlapping ones, and on melanoma it is gone. That is what memory
+would look like; it does not prove it.
 
 ### The trap in this project's own numbers
 
@@ -128,11 +132,9 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | **M5** | **Someone else's model** — Phases B, C, D | **B ✅ 2026-09-25** (#12, released with 0.3.0): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C**: the Hub resolver and the adapter catalogue; the fingerprint compared against a checkpoint's own `preprocessor_config.json`. **D**: `verifai resolve / preflight / run`, and the per-metric `cost` moved here from M4 | the integrity-gate placeholder is filled; the studio and preflight placeholders wait for C and D. The first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible |
 | M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
-**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). The item
-that sat right after M2 — Grad-CAM's sample — is done; none of the rest is scheduled yet.
-Experiment 8 adds one worth doing: score the original checkpoint on **Derm7pt**, which it cannot
-have seen. Beside the ISIC model's Derm7pt result it separates at least part of the 0.867 against
-0.806 gap into skill and memory — the one comparison on these data that no leakage can inflate.
+**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). Two
+items are done — Grad-CAM's sample (2026-09-25), and the original checkpoint scored on Derm7pt
+(2026-09-29), which Experiment 8 asked for; none of the rest is scheduled yet.
 
 **Under consideration, not scheduled (raised 2026-09-25):** an additional pillar from the
 earlier VERIFAI paper, still being worked out, with **human-in-the-loop** functionality as part
@@ -246,9 +248,10 @@ Unfinished, and still ranked by what it would establish:
       the first seven filenames of a sorted manifest, six of them nevi. It now scores every test
       image against a random-region control [[42]](references.md#ref-42): on the ISIC model the
       highlight costs 0.192 [0.178–0.205] more confidence than a random region of the same size.
-- [ ] **Score the original checkpoint on Derm7pt.** Experiment 8 cannot say how much of its
-      0.867 on HAM10000 is memory. On Derm7pt, which it cannot have seen, it can be set beside the
-      ISIC model's external result with no leakage in either number.
+- [x] **Score the original checkpoint on Derm7pt** — done 2026-09-29 (active configuration
+      `external_derm7pt_original`). Against the project's own HAM10000 model, the 7.1-point
+      internal lead (separated intervals) becomes 3.7 points on Derm7pt (overlapping), and the
+      melanoma J lead reverses — [Experiment 8](results.md#on-derm7pt-where-neither-model-trained).
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97

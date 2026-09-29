@@ -211,9 +211,10 @@ it is presentation: it never widens what may be compared.
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
 experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
-day. Archived is not *wrong*; it lacks what was added since. Today three are active — the ISIC
-model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint on the
-HAM10000 test set, the project's one model it did not train — and twenty-one archived. Re-running
+day. Archived is not *wrong*; it lacks what was added since. Today four are active — the ISIC
+model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint, the
+project's one model it did not train, on the HAM10000 test set and on Derm7pt — and twenty-one
+archived. Re-running
 the ISIC two reproduced all 274 published values exactly, which is what makes freezing the rest
 safe. A scenario may say why it leaves an applicable metric out, in `not_requested:
 {metric id: reason}`; the report shows the reason instead of a bare "not requested".

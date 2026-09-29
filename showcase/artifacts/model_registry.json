@@ -494,6 +494,23 @@
       "key": "resnet18_ham10000_classweights",
       "configurations": [
         {
+          "scenario": "external_derm7pt_original",
+          "label": "Original checkpoint — Derm7pt",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
           "scenario": "original_checkpoint_ham10000",
           "label": "Original checkpoint — HAM10000 test",
           "status": "active",
@@ -531,7 +548,7 @@
       ],
       "project": "Skin lesion classification",
       "trained_by": null,
-      "name": "Original checkpoint — HAM10000 test",
+      "name": "Original checkpoint — Derm7pt",
       "provenance": null,
       "identified": true,
       "active": true
