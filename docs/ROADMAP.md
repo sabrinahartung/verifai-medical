@@ -55,10 +55,10 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 
 ## Where things stand (2026-09-25)
 
-**24 artifact folders — 15 models in 24 configurations, 3 of them active — 151 contract
+**25 artifact folders — 15 models in 25 configurations, 4 of them active — 151 contract
 tests, three evaluation sets, nine metrics.** [Current results](results.md) has the
-measurements; this is what they add up to. Released: [v0.2.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.2.0)
-(M2). Awaiting release 0.3.0 on `dev`: M3, M4 and M5 Phase B. The four findings
+measurements; this is what they add up to. Released: [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0)
+(M3, M4 and M5 Phase B). Next: M5 Phases C and D. The four findings
 below have not moved since 2026-09-16; the fifth is new with Phase B. What else changed is
 recorded in [What has been built](#what-has-been-built).
 
@@ -89,6 +89,10 @@ on the HAM10000 test set, where the ISIC model with a verified split scores 0.80
 in the evaluation can say how much of that gap is skill and how much is memory, because its
 training images are only inferred and cannot be compared row by row. Its report says so, and
 reads as an upper bound ([Experiment 8](results.md#experiment-8-a-model-this-project-did-not-train)).
+On Derm7pt, which shares no archive with what it trained on, its lead over the project's own
+HAM10000 model — same archive, same architecture, verified split — shrinks from 7.1 points with
+separated intervals to 3.7 with overlapping ones, and on melanoma it is gone. That is what memory
+would look like; it does not prove it.
 
 ### The trap in this project's own numbers
 
@@ -124,15 +128,13 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **M2 — The findings strip** · 2026-09-25 | Every finding carries `details["baseline"]` — an ideal, chance, or a control measured in the same run — and the report opens with what cleared it, in pillar order. Grad-CAM scores every test image against a random-region control. Scenarios are **active** (re-run when a metric changes, `scripts/run_active.py`) or **archived** (the record, frozen); metrics carry versions and reports record them and their checkpoint, so a report left behind says so | a backfill of all 23 reports was planned; archiving made it unnecessary — only the two active configurations were re-run, and they reproduced every other published value exactly |
 | ✅ | **M3 — A usability pass** · 2026-09-25 | The report's two pillar lists became one card per pillar: status, result, and what it was compared with — **established** where the interval clears the reference, otherwise why nothing is claimed. Metrics are headed by name, classes and datasets read as words, counts say what they count, and charts no longer overlap their own labels. Metric summaries were rewritten for a reader (version 3; fairness 4) and a test now holds every active one to an image count and an interval; robustness gained the interval it lacked | the walkthrough found eleven problems and all were fixed; re-running the two active configurations reproduced every value exactly, so only wording changed. Left as is: Streamlit prints `None` for a missing value in the comparison table |
 | ✅ | **M4 — Phase A**, the two contracts and capability gating · 2026-09-25 | `verifai/models/base.py`: the model contract and the access ladder. Every registry entry is a `MetricSpec` declaring its pillar, tasks, modalities and the access it needs; the runner never calls a metric the model cannot support and writes an `unavailable` finding with the reason instead. Scenarios declare `task:`. Each report records its task, access and a coverage row per registered metric, and the showcase reads it: a coverage map at the top of the report, *not applicable* and *not requested* told apart from *not evaluated*, and an access column and statement in the comparison | every published model is a local checkpoint, so the gate is proven by tests with a model that returns only class scores, not by a published report. Two items of the Phase A text moved: the adapter's `metadata` (provenance, preprocessing fingerprint) belongs with Phase B, which consumes it, and the per-metric `cost` with Phase D's `preflight` |
-| ⏳ | **Release 0.3.0** | M3, M4 and M5 Phase B on `main` and the public app: one card per pillar, text written for a reader, the coverage map, capability gating, and the first model this project did not train, with what can and cannot be verified about it ([#11](https://github.com/sabrinahartung/verifai-medical/pull/11), after the version bump [#10](https://github.com/sabrinahartung/verifai-medical/pull/10)) | the public app still shows 0.2.0. Phase B was taken into this release (decided 2026-09-29) rather than held for the next one |
+| ✅ | **Release 0.3.0** · 2026-09-29 | M3, M4 and M5 Phase B on `main` and the public app: one card per pillar, text written for a reader, the coverage map, capability gating, and the first model this project did not train, with what can and cannot be verified about it ([#11](https://github.com/sabrinahartung/verifai-medical/pull/11), after the version bump [#10](https://github.com/sabrinahartung/verifai-medical/pull/10)) | [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0). Phase B was taken into this release (decided 2026-09-29) rather than held for the next one |
 | **M5** | **Someone else's model** — Phases B, C, D | **B ✅ 2026-09-25** (#12, released with 0.3.0): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C**: the Hub resolver and the adapter catalogue; the fingerprint compared against a checkpoint's own `preprocessor_config.json`. **D**: `verifai resolve / preflight / run`, and the per-metric `cost` moved here from M4 | the integrity-gate placeholder is filled; the studio and preflight placeholders wait for C and D. The first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible |
 | M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
-**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). The item
-that sat right after M2 — Grad-CAM's sample — is done; none of the rest is scheduled yet.
-Experiment 8 adds one worth doing: score the original checkpoint on **Derm7pt**, which it cannot
-have seen. Beside the ISIC model's Derm7pt result it separates at least part of the 0.867 against
-0.806 gap into skill and memory — the one comparison on these data that no leakage can inflate.
+**Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). Two
+items are done — Grad-CAM's sample (2026-09-25), and the original checkpoint scored on Derm7pt
+(2026-09-29), which Experiment 8 asked for; none of the rest is scheduled yet.
 
 **Under consideration, not scheduled (raised 2026-09-25):** an additional pillar from the
 earlier VERIFAI paper, still being worked out, with **human-in-the-loop** functionality as part
@@ -246,9 +248,10 @@ Unfinished, and still ranked by what it would establish:
       the first seven filenames of a sorted manifest, six of them nevi. It now scores every test
       image against a random-region control [[42]](references.md#ref-42): on the ISIC model the
       highlight costs 0.192 [0.178–0.205] more confidence than a random region of the same size.
-- [ ] **Score the original checkpoint on Derm7pt.** Experiment 8 cannot say how much of its
-      0.867 on HAM10000 is memory. On Derm7pt, which it cannot have seen, it can be set beside the
-      ISIC model's external result with no leakage in either number.
+- [x] **Score the original checkpoint on Derm7pt** — done 2026-09-29 (active configuration
+      `external_derm7pt_original`). Against the project's own HAM10000 model, the 7.1-point
+      internal lead (separated intervals) becomes 3.7 points on Derm7pt (overlapping), and the
+      melanoma J lead reverses — [Experiment 8](results.md#on-derm7pt-where-neither-model-trained).
 - [ ] Upload the clean checkpoints to the HF Hub (`.pt` is gitignored).
 
 **The test set is the binding constraint.** With 163 melanomas, sensitivity near 0.97

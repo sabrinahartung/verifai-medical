@@ -24,7 +24,7 @@ here can be justified (see [the glossary](glossary.md)).
 
 `skin_cancer_clean` is **archived**: this is the record of its run, with the metrics of its day.
 The configurations kept current are the ISIC model on this same test set and on Derm7pt, and
-the original Hub checkpoint ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)).
+the original Hub checkpoint on both ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)).
 
 ## What the headline number hides
 
@@ -617,6 +617,42 @@ because it needs known training members. The report carries the provisional bann
     higher. And it very likely saw most of these test images. The honest statement
     is the one the report makes: the number is measured correctly and may not describe
     generalisation at all.
+
+### On Derm7pt, where neither model trained
+
+The ISIC model is the wrong control for the first explanation: it trained on a different mix of
+archives. The right one is `skin_cancer_clean` — the project's own ResNet18 on HAM10000, with a
+lesion-grouped split that was verified. Same archive, same architecture; only the
+checkability of the split differs. On HAM10000 it cannot separate skill from memory either,
+because only one of the two could have memorised. On **Derm7pt** — 1,003 images from another
+clinic, an archive that shares nothing with HAM10000 — neither can
+(configuration `external_derm7pt_original`, 2026-09-29).
+
+| | Original checkpoint | HAM10000 model (split verified) | ISIC model |
+|---|---|---|---|
+| Top-1, HAM10000 test (1,493) | **0.867** [0.85–0.88] | 0.796 [0.78–0.82] | 0.806 [0.79–0.83] |
+| Top-1, Derm7pt (1,003) | 0.628 [0.60–0.66] | 0.591 [0.56–0.62] | **0.677** [0.65–0.71] |
+| Change | −0.239 | −0.205 | −0.129 |
+| Melanoma J, HAM10000 → Derm7pt | 0.626 → 0.292 | 0.558 → 0.314 | 0.544 → 0.497 |
+| Melanoma sensitivity on Derm7pt | 0.337 [0.28–0.40] | 0.460 [0.40–0.52] | 0.722 [0.66–0.77] |
+
+Against the HAM10000 model, the original checkpoint's lead is 7.1 points on the test set it may
+have seen, with separated intervals, and 3.7 points on the one it cannot have, with overlapping
+intervals. On melanoma, a J lead of 0.068 becomes a deficit of 0.022: it keeps its specificity
+(0.955) by flagging a third of the melanomas.
+
+!!! note "What this does and does not establish"
+    It is what memory would look like: an advantage that exists only on data the model may have
+    trained on. It does not prove memory. The two checkpoints also differ in how they were
+    trained (epochs, augmentation, class weights), and a model that fits HAM10000 better is
+    expected to lose more when the clinic changes — overfitting to one archive and memorising
+    its images predict the same pattern here. What it does establish is narrower and firm: on
+    unseen data, nothing in this evaluation distinguishes the original checkpoint from a model
+    whose split was verified. The internal 0.867 should not be quoted as its skill.
+
+    This run's report still reads as provisional. Corpus ancestry finds no shared archive, but
+    against a training corpus that is itself only inferred from the model card, so no
+    row-level check is possible and the banner stays.
 
 ## Training run
 
