@@ -87,8 +87,12 @@ def _identity(ck: dict, scenario: str, root: Path, known: dict[str, str]) -> tup
         digest = _sha256(path) if path.is_file() else known.get(ck["path"])
         return (f"sha256:{digest}", digest) if digest else (f"path:{ck['path']}", None)
     if ck["kind"] == "hub":
+        # A pinned revision is a commit; "unpinned" is whatever the default branch
+        # held when it ran. A self-describing model (hf_image) is the whole
+        # repository at that commit, with no single weights file to name.
         rev = ck.get("revision") or "unpinned"
-        return f"hub:{ck['repo_id']}/{ck.get('filename')}@{rev}", None
+        where = f"{ck['repo_id']}/{ck['filename']}" if ck.get("filename") else ck["repo_id"]
+        return f"hub:{where}@{rev}", None
     return f"unidentified:{scenario}", None
 
 

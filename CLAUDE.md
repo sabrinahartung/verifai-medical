@@ -34,7 +34,7 @@ uv run python scripts/run_active.py
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (151 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (154 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q

@@ -1599,6 +1599,53 @@ def test_a_missing_checkpoint_keeps_the_identity_it_had(tmp_path):
     assert orphaned["identity"] == "path:ck/m.pt" and orphaned["sha256"] is None
 
 
+def test_a_hub_model_is_identified_by_its_revision(tmp_path):
+    """A Hub checkpoint at two commits is two models, and a self-describing one
+    (no single weights file) is the repository at a commit — never `repo/None`."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    hub = {"repo_id": "org/net", "filename": "w.pt"}
+    _write_scenario(sc, "pinned", model={**hub, "revision": "abc123"})
+    _write_scenario(sc, "other_commit", model={**hub, "revision": "def456"})
+    _write_scenario(sc, "unpinned", model=hub)
+    _write_scenario(sc, "whole_repo", model={"repo_id": "org/vit", "revision": "abc123"})
+    identities = {m["configurations"][0]["scenario"]: m["identity"]
+                  for m in build_registry(sc, root=tmp_path)["models"]}
+    assert identities == {"pinned": "hub:org/net/w.pt@abc123",
+                          "other_commit": "hub:org/net/w.pt@def456",
+                          "unpinned": "hub:org/net/w.pt@unpinned",
+                          "whole_repo": "hub:org/vit@abc123"}
+
+
+@pytest.mark.parametrize("revision", ["abc123", None])
+def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, revision):
+    """Regression: the report said "pinned" while the loader fetched whatever the
+    repository held today, because the revision was recorded but never passed on."""
+    torch = pytest.importorskip("torch")
+    tvm = pytest.importorskip("torchvision.models")
+    huggingface_hub = pytest.importorskip("huggingface_hub")
+    from verifai.models.image import load
+
+    net = tvm.mobilenet_v3_small(weights=None)
+    net.classifier[-1] = torch.nn.Linear(net.classifier[-1].in_features, 3)
+    weights = tmp_path / "w.pt"
+    torch.save(net.state_dict(), weights)
+
+    calls = []
+    def fake_download(**kwargs):
+        calls.append(kwargs)
+        return str(weights)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+
+    spec = {"repo_id": "org/net", "filename": "w.pt", "arch": "mobilenet_v3_small",
+            "classes": ["a", "b", "c"], "cam_layer": "features[-1]", "device": "cpu"}
+    if revision:
+        spec["revision"] = revision
+    load(spec)
+    assert calls == [{"repo_id": "org/net", "filename": "w.pt", "revision": revision}]
+
+
 def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
     """Status is counted from which reports exist, never stored; and an
     evaluation no model claims is returned, not dropped."""
