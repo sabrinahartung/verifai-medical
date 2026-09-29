@@ -88,7 +88,31 @@ def decision_rule(weights: dict | None) -> str:
     """A configuration's decision rule in words — `argmax` unless weights say otherwise."""
     if not weights:
         return "argmax — the most probable class"
-    return "weighted — " + ", ".join(f"{cls} ×{w:g}" for cls, w in weights.items())
+    return "weighted — " + ", ".join(f"{cls.replace('_', ' ')} ×{w:g}"
+                                     for cls, w in weights.items())
+
+
+# How the archives spell their own names. A manifest's filename is lowercase
+# because filenames are; a reader should see the name the dataset is published
+# under. An archive missing here falls back to the filename, never a guess.
+ARCHIVE_NAMES = {"ham10000": "HAM10000", "derm7pt": "Derm7pt", "isic": "ISIC 2019"}
+SPLIT_NAMES = {"test": "test set", "val": "validation set", "train": "training set",
+               "examples": "examples"}
+
+
+def dataset_name(manifest: str | None) -> str:
+    """`data/manifests/ham10000_test.csv` -> `HAM10000 test set`.
+
+    Only a name the tables above account for is rewritten; anything else keeps
+    its filename, which is at least exact.
+    """
+    if not manifest:
+        return "an unknown set of images"
+    stem = manifest.rsplit("/", 1)[-1].removesuffix(".csv")
+    archive, _, split = stem.partition("_")
+    if archive in ARCHIVE_NAMES and (not split or split in SPLIT_NAMES):
+        return " ".join([ARCHIVE_NAMES[archive]] + ([SPLIT_NAMES[split]] if split else []))
+    return manifest.rsplit("/", 1)[-1]
 
 
 def describe(provenance: dict | None) -> str:
@@ -104,6 +128,7 @@ def describe(provenance: dict | None) -> str:
     train = (provenance.get("manifests") or {}).get("train")
     if train:
         corpus = train.rsplit("/", 1)[-1].removesuffix(".csv").removesuffix("_train")
+        corpus = ARCHIVE_NAMES.get(corpus, corpus)
         n = provenance.get("train_images")
         bits.append(f"trained on {corpus}" + (f" ({n:,} images)" if n else ""))
     if provenance.get("freeze_backbone"):

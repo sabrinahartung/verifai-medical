@@ -8,6 +8,7 @@ yet.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -28,13 +29,14 @@ from catalog import PILLARS, PILLAR_QUESTION, VERDICT, normalise_verdict
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
     from verifai.core.glossary import (GLOSSARY, entries_for, explain_metric,
-                                       metric_keys, pillar_of)
+                                       metric_keys, metric_name, pillar_of)
 except ImportError:                                           # pragma: no cover
     GLOSSARY = []                                             # names fall back to raw keys
     entries_for = lambda keys: []                             # noqa: E731
     metric_keys = lambda value, prefix: []                    # noqa: E731
     explain_metric = lambda key: None                         # noqa: E731
     pillar_of = lambda key: None                              # noqa: E731
+    metric_name = lambda metric_id: metric_id                 # noqa: E731
 
 
 # Planned components render only when explicitly asked for. A public deploy that
@@ -84,6 +86,57 @@ def placeholder(key: str, compact: bool = False) -> bool:
 
 
 # ---------- generic Plotly renderer (the extensibility trick) ----------
+# A word joined by underscores is an identifier — a class name as the checkpoint
+# stores it, `melanocytic_Nevi`. Digits are left out on purpose, so an image id
+# such as `ISIC_0024342` stays exactly as the dataset spells it.
+_IDENTIFIER = re.compile(r"\b[A-Za-z][A-Za-z-]*(?:_[A-Za-z-]+)+\b")
+
+
+def readable(text):
+    """`melanocytic_Nevi` -> `Melanocytic nevi`, inside any label or caption.
+
+    Display only: the artifact keeps the identifier, because that is what ties a
+    label to the checkpoint's output order.
+    """
+    if not isinstance(text, str):
+        return text
+
+    def one(m: re.Match) -> str:
+        words = m.group(0).replace("_", " ").lower()
+        return words[0].upper() + words[1:] if m.start() == 0 else words
+    return _IDENTIFIER.sub(one, text)
+
+
+def _readable_all(values):
+    """`readable` over a whole axis, capitalised alike once any label needed it —
+    otherwise `melanoma` stays lowercase beside `Melanocytic nevi`."""
+    if values is None:
+        return None
+    out = [readable(v) for v in values]
+    if any(isinstance(v, str) and _IDENTIFIER.search(v) for v in values):
+        out = [v[:1].upper() + v[1:] if isinstance(v, str) else v for v in out]
+    return out
+
+
+def _thin_ticks(ticks: list, labels: list | None, lo: float, hi: float):
+    """Drop ticks that would print on top of the one before them.
+
+    A scale whose bands are uneven (0, 1, 10, 100 on a 0–100 axis) puts two
+    labels within a few pixels of each other. The band edge stays drawn; only
+    its tick label goes.
+    """
+    span = (hi - lo) or 1.0
+    keep_t, keep_l, last = [], [], None
+    for i, t in enumerate(ticks):
+        if last is not None and (t - last) / span < 0.04:
+            continue
+        keep_t.append(t)
+        if labels:
+            keep_l.append(labels[i])
+        last = t
+    return keep_t, (keep_l if labels else None)
+
+
 def _scale(spec: dict):
     """A value placed on a labeled band scale.
 
@@ -115,15 +168,17 @@ def _scale(spec: dict):
                       line=dict(color="#102A43", width=4))
         # no explicit colour: this sits on the plot background, so the Streamlit
         # template must pick it or it goes invisible in dark mode. Same below.
-        fig.add_annotation(x=val, y=1.42, text=f"<b>{val:g}</b>", showarrow=False,
+        # The marker speaks the axis's unit: on a percentage scale, 0 is "0%".
+        unit = "%" if all(str(t).endswith("%") for t in spec.get("tick_labels") or ["x"]) else ""
+        fig.add_annotation(x=val, y=1.42, text=f"<b>{val:g}{unit}</b>", showarrow=False,
                            font=dict(size=20))
     if spec.get("value_label"):
         fig.add_annotation(x=(lo + hi) / 2, y=-0.75, text=spec["value_label"], showarrow=False,
                            font=dict(size=12), xanchor="center", align="center")
 
-    fig.update_xaxes(range=[lo, hi], showgrid=False, zeroline=False,
-                     tickvals=spec.get("ticks", [lo, hi]),
-                     ticktext=spec.get("tick_labels"))
+    ticks, tick_labels = _thin_ticks(spec.get("ticks", [lo, hi]), spec.get("tick_labels"), lo, hi)
+    fig.update_xaxes(range=[lo, hi], showgrid=False, zeroline=False, tickangle=0,
+                     tickvals=ticks, ticktext=tick_labels)
     fig.update_yaxes(range=[-1.0, 1.8], visible=False)
     # transparent plot area so only the bands carry colour, in either theme.
     # The band labels keep an explicit dark colour because they always sit on a
@@ -139,7 +194,7 @@ def render_chart(spec: dict, base: Path):
     title = spec.get("title", "")
     if kind == "bar":
         marker_color = spec.get("colors", spec.get("color", "#5B3FD6"))  # list = per-bar
-        bar = go.Bar(x=spec["x"], y=spec["y"], marker_color=marker_color)
+        bar = go.Bar(x=_readable_all(spec["x"]), y=spec["y"], marker_color=marker_color)
         if spec.get("y_lo") and spec.get("y_hi"):
             # Wilson intervals are asymmetric, so plus/minus arms differ.
             bar.error_y = dict(
@@ -148,8 +203,11 @@ def render_chart(spec: dict, base: Path):
                 arrayminus=[y - lo for y, lo in zip(spec["y"], spec["y_lo"])],
                 thickness=1.4, width=6, color="#455A64")
         if spec.get("hover"):
+            # Hover only: printed inside the bar, the text collides with the
+            # error bar it describes.
             bar.text = spec["hover"]
-            bar.hovertemplate = "%{text}<br>%{y}<extra></extra>"
+            bar.textposition = "none"
+            bar.hovertemplate = "%{text}<extra></extra>"
         fig = go.Figure(bar)
         fig.update_layout(title=title, xaxis_title=spec.get("x_title", ""), yaxis_title=spec.get("y_title", ""))
         st.plotly_chart(fig, width="stretch")
@@ -158,8 +216,13 @@ def render_chart(spec: dict, base: Path):
         fig.update_layout(title=title, xaxis_title=spec.get("x_title", ""), yaxis_title=spec.get("y_title", ""))
         st.plotly_chart(fig, width="stretch")
     elif kind == "heatmap":
-        hm = go.Heatmap(z=spec["z"], x=spec.get("x"), y=spec.get("y"), colorscale="Blues",
+        hm = go.Heatmap(z=spec["z"], x=_readable_all(spec.get("x")),
+                        y=_readable_all(spec.get("y")), colorscale="Blues",
                         zmin=spec.get("zmin"), zmax=spec.get("zmax"))
+        # Values printed in the cells while they still fit: colour alone makes
+        # the reader estimate 0.35 from a shade of blue.
+        if len(spec["z"]) <= 12 and all(len(row) <= 12 for row in spec["z"]):
+            hm.texttemplate = "%{z:.2f}"
         if spec.get("text"):
             hm.text = spec["text"]
             hm.hovertemplate = "%{text}<extra></extra>"
@@ -178,7 +241,8 @@ def render_chart(spec: dict, base: Path):
         for i, rel in enumerate(paths):
             p = base / rel
             if p.exists():
-                cols[i % len(cols)].image(str(p), caption=captions[i] if i < len(captions) else None)
+                cols[i % len(cols)].image(
+                    str(p), caption=readable(captions[i]) if i < len(captions) else None)
     else:
         st.json(spec)
 
@@ -212,7 +276,7 @@ def render_finding(finding: dict, base: Path):
     """One finding: its status, its five-question box, its charts, its definitions."""
     verdict = normalise_verdict(finding.get("verdict"), finding.get("pillar"))
     icon, label, meaning = VERDICT[verdict]
-    st.markdown(f"##### {icon} `{finding['metric']}` · {label}", help=meaning)
+    st.markdown(f"##### {icon} {metric_name(finding['metric'])} · {label}", help=meaning)
 
     ex = (finding.get("details") or {}).get("explain") or {}
     details = finding.get("details") or {}

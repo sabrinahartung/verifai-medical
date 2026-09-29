@@ -34,7 +34,7 @@ uv run python scripts/run_active.py
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (128 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (151 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -118,17 +118,32 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
 - `verifai/core/findings.py` — the single data model for the whole pipeline. `Finding`
   (pillar, metric, domain, value, verdict, summary, details, plots) and `Report`. Everything
   downstream, including the app, is written against this shape.
+- `verifai/models/base.py` — the model contract (`ModelAdapter`) and the access ladder
+  `labels < probs < logits < gradients < weights < training_data`. Torch-free on purpose: the
+  showcase reads it. A model declares `access` and `modality`; `ImageClassifier` declares
+  `weights`, raised to `training_data` by the runner when the scenario declares training
+  manifests. A model that declares nothing is taken at `labels`, never trusted upward.
 - `verifai/core/run.py` — `run_scenario(dict) -> Report`. Holds `METRIC_REGISTRY`
-  (metric id → `"module:function"`), seeds RNGs, builds model/dataset by importing the
-  `loader:` string from the scenario, and calls each metric. Before any metric runs it
-  calls `_enforce_split_integrity` and raises `SplitLeakageError` if the test manifest
-  overlaps the training manifests — a contaminated split fails loudly instead of
-  reporting a high number.
+  (metric id → `MetricSpec`), seeds RNGs, builds model/dataset by importing the
+  `loader:` string from the scenario, and calls each metric through the capability gate
+  ([ADR 0001](docs/adr/0001-capability-gating.md)). Before any metric runs it applies a declared
+  `dataset.label_map`, refuses a disjoint label space, and calls `_enforce_split_integrity`,
+  which raises `SplitLeakageError` if the test manifest overlaps the training manifests — a
+  contaminated split fails loudly instead of reporting a high number. `docs/adr/` records why
+  the built parts are the way they are; read the ADR before changing what it describes.
 - `verifai/core/integrity.py` — the one implementation of that check. The runner uses it
   as a precondition and `metrics/integrity/split_leakage.py` publishes the same result as
   a finding, so the guard and the report cannot drift apart. Splits are compared by
   `lesion_id` as well as `image_id`, because a second photo of a memorised lesion is not
-  a fair test question.
+  a fair test question. It also holds what Phase B checks for a model this project did not
+  train: `corpus ancestry` against `data/corpora.yaml` (which archive contains which, each
+  with its reference — an archive missing there is unknown, never independent), and the
+  `label_space` relation, which the runner checks before any metric and refuses when disjoint
+  unless `dataset.label_map` is declared. A scenario states `model.trained_on` (corpus ids, or
+  `{corpora, basis}` when only inferred) and `dataset.corpus`. A shared corpus with no
+  row-level check is `insufficient` — leakage cannot be ruled out — never `invalid`, which
+  stays reserved for contamination that was found. On such a provisional report every
+  *established* mark outside integrity reads *on a split that could not be checked*.
 - `verifai/models/image.py` — `ImageClassifier` wrapper (`SkinLesionModel` is kept as an alias).
   Metrics use `.torch_module` and `.cam_layer` (hooks/Grad-CAM), `.to_tensor()`,
   `.predict_probs()`. Classes, architecture, Grad-CAM layer, image size and device all come from
@@ -196,9 +211,12 @@ it is presentation: it never widens what may be compared.
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
 experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
-day. Archived is not *wrong*; it lacks what was added since. Today two are active — the ISIC
-model on its internal test and on Derm7pt "as deployed" — and twenty-one archived. Re-running
-those two reproduced all 274 published values exactly, which is what makes freezing the rest safe.
+day. Archived is not *wrong*; it lacks what was added since. Today three are active — the ISIC
+model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint on the
+HAM10000 test set, the project's one model it did not train — and twenty-one archived. Re-running
+the ISIC two reproduced all 274 published values exactly, which is what makes freezing the rest
+safe. A scenario may say why it leaves an applicable metric out, in `not_requested:
+{metric id: reason}`; the report shows the reason instead of a bare "not requested".
 
 **Adding a model/domain** = add `scenarios/<new>.yaml`, run it, done. The app needs no change —
 its first run puts it in the model registry and gives it a report. `card:` in the YAML is passed
@@ -207,9 +225,16 @@ To list a model *before* evaluating it, run `scripts/build_model_registry.py`; i
 not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
-`METRIC_REGISTRY`, give it a version in `verifai/core/suite.py` (a test fails without one) and a
+`METRIC_REGISTRY` as a `MetricSpec` — `pillar`, the `finding` name it returns, `tasks`,
+`modalities` and the lowest access level it `requires` (a test fails on a bare string). The
+runner never calls a metric the model cannot support; it writes an `unavailable` finding under
+that name with the reason, and records every registered metric's status in
+`report.meta["coverage"]` (`not_applicable` · `not_requested` · the verdict). A scenario's
+`task:` defaults to `classification`; a requested metric that does not apply to it is refused
+before anything runs. Then give it a version in `verifai/core/suite.py` (a test fails without one) and a
 reference function in `verifai/metrics/_baseline.py::BY_FINDING` — what its number is compared
-with, and the claim when the interval clears it; the report's first section lists only those. List its
+with, and the claim when the interval clears it; only those are marked established on the
+report's pillar cards. List its
 id under `metrics:` in the scenario. **Bump that version whenever what the metric reports
 changes** — a new sample, a field, a fixed bug, a verdict's wording — then run
 `scripts/run_active.py`. Each report records the versions and the checkpoint hash that produced it,
@@ -242,7 +267,9 @@ also add an entry to `verifai/core/glossary.py`, keyed by an `fnmatch` pattern o
 Each entry carries `term` (the human name shown as the card's heading — never a raw key),
 `measures` / `ideal` / `reading` and optionally `tension`, written **generally**
 — about the concept, not about this dataset, so it stays true when the numbers change. A test
-asserts that every metric key present in any artifact resolves to an entry. Keep the module free of
+asserts that every metric key present in any artifact resolves to an entry. The same module holds
+`METRIC_NAMES`, the human name each finding's `metric` id is headed with in a report; a test asserts
+every id in any artifact has one. Keep the module free of
 heavy imports: `showcase/app.py` imports it, and the showcase must not need torch.
 
 `ctx` carries `{"scenario": ..., "seed": ..., "plot_dir": ...}`. Metrics that write images must
@@ -266,7 +293,10 @@ The default sample is n=7. Metrics must not manufacture confidence from it:
   `invalid` only for a broken precondition — today just a contaminated split, which makes the
   *measurement* unusable rather than the model bad. `showcase/app.py::normalise_verdict` maps the
   retired pass/warn/fail words so artifacts written before the change still render.
-- State `n` in the `summary` and say plainly when it is only a plausibility check.
+- State `n` in the `summary` and say plainly when it is only a plausibility check. The summary is
+  a template in the metric, never generated, so its rules are tested: in every active report it
+  names an image count, carries an interval (integrity's exact counts excepted) and contains no
+  raw identifier such as `actinic_keratoses`.
 - A metric that cannot be computed reports *why* and returns `None`, never an invented number —
   see `privacy/mia.py`, which requires a train/holdout split that the example set does not have.
 - An artifact with placeholder numbers must carry `"sample": true` in its `card.json`; the app

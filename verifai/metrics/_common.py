@@ -10,6 +10,15 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance
 
+def class_name(label: str) -> str:
+    """A class id as a reader says it: `melanocytic_Nevi` -> `melanocytic nevi`.
+
+    For sentences only. Values, keys and chart axes keep the id, because that
+    is what ties a number to the checkpoint's output order.
+    """
+    return label.replace("_", " ").lower()
+
+
 # ITA bins (after Kinyanjui et al. 2019) -> coarse skin-tone groups.
 # Higher ITA = lighter skin.
 ITA_BINS = [

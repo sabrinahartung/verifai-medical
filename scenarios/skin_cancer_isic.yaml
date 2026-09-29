@@ -67,6 +67,9 @@ model:
   device: "auto"
   # After training, point this at the checkpoint you just produced:
   weights_path: "artifacts_training/skin_cancer_isic.pt"
+  # Archive ids from data/corpora.yaml. ISIC 2019 contains HAM10000, which is
+  # exactly the overlap the corpus check reports and the split check clears.
+  trained_on: [isic2019]
   classes:                        # must match the training class order (sorted)
     - actinic_keratoses
     - basal_cell_carcinoma
@@ -90,6 +93,7 @@ dataset:
   # legitimate and be meaningless. Training reads from training.images_dir.
   images_dir: "data/raw/ham10000"
   source: "ISIC 2019 (training) / HAM10000 (evaluation)"
+  corpus: ham10000                # the archive these test images come from
 
 card:
   # Same group as the clean split: same problem, same test set, so these belong
@@ -124,6 +128,9 @@ integrity:
 
 metrics:
   - "integrity.split_leakage"      # every number below is conditional on this
+  - "integrity.provenance"
+  - "integrity.corpus_ancestry"
+  - "integrity.label_space"
   - "performance.classification"
   - "explainability.gradcam"
   - "robustness.corruption"

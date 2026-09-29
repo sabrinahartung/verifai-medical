@@ -19,7 +19,7 @@ from typing import Any
 
 from verifai.core.findings import Finding
 from verifai.metrics._common import estimate_ita, ita_bin, ITA_BINS
-from verifai.metrics._stats import wilson
+from verifai.metrics._stats import fmt, wilson
 
 
 def run(model, dataset, ctx: dict[str, Any]) -> Finding:
@@ -58,11 +58,14 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     dark_share = per_bin_total.get(bins_order[-1], 0) / n if n else 0
     verdict = "measured" if enough_per_bin else "insufficient"
 
-    summary = (f"Skin-tone coverage (ITA-estimated) over n={n}: "
-               + ", ".join(f"{b.split(' ')[0]} {per_bin_total.get(b,0)}" for b in bins_order)
-               + ". The sample is small and skewed towards light skin types — a "
-                 "documented HAM10000 limitation. Use the full subset run for a "
-                 "meaningful subgroup accuracy.")
+    # Said about this sample, whichever archive it came from: the reason no gap
+    # is reported is the bin counts, and those are right here.
+    summary = (f"Skin-tone coverage (ITA-estimated) over {n:,} images: "
+               + ", ".join(f"{b.split(' ')[0]} {per_bin_total.get(b, 0):,}" for b in bins_order)
+               + (". Only one skin-tone group is present, so there is no second group to "
+                  "compare accuracy with." if len(populated) < 2 else
+                  ". At least one group holds fewer than 10 images, so no accuracy gap "
+                  "between groups is reported."))
 
     chart_bar = {
         "kind": "bar", "title": "Skin-tone coverage of the sample (ITA bins)",
@@ -72,8 +75,9 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
 
     explain = {
         "what": ("A skin-lesion model that was only ever tested on light skin cannot be "
-                 "trusted on dark skin. HAM10000 carries no skin-type labels, so the skin "
-                 "tone is estimated from the image itself: the ITA (Individual Typology "
+                 "trusted on dark skin. Skin-type labels are rarely recorded with "
+                 "dermoscopy images, so the skin tone is estimated from the image itself: "
+                 "the ITA (Individual Typology "
                  "Angle) is measured on the healthy skin around the lesion and sorted into "
                  "light, medium and dark bins."),
         "how": ("The bars show how many images fall into each skin-tone bin. What matters "
@@ -122,13 +126,14 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             "y_lo": [ci[b][0] for b in populated_bins],
             "y_hi": [ci[b][1] for b in populated_bins],
             "x_title": "Estimated skin type", "y_title": "Top-1 accuracy",
-            "hover": [f"{acc[b]:.3f} [{ci[b][0]:.2f}-{ci[b][1]:.2f}] on "
-                      f"{per_bin_total[b]} images" for b in populated_bins],
+            "hover": [f"{acc[b]:.3f} [{ci[b][0]:.2f}–{ci[b][1]:.2f}] on "
+                      f"{per_bin_total[b]:,} images" for b in populated_bins],
         }
         summary = (
-            f"Subgroup accuracy by ITA skin type; largest gap {gap*100:.0f} points "
-            f"between {worst} ({acc[worst]:.2f}, n={per_bin_total[worst]}) and {best} "
-            f"({acc[best]:.2f}, n={per_bin_total[best]}), n={n}. "
+            f"Accuracy by ITA-estimated skin type over {n:,} images; the largest gap is "
+            f"{gap*100:.0f} points, between {worst} ({fmt(acc[worst], ci[worst])} on "
+            f"{per_bin_total[worst]:,} images) and {best} ({fmt(acc[best], ci[best])} on "
+            f"{per_bin_total[best]:,}). "
             + ("Their 95% intervals do not overlap, so the difference is supported."
                if separated else
                "Their 95% intervals overlap, so this gap is not yet distinguishable from "

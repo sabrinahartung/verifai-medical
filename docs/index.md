@@ -118,7 +118,7 @@ than blended. The vocabulary is the same on every page:
 | **Running today** · **shipped** | implemented, registered, and producing findings in the artifacts committed to this repository |
 | **Planned** | designed and argued for, and not yet written. A heading or a lead line says so before you read the section |
 
-Six metrics run today; the catalogue plans fifty-one. A document that read as though all of it
+Nine metrics run today; the catalogue plans fifty-one. A document that read as though all of it
 existed would be the same kind of overclaim this project was built to catch — so
 [The pillars](pillars.md) opens with what runs, and [the roadmap](ROADMAP.md) is the only page
 that is a plan from top to bottom.
@@ -127,7 +127,7 @@ that is a plan from top to bottom.
 
 | If you want to… | Read |
 |---|---|
-| See what actually runs | [The pillars → Running today](pillars.md#running-today-six-metrics) |
+| See what actually runs | [The pillars → Running today](pillars.md#running-today-nine-metrics) |
 | See what is planned, and in what order | [Roadmap](ROADMAP.md) |
 | Understand what this is *for*, and why not just use a toolkit | [Direction](direction.md) |
 | See what a finished report could look like | [A worked example](case-view.md) |

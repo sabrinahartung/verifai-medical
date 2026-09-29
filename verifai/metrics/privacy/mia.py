@@ -132,12 +132,12 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         summary=((f"Membership is distinguishable: the interval lies entirely above "
                   f"0.5 (chance). " if leaks else
                   f"No leakage shown: the interval includes 0.5 (chance). ")
-                 + f"Membership-inference AUC {auc}"
-                 f"{f' [{ci[0]:.2f}-{ci[1]:.2f}]' if ci else ''} "
-                 f"from {len(member_conf)} training and "
-                 f"{len(non_conf)} held-out images (0.5 = an attacker cannot tell them "
-                 f"apart). Mean confidence in the true class was {mean_m} on training "
-                 f"images against {mean_n} on unseen ones."),
+                 + f"Membership-inference AUC {auc:.3f}"
+                 f"{f' [{ci[0]:.2f}–{ci[1]:.2f}]' if ci else ''} "
+                 f"from {len(member_conf):,} training and "
+                 f"{len(non_conf):,} held-out images (0.5 = an attacker cannot tell them "
+                 f"apart). Mean confidence in the true class was {mean_m:.3f} on training "
+                 f"images against {mean_n:.3f} on unseen ones."),
         details={
             "better": {"mia_auc": "lower"},
             "explain": EXPLAIN,

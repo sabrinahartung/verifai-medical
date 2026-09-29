@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._common import class_name
 from verifai.metrics._stats import auc_ci, fmt, ppv_at_prevalence, wilson  # noqa: F401
 
 # One bar per image is readable for a handful of examples and useless for a
@@ -127,18 +128,20 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     worst = min(scored, key=lambda kv: kv[1]["sensitivity"])[0] if scored else None
     note = (f" Small sample (n={n}) — a plausibility check, not a benchmark."
             if n < VERDICT_MIN_N else "")
-    summary = (f"Top-1 accuracy {fmt(acc, acc_ci)} on {n} labeled examples; "
-               f"balanced {balanced}")
+    summary = (f"Top-1 accuracy {fmt(acc, acc_ci)} on {n:,} labeled images; "
+               f"balanced accuracy {balanced:.3f}" if balanced is not None else
+               f"Top-1 accuracy {fmt(acc, acc_ci)} on {n:,} labeled images")
     if absent:
         summary += (f" over {len(sens)} of {len(classes)} classes — "
-                    f"{', '.join(absent)} {'does' if len(absent) == 1 else 'do'} not occur "
+                    f"{', '.join(class_name(c) for c in absent)} "
+                    f"{'does' if len(absent) == 1 else 'do'} not occur "
                     f"in this evaluation set, so the balanced figure is not comparable with "
                     f"one computed over all {len(classes)}")
     summary += ". "
     if worst:
         w = per_class[worst]
-        summary += (f"Weakest class {worst}: sensitivity "
-                    f"{fmt(w['sensitivity'], w['sensitivity_ci'])} on {w['support']} images.")
+        summary += (f"Weakest class {class_name(worst)}: sensitivity "
+                    f"{fmt(w['sensitivity'], w['sensitivity_ci'])} on {w['support']:,} images.")
     summary += note
 
     return Finding(

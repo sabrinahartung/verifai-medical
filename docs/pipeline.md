@@ -151,8 +151,12 @@ accuracy (0.807, epoch 11) was *not* the checkpoint kept.
 
 ## Step 4 — evaluation and deploy
 
-`run_scenario.py` builds the model and dataset, runs the integrity guard, then each metric in
-the scenario's `metrics:` list, and writes the artifact folder. Because the showcase reads
+`run_scenario.py` builds the model and dataset, refuses any requested metric that does not
+apply to the scenario's `task:`, runs the integrity guard, then each metric in the scenario's
+`metrics:` list — except that a metric needing more access than the model gives is never called
+and becomes an `unavailable` finding with the reason — and writes the artifact folder, with a
+coverage row for every registered metric. How the gate decides:
+[ADR 0001](adr/0001-capability-gating.md). Because the showcase reads
 committed files, **pushing is deploying** — Streamlit Community Cloud redeploys on push.
 
 ## Measured performance

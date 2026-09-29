@@ -35,6 +35,10 @@ Pillar = Literal["integrity", "fairness", "robustness", "explainability",
 # artifact already written; renaming it would break them for no reader-visible
 # gain. The vocabulary is what carries the meaning.
 Verdict = Literal["measured", "insufficient", "unavailable", "invalid"]
+# The payload type. "llm" is a task, not a payload, and is retired the way the
+# "gauge" chart kind and the pass/warn/fail verdicts were: still read, so older
+# artifacts load, never written. What a scenario *does* is its `task:` (see
+# `verifai.models.base.Task`).
 Domain = Literal["image", "text", "tabular", "llm"]
 
 

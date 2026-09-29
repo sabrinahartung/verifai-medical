@@ -246,8 +246,62 @@ Access level
 :   How much of the model this evaluation actually has: `labels` · `probs` · `logits` ·
     `gradients` · `weights` · `training_data`, in increasing order, each level including the ones
     before it. It decides which metrics **can exist** for a run, and it is a fact about the
-    evaluation setup, never a judgement about the model. See
+    evaluation setup, never a judgement about the model. The ISIC model in this repository is at
+    `training_data`: it was trained here, so it can be opened, differentiated, and its training
+    manifests are known. The same weights behind a hosted API would be `probs`. See
     [The pillars](pillars.md#how-much-of-the-model-do-you-have).
+
+Capability gate
+:   The check the runner makes before calling a metric: does the model's access level reach the
+    level the metric needs? If not, the metric is never called and the report gets an
+    `unavailable` row under its name saying why — *"it needs gradients, and this model can only be
+    queried"*. A metric that cannot run is a row with a reason, never a gap. How it works:
+    [ADR 0001](adr/0001-capability-gating.md).
+
+Task and modality
+:   The **task** is what the model does — `classification` today, `generation` later — and decides
+    which metrics belong in an evaluation at all. The **modality** is what it takes in — `pixels`,
+    `tokens`, `rows`, `audio`. The skin-tone metric needs pixels; accuracy needs neither in
+    particular. A metric that does not fit the task is refused before the run starts.
+
+Provenance
+:   Where a model came from, and what that lets an evaluation check. A model trained here
+    comes with the list of images it trained on, so the split can be counted image by image. The
+    original checkpoint on the Hugging Face Hub comes with weights only; its training data is
+    *inferred* as HAM10000 from its model card. Its report therefore says *no split check is
+    possible* — which is never the same as a clean split.
+
+Corpus ancestry
+:   Which public archives contain which. ISIC 2019 includes all of HAM10000, so a model trained on
+    ISIC 2019 has seen HAM10000 images unless they were held back one by one. The table lives in
+    `data/corpora.yaml`, each line with its source. The ISIC model shares an archive with its
+    HAM10000 test set and the split check shows the overlap was held back; the original checkpoint
+    shares one with no way to check, so leakage *cannot be ruled out*.
+
+Label space
+:   The list of classes a model answers with, against the list the test images are labelled
+    with. Derm7pt has no actinic keratoses, so one of the model's seven classes is never scored
+    there. Two lists with nothing in common need an explicit `label_map`; one is never guessed.
+
+Preprocessing fingerprint
+:   A hash of how a model's input images were resized and normalised, recorded in every report.
+    If it differs from how the model was trained, every metric measures a slightly different
+    model — so it is written down rather than assumed.
+
+Provisional
+:   A report whose split could not be verified. Its results are measured correctly, but they may
+    include memory rather than generalisation, so a yellow banner says so and every
+    *established* mark on it reads *on a split that could not be checked*. The original checkpoint
+    scores 0.867 on the HAM10000 test set, where the ISIC model with a verified split scores 0.806
+    — a gap the report cannot attribute to skill or to leakage, and says so.
+
+Not applicable · not requested
+:   Two ways a metric can be absent from a report without anything being wrong with the model.
+    *Not applicable*: it does not belong in an evaluation of this task. *Not requested*: it
+    applies, but this evaluation did not ask for it, so nothing is known either way. Both differ
+    from `unavailable`, which means it was asked for and could not run. On the Derm7pt report,
+    Grad-CAM and membership inference are *not requested* — before coverage was recorded, the
+    same report said they were *not evaluated*, which read as though something had failed.
 
 White-box / black-box
 :   White-box means the evaluation can reach inside the model — gradients, and sometimes the
@@ -259,7 +313,10 @@ White-box / black-box
 Coverage
 :   The only thing this project aggregates: how many applicable metrics were measured, how many
     came back `insufficient` or `unavailable`, and why. A completeness statement, never a
-    quality one — there is no composite score, and there will not be one.
+    quality one — there is no composite score, and there will not be one. Every report records
+    one coverage row per registered metric. The Derm7pt report reads *9 of the 9 metrics apply:
+    6 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
+    passed.
 
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content

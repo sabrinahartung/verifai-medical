@@ -118,6 +118,10 @@ def write_snapshot(report: Report, base: Path) -> Path:
         "integrity": integrity,
         "device": meta.get("device"),
         "seed": meta.get("seed"),
+        # how much of the model this run could reach: a comparison between a
+        # model that was opened and one that was only queried says so
+        "access": meta.get("access"),
+        "task": meta.get("task"),
         "verdicts": {f.pillar: f.verdict for f in report.findings},
         "metrics": snapshot_metrics(report),
         "directions": snapshot_directions(report),

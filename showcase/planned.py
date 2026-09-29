@@ -19,31 +19,13 @@ from __future__ import annotations
 
 PLANNED: dict[str, dict[str, str]] = {
     # ---- report -------------------------------------------------------------
-    "provenance_strip": {
-        "title": "Provenance strip",
-        "shows": "task, access level, intended-use profile, checkpoint revision "
-                 "and the preprocessing fingerprint the model was scored under",
-        "blocked_by": "Phase A (access and task declarations) and Phase B "
-                      "(preprocessing fingerprint)",
-        "phase": "ROADMAP.md#phase-a-the-two-contracts-and-capability-gating",
-    },
-    "integrity_gate": {
-        "title": "The rest of the integrity gate",
-        "shows": "provenance, corpus ancestry and label-space compatibility beside the "
-                 "split-leakage check — the parts of the gate that need more than a "
-                 "training manifest to run",
-        "blocked_by": "Phase B. Split leakage exists, and the banner that holds the page "
-                      "when it fails is built; the other three checks are not",
-        "phase": "ROADMAP.md#phase-b-what-you-can-and-cannot-verify-about-someone-elses-model",
-    },
-    "coverage_map": {
-        "title": "Coverage map",
-        "shows": "how many applicable metrics were measured, how many came back "
-                 "inconclusive or not assessed, and why",
-        "blocked_by": "Phase A: nothing knows the *applicable* set until tasks, "
-                      "modalities and access are declared, so the denominator "
-                      "would have to be invented",
-        "phase": "ROADMAP.md#what-takes-its-place",
+    "intended_use": {
+        "title": "Intended-use profile",
+        "shows": "what this model is meant to be used for — screening, triage, second "
+                 "opinion — and which criteria that use brings with it; the rest of the "
+                 "provenance strip (task, access, weights, preprocessing) is built",
+        "blocked_by": "Phase G: intended use becomes a profile in the versioned policy file",
+        "phase": "ROADMAP.md#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them",
     },
     "impact": {
         "title": "Why it matters",
@@ -81,19 +63,11 @@ PLANNED: dict[str, dict[str, str]] = {
         "title": "Export as an evaluation card",
         "shows": "the report as a readable document — coverage, every metric with "
                  "its interval, and what the evaluation does not tell you",
-        "blocked_by": "the coverage map and the info box it would be built from",
+        "blocked_by": "the document itself: the coverage map it would open with exists "
+                      "since Phase A, the export does not",
         "phase": "ROADMAP.md#what-takes-its-place",
     },
     # ---- compare ------------------------------------------------------------
-    "access_statement": {
-        "title": "Access levels in this group",
-        "shows": "which runs could be opened and which could only be queried, which "
-                 "columns are therefore compared at the weaker level, and which findings "
-                 "were measured for one model only and are not used in the comparison",
-        "blocked_by": "Phase A: every model here is a local checkpoint, so the "
-                      "question has never had to be asked",
-        "phase": "ROADMAP.md#comparing-models-that-were-not-evaluated-under-the-same-suite",
-    },
     "delta_view": {
         "title": "Against the previous version",
         "shows": "what changed since the version you shipped, on the same images "
