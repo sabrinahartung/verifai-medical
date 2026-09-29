@@ -58,7 +58,7 @@ is ever scored against a threshold. See [What does not move](#what-does-not-move
 **25 artifact folders — 15 models in 25 configurations, 4 of them active — 151 contract
 tests, three evaluation sets, nine metrics.** [Current results](results.md) has the
 measurements; this is what they add up to. Released: [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0)
-(M3, M4 and M5 Phase B). Next: M5 Phases C and D. The four findings
+(M3, M4 and M5 Phase B). Next: M5 Phase C, [planned step by step](#phase-c-resolving-a-model-and-the-adapter-catalogue). The four findings
 below have not moved since 2026-09-16; the fifth is new with Phase B. What else changed is
 recorded in [What has been built](#what-has-been-built).
 
@@ -129,8 +129,9 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **M3 — A usability pass** · 2026-09-25 | The report's two pillar lists became one card per pillar: status, result, and what it was compared with — **established** where the interval clears the reference, otherwise why nothing is claimed. Metrics are headed by name, classes and datasets read as words, counts say what they count, and charts no longer overlap their own labels. Metric summaries were rewritten for a reader (version 3; fairness 4) and a test now holds every active one to an image count and an interval; robustness gained the interval it lacked | the walkthrough found eleven problems and all were fixed; re-running the two active configurations reproduced every value exactly, so only wording changed. Left as is: Streamlit prints `None` for a missing value in the comparison table |
 | ✅ | **M4 — Phase A**, the two contracts and capability gating · 2026-09-25 | `verifai/models/base.py`: the model contract and the access ladder. Every registry entry is a `MetricSpec` declaring its pillar, tasks, modalities and the access it needs; the runner never calls a metric the model cannot support and writes an `unavailable` finding with the reason instead. Scenarios declare `task:`. Each report records its task, access and a coverage row per registered metric, and the showcase reads it: a coverage map at the top of the report, *not applicable* and *not requested* told apart from *not evaluated*, and an access column and statement in the comparison | every published model is a local checkpoint, so the gate is proven by tests with a model that returns only class scores, not by a published report. Two items of the Phase A text moved: the adapter's `metadata` (provenance, preprocessing fingerprint) belongs with Phase B, which consumes it, and the per-metric `cost` with Phase D's `preflight` |
 | ✅ | **Release 0.3.0** · 2026-09-29 | M3, M4 and M5 Phase B on `main` and the public app: one card per pillar, text written for a reader, the coverage map, capability gating, and the first model this project did not train, with what can and cannot be verified about it ([#11](https://github.com/sabrinahartung/verifai-medical/pull/11), after the version bump [#10](https://github.com/sabrinahartung/verifai-medical/pull/10)) | [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0). Phase B was taken into this release (decided 2026-09-29) rather than held for the next one |
-| **M5** | **Someone else's model** — Phases B, C, D | **B ✅ 2026-09-25** (#12, released with 0.3.0): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C**: the Hub resolver and the adapter catalogue; the fingerprint compared against a checkpoint's own `preprocessor_config.json`. **D**: `verifai resolve / preflight / run`, and the per-metric `cost` moved here from M4 | the integrity-gate placeholder is filled; the studio and preflight placeholders wait for C and D. The first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible |
-| M6+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
+| **M5** | **Someone else's model** — Phases B, C | **B ✅ 2026-09-25** (#12, released with 0.3.0): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C** ([steps C1–C6](#phase-c-resolving-a-model-and-the-adapter-catalogue)): a pinned Hub revision that is actually loaded, the resolver that turns a Hub link into a *draft* scenario, the `hf_image` adapter, the fingerprint compared against the checkpoint's own processor config — and, as the finish line, **a skin-lesion model from the Hub that this project neither trained nor picked, evaluated end to end**. Released as 0.4.0 | the first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible. Split from D on 2026-09-29, so the working Hub example ships without waiting for the command line |
+| **M6** | **One command** — Phase D | [Steps D1–D6](#phase-d-the-two-entry-tracks-one-command): `verifai resolve / preflight / run`, the per-metric `cost` moved here from M4, `per_example` capped before the catalogue grows, and the studio and preflight placeholders made real, local only. Released as 0.5.0 | preflight is only worth having once there is more than one kind of model to preflight, which C provides. Its finish line is C's demo reproduced from nothing by three commands |
+| M7+ | **F → G → H → I** | the metric catalogue as data; the policy layer; chest X-ray, then text; generative models and the safety pillar | in the order the phases already describe |
 
 **Alongside, blocking nothing:** [the open scientific work](#the-open-scientific-work). Two
 items are done — Grad-CAM's sample (2026-09-25), and the original checkpoint scored on Derm7pt
@@ -349,36 +350,87 @@ of one half. Which is exactly the open item at the top of this page.
 
 ### Phase C — resolving a model, and the adapter catalogue
 
-- `verifai/models/resolve.py` — `hf:owner/repo[@rev]` or a local path → a **draft**
-  `model:` block for review, never an auto-run. Reads `HfApi().model_info` without
-  downloading: `pipeline_tag`, `library_name`, `config.json` (`id2label`,
-  `architectures`), card metadata (`datasets`, `license`), and the commit sha, which
-  becomes a pinned `revision`.
-- Adapters, in order, each roughly 80 lines:
-    1. **torchvision / timm `state_dict`** — exists. Carries no metadata at all, so
-       `arch` and `classes` must be declared; the resolver says so rather than guessing.
-    2. **`hf_image`** — `AutoModelForImageClassification` + `AutoImageProcessor`.
-       Self-describing: `id2label` gives the class order, the processor gives the exact
-       preprocessing. This is where "paste a link and it works" is genuinely true.
-    3. **`hf_text`** — `AutoModelForSequenceClassification` + `AutoTokenizer`;
-       `dataset.load()` returns a string and `predict_probs` is unchanged.
-- `transformers` goes in the `engine` dependency group only, never in the `showcase` group.
-- Deliberately **not** first: ONNX, sklearn/joblib, generative checkpoints. Each is a
-  different loading story and none of them is on the path to the next result.
+!!! info "Planned 2026-09-29 (M5, second part) — not started"
+    Broken into six steps, each with its own finish line, so the milestone can be reviewed
+    step by step rather than in one pull request. The finish line of the phase is step C5: a
+    skin-lesion model from the Hugging Face Hub that this project **neither trained nor
+    picked**, evaluated end to end. Everything before C5 exists to make that run honest.
+
+Phase B made the report say what cannot be verified about a model someone else trained. It still
+took a person to write that model's scenario by hand, knowing its architecture, its class
+order and its preprocessing. Phase C moves that knowledge from the person to the checkpoint,
+where the checkpoint can supply it, and says so where it cannot.
+
+Four decisions stand behind the steps (2026-09-29):
+
+- **The resolver drafts; it never runs.** Its output is a scenario marked `draft: true`.
+  `run_scenario` refuses a draft, and the model registry and `scripts/run_active.py` ignore one.
+  A person reads what was resolved, fixes what is marked TODO, and deletes the flag.
+- **A label map is proposed, never guessed.** The resolver pairs a model's class with a
+  dataset's class only where the two names are identical after normalising case and
+  punctuation (`Melanoma` ↔ `melanoma`). Every other class gets a TODO line, and the run refuses
+  until each is decided. This keeps [ADR 0002](adr/0002-verifying-a-foreign-model.md)'s rule that
+  a map is never invented. `MEL` ↔ `melanoma` looks obvious, but it is still a claim that
+  somebody has to make.
+- **A CNN is preferred, a ViT is allowed.** Grad-CAM as built targets a convolutional layer. A
+  Vision Transformer can be evaluated on every other pillar; its Grad-CAM finding reads
+  `unavailable`, with the reason, and Grad-CAM for transformers moves to
+  [Phase F](#phase-f-the-metric-catalogue-the-taxonomy-becomes-data).
+- **The network is touched once.** Every step before C5 is tested offline, with mocked
+  Hub responses and a tiny model built inside the test. Only the demo run downloads anything.
+
+| Step | Delivers | Done when |
+|---|---|---|
+| **C1** | **A pinned revision that is actually loaded.** `integrity.provenance` reads `model.revision` and reports a pinned or unpinned revision. But `verifai/models/image.py::load` calls `hf_hub_download(repo_id, filename)` without `revision=`, so a report can say *pinned* while the weights come from whatever the repository holds today. The loader passes it on. A Hub model's identity in the registry (`model_registry.py::_checkpoint`) becomes `hub:{repo}@{commit sha}`, because an `hf_image` model has no single `filename` | a pinned scenario loads exactly that commit, tested against a mocked download; the registry test covers both identity forms |
+| **C2** | **`verifai/models/resolve.py`.** Turns `hf:owner/repo[@rev]` or a local path into a draft `model:` and `dataset:` block. It reads `HfApi().model_info`, `config.json` (`id2label`, `architectures`), `preprocessor_config.json` and the card's `datasets` and `license`, and pins the commit sha as `revision`, without downloading the weights. Card dataset ids resolve to corpora through a new `hub_aliases:` list per entry in `data/corpora.yaml` (`marmal88/skin_cancer` → `ham10000`). The draft states `trained_on: {corpora, basis: "model card metadata"}`; an unlisted dataset id stays *unknown*, the table's existing rule. A torchvision `state_dict` carries no metadata at all, so for a local `.pt` the resolver says which fields must be declared rather than guessing them | the tests pass offline against mocked responses. Resolving the project's own Hub checkpoint reproduces `original_checkpoint_ham10000.yaml` wherever the Hub can know the value, and marks the rest TODO |
+| **C3** | **The `hf_image` adapter.** `AutoModelForImageClassification` + `AutoImageProcessor`. The class order comes from `id2label`, the preprocessing from the processor, and `access` is `weights`. For a CNN, `cam_layer` is resolved from the architecture. `predict_probs` batches, which closes the batch-size-1 [scaling gap](#known-scaling-gaps) where it first matters: a transformer at batch size 1, over 1,493 images times the robustness passes. `transformers` (Apache-2.0) goes into the `engine` group only, with `requirements-engine.txt` kept in step, and gets its entry in [the references](references.md) | the adapter satisfies `ModelAdapter`; the contract tests run against a tiny, randomly initialised HF model built in the test; the showcase stays torch-free and `transformers`-free, which a test already asserts |
+| **C4** | **The fingerprint, checked against the model's own processor.** The fingerprint Phase B records knows resize, mean and std. An HF `preprocessor_config.json` can also carry a shortest-edge resize, a centre crop, a `rescale_factor` and the resampling filter. The spec gains those fields, and comparing the two becomes a finding that lists each field that differs. It is never a silent pass, because a mismatch there means every metric measured a different model. This is part of `integrity.provenance` or a sibling finding, whichever keeps the report's four integrity checks readable, and the metric's version is bumped | a deliberate mismatch in a test is reported field by field; the three active reports it touches are re-run by `scripts/run_active.py` |
+| **C5** | **The demo — the phase's finish line.** A shortlist against the criteria below, one model chosen with Sabrina, and a new active configuration of it on the HAM10000 test set. On Derm7pt as well, if its label space allows. The scenario starts from the resolver's draft, and the draft's TODOs and their answers are kept in the scenario's comments | its report is in the showcase; its integrity findings say what could and could not be verified; [Current results](results.md) gains Experiment 9 |
+| **C6** | **The record.** ADR 0003 records that the resolver drafts but never runs, and the adapter contract for a self-describing model. The pipeline, architecture, extending and glossary pages are updated, and the demo model and its licence go into [the references](references.md) | `mkdocs build --strict` is clean; release **0.4.0** closes M5 |
+
+**Choosing the C5 model.** A candidate has to pass every check, and the shortlist records the
+answer for each:
+
+- [ ] its **licence** allows evaluating the model and publishing the scores;
+- [ ] its **label space** can be mapped onto HAM10000's seven classes, as a subset if not
+      identically (a model with a class the data lacks is fine, as the Derm7pt case shows);
+- [ ] it ships a **`preprocessor_config.json`**, or C4 has nothing to compare against;
+- [ ] its **training data is named** on the card, since that decides whether corpus ancestry can
+      answer at all. A model trained on HAM10000 itself reproduces Experiment 8's
+      *insufficient* verdict, one trained on an archive disjoint from the test set can reach
+      *measured*, and both are honest outcomes;
+- [ ] it is **not gated** and runs on a laptop CPU or MPS within minutes;
+- [ ] a **CNN** is preferred, so every pillar runs.
+
+Deliberately **not** in this phase: ONNX, sklearn/joblib and generative checkpoints. Each is a
+different loading story, and none of them is on the path to the next result. `hf_text`
+(`AutoModelForSequenceClassification` + `AutoTokenizer`) is the same adapter pattern for the
+text domain, and moves to [Phase H](#phase-h-domains-chest-x-ray-then-text), where there is a
+text dataset to evaluate it on.
 
 ### Phase D — the two entry tracks, one command
+
+!!! info "Planned 2026-09-29 (M6) — not started"
+    Split from M5 on 2026-09-29. The finish line is C5's demo reproduced from nothing by
+    three commands.
 
 | The model is… | What runs |
 |---|---|
 | trained and ready (local `.pt`, or a Hub link) | resolve → preflight → evaluate → export |
 | not trained yet, but the data is here | resolve data → train (`training:` block) → preflight → evaluate → export |
 
-One dispatcher over scripts that already exist:
-`verifai resolve <link>` → a draft scenario ·
-`verifai preflight <scenario>` → provenance, label space and integrity with **no**
-metric run, which is the thing to run before a long evaluation ·
-`verifai run <scenario>` → trains first when `training:` is present and the
-checkpoint is missing, then evaluates and exports.
+One dispatcher over scripts that already exist, not a second implementation of them:
+
+| Step | Delivers | Done when |
+|---|---|---|
+| **D1** | **`verifai` as a command.** `[project.scripts] verifai = "verifai.cli:main"`, dispatching `resolve` (C2) and `run` (`scripts/run_scenario.py`). The scripts stay, as thin wrappers, so nothing documented breaks | `uv run verifai --help` lists the subcommands; the existing scripts still work |
+| **D2** | **A cost per metric**, moved here from M4: `MetricSpec.cost`, a rough count of forward passes per sample, so a run can be priced before it starts | every registry entry declares one, which a test asserts, as it does `requires` |
+| **D3** | **`verifai preflight <scenario>`.** Provenance, corpus ancestry, label space and split integrity with **no** metric run, plus the estimated cost from D2. It calls the same code in `verifai/core/integrity.py` that the runner calls, so preflight and a real run cannot disagree. This is the command to run before a long evaluation | preflight on each active scenario prints the same integrity verdicts its report carries |
+| **D4** | **`verifai run`** trains first when the scenario has a `training:` block and the checkpoint is missing, then evaluates and exports. It refuses a `draft: true` scenario | a fresh clone runs the C5 demo from `resolve` to report with three commands |
+| **D5** | **`per_example` capped** before the catalogue grows. It is written by every metric for every sample today, a [known scaling gap](#known-scaling-gaps) that a fifty-metric report would multiply. It becomes capped, or opt-in per metric | report size stops growing with the number of metrics times `n`; the metrics that render per-image views still have what they need |
+| **D6** | **The studio and preflight pages made real**, replacing the placeholders in `showcase/planned.py`. Local only: they appear only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`, so the public deploy, which has neither, never shows them | the public-path tests still pass with no torch installed; locally, the studio walks from a Hub link to a report |
+
+Release **0.5.0** closes M6.
 
 ### Phase E — the interface
 
@@ -414,7 +466,7 @@ checkpoint is missing, then evaluates and exports.
   only, which a check with no number to plot may. Not yet enforced for the next one.* **Every metric renders something.** A single scalar gets the `scale` band chart by default, so
   a reader sees whether it is a *good* number rather than only what it is. A metric that returns
   a bare number with no chart spec is incomplete, the same way one without an `explain` block is.
-- ◐ *Placeholder pages only; filled by [M5](#milestones).* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
+- ◐ *Placeholder pages only; filled by [M6](#milestones), step D6.* **Run mode, gated to local.** A "New evaluation" page — source → resolved metadata
   for review → pick a test set → preflight → run → link to the new report — that
   appears only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`,
   imported lazily so the public path never touches it. `showcase/requirements.txt`
@@ -857,12 +909,12 @@ bigger than a ResNet18:
 - Everything runs at **batch size 1** (`to_tensor` does `.unsqueeze(0)` per image).
   A robustness metric costs ~7 forward passes per sample; on a ViT or a text
   transformer that stops being a rounding error. Measured here, batching would win
-  ~3.5× on MPS on top of the device fix.
+  ~3.5× on MPS on top of the device fix. *Scheduled: [step C3](#phase-c-resolving-a-model-and-the-adapter-catalogue), with the first adapter that loads a transformer.*
 - `fairness/skin_tone_ita.py` recomputes the clean prediction that
   `performance/classification.py` already made — 2 redundant passes of 7.
 - `details["per_example"]` is written for every sample **by every metric**, so a fifty-metric
   report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
-  opt-in per metric, before the catalogue lands.
+  opt-in per metric, before the catalogue lands. *Scheduled: [step D5](#phase-d-the-two-entry-tracks-one-command).*
 
 ## Tooling — moved to uv (done 2026-09-24)
 
