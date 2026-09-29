@@ -483,13 +483,13 @@
       "active": false
     },
     {
-      "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@unpinned",
+      "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@f96683db1e07243b2e2d3c9ed9c403d1fccd6824",
       "sha256": null,
       "checkpoint": {
         "kind": "hub",
         "repo_id": "sabrinahartung1010/skin-lesion-resnet18",
         "filename": "resnet18_ham10000_classweights.pt",
-        "revision": null
+        "revision": "f96683db1e07243b2e2d3c9ed9c403d1fccd6824"
       },
       "key": "resnet18_ham10000_classweights",
       "configurations": [
