@@ -159,13 +159,14 @@ flowchart TD
     style M2 fill:#CDE8D5,stroke:#2E9E5B,color:#1a1a2e
 ```
 
-On the three active configurations this produces all three kinds of answer:
+On the four active configurations this produces all three kinds of answer:
 
 | Configuration | Trained on → tested on | Row check | Verdict |
 |---|---|---|---|
 | ISIC corpus | ISIC 2019 → HAM10000 (contained) | clean | **measured** — the overlap was held back |
 | ISIC corpus — as deployed | ISIC 2019 → Derm7pt | clean | **measured** — no shared archive |
 | Original checkpoint — HAM10000 test | HAM10000 (inferred) → HAM10000 | not possible | **insufficient** — cannot be ruled out |
+| Original checkpoint — Derm7pt | HAM10000 (inferred) → Derm7pt | not possible | **measured** — no shared archive |
 
 The first row is the project's origin story, now stated by the engine: ISIC 2019 contains HAM10000,
 so the ISIC model *could* have seen its test images; the lesion-level split check is what shows
@@ -243,6 +244,12 @@ four findings deep, in the fixed order split · provenance · corpus · label sp
   keeps the gap visible rather than silently favourable.
 - **`trained_on` for a foreign model is a claim someone makes.** The `basis` field records how it
   is known, and the report quotes it; nothing verifies it.
+- **So a disjoint archive does not lift the banner on its own** (decided 2026-09-29). The
+  original checkpoint on Derm7pt measures *no shared archive*, but against a corpus inferred from
+  the model card; with no training manifests, split leakage and provenance stay `unavailable`,
+  the report still reads as provisional, and its established marks stay qualified. Lifting it
+  would mean trusting the model card as far as the table is trusted. A declared, not inferred,
+  `trained_on` disjoint from the test corpus is the case to revisit if it ever arises.
 - **The qualified mark is a wording rule, not a statistical adjustment.** Nothing estimates how
   much of a number is memory; the report only refuses to present it without the caveat.
 - **Only active configurations carry the new checks.** The 21 archived reports keep their single
