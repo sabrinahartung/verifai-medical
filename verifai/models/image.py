@@ -216,9 +216,46 @@ class ImageClassifier:
             probs = self.model(x).softmax(dim=1)[0].cpu()
         return {self.classes[i]: float(probs[i]) for i in range(len(self.classes))}
 
+    def predict_probs_batch(self, imgs, batch_size: int = 32) -> list[dict[str, float]]:
+        """`predict_probs` for many images, one forward pass per `batch_size`.
+
+        The model is in eval mode, so batch norm uses its stored statistics and an
+        image's scores do not depend on what it is batched with; they can differ
+        from the one-at-a-time pass only in the last float bits.
+        """
+        import torch
+        out: list[dict[str, float]] = []
+        for start in range(0, len(imgs), batch_size):
+            x = torch.stack([self._pre(im.convert("RGB")) for im in imgs[start:start + batch_size]])
+            with torch.no_grad():
+                probs = self.model(x.to(self.device)).softmax(dim=1).cpu()
+            out.extend({self.classes[i]: float(row[i]) for i in range(len(self.classes))}
+                       for row in probs)
+        return out
+
 
 # Kept so older imports/pickles keep resolving.
 SkinLesionModel = ImageClassifier
+
+
+def load_context_prior(prior_path: str | None) -> dict | None:
+    """The age/site prior a scenario points at, or None.
+
+    A path rather than an inline table: the prior is a measured artifact of one
+    training manifest, so it belongs on disk where it can be read, diffed and
+    pointed at, next to the manifests it was derived from.
+    """
+    if not prior_path:
+        return None
+    import json as _json
+    path_obj = Path(prior_path)
+    if not path_obj.is_absolute():
+        path_obj = Path(__file__).resolve().parents[2] / path_obj
+    if not path_obj.exists():
+        raise FileNotFoundError(
+            f"context_prior {prior_path} not found — build it with "
+            f"scripts/build_context_prior.py")
+    return _json.loads(path_obj.read_text(encoding="utf-8"))
 
 
 def load(spec: dict[str, Any]) -> ImageClassifier:
@@ -244,21 +281,7 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     arch = spec.get("arch", "resnet18")
     device = resolve_device(spec.get("device", "auto"))
 
-    # A path rather than an inline table: the prior is a measured artifact of one
-    # training manifest, so it belongs on disk where it can be read, diffed and
-    # pointed at, next to the manifests it was derived from.
-    prior = None
-    prior_path = spec.get("context_prior")
-    if prior_path:
-        import json as _json
-        path_obj = Path(prior_path)
-        if not path_obj.is_absolute():
-            path_obj = Path(__file__).resolve().parents[2] / path_obj
-        if not path_obj.exists():
-            raise FileNotFoundError(
-                f"context_prior {prior_path} not found — build it with "
-                f"scripts/build_context_prior.py")
-        prior = _json.loads(path_obj.read_text(encoding="utf-8"))
+    prior = load_context_prior(spec.get("context_prior"))
 
     weights_path = spec.get("weights_path")
     if weights_path and Path(weights_path).exists():

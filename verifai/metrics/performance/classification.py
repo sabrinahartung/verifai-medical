@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Any
 
 from verifai.core.findings import Finding
-from verifai.metrics._common import class_name
+from verifai.metrics._common import chunks, class_name, predict_many
 from verifai.metrics._stats import auc_ci, fmt, ppv_at_prevalence, wilson  # noqa: F401
 
 # One bar per image is readable for a handful of examples and useless for a
@@ -67,8 +67,9 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     idx = {c: i for i, c in enumerate(classes)}
     cm = [[0] * len(classes) for _ in classes]
 
-    for s in labeled:
-        probs = model.predict_probs(dataset.load(s))
+    scored = ((s, p) for batch in chunks(labeled)
+              for s, p in zip(batch, predict_many(model, [dataset.load(s) for s in batch])))
+    for s, probs in scored:
         ranked = model.rank(probs, getattr(s, "meta", None))  # honours the configured decision rule
         top = ranked[0]
         ok = (top == s.label)

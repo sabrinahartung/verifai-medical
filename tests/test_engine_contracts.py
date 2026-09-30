@@ -2507,3 +2507,121 @@ def test_a_draft_written_as_yaml_reads_back_as_the_same_scenario():
     text = d.to_yaml()
     assert yaml.safe_load(text) == d.scenario
     assert text.startswith("# DRAFT"), "the header says what the file is before anything else"
+
+
+# --- C3: the hf_image adapter ---------------------------------------------------
+# A tiny, randomly initialised transformers model saved to a temp directory: the
+# adapter is exercised end to end with no download and no checkpoint.
+def _tiny_hf(tmp_path, family="resnet", labels=("a", "b", "c")):
+    T = pytest.importorskip("transformers")
+    id2label = dict(enumerate(labels))
+    if family == "resnet":
+        cfg = T.ResNetConfig(embedding_size=8, hidden_sizes=[8, 16], depths=[1, 1],
+                             num_labels=len(labels), id2label=id2label)
+        model = T.ResNetForImageClassification(cfg)
+    else:
+        cfg = T.ViTConfig(image_size=32, patch_size=8, hidden_size=16, num_hidden_layers=1,
+                          num_attention_heads=2, intermediate_size=32,
+                          num_labels=len(labels), id2label=id2label)
+        model = T.ViTForImageClassification(cfg)
+    d = tmp_path / family
+    model.save_pretrained(d)
+    T.ViTImageProcessor(size={"height": 32, "width": 32}).save_pretrained(d)
+    return d
+
+
+def _rgb(seed=0, size=(40, 30)):
+    import numpy as np
+    from PIL import Image
+    rng = np.random.default_rng(seed)
+    return Image.fromarray(rng.integers(0, 255, (*size[::-1], 3), dtype=np.uint8))
+
+
+def test_an_hf_image_model_satisfies_the_adapter_contract(tmp_path):
+    from verifai.models.base import ModelAdapter
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    assert isinstance(clf, ModelAdapter)
+    assert clf.classes == ["a", "b", "c"], "the class order is the repository's id2label"
+    assert (clf.access, clf.modality) == ("weights", "pixels")
+    probs = clf.predict_probs(_rgb())
+    assert set(probs) == {"a", "b", "c"} and abs(sum(probs.values()) - 1) < 1e-5
+    assert clf.decide(probs) == max(probs, key=probs.get)
+    md = clf.metadata
+    assert md["preprocessing"]["processor"] == "ViTImageProcessor"
+    assert md["preprocessing"]["size"] == {"height": 32, "width": 32}
+    assert md["architecture"] == "ResNetForImageClassification"
+
+
+def test_batched_scores_equal_one_at_a_time_scores(tmp_path):
+    from verifai.metrics._common import predict_many
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    imgs = [_rgb(i) for i in range(5)]
+    batched = predict_many(clf, imgs, batch_size=2)          # crosses a batch boundary
+    for img, b in zip(imgs, batched):
+        single = clf.predict_probs(img)
+        assert all(abs(single[c] - b[c]) < 1e-5 for c in single)
+
+
+def test_an_adapter_without_batching_is_asked_one_image_at_a_time():
+    from verifai.metrics._common import predict_many
+
+    class OneAtATime:
+        calls = 0
+
+        def predict_probs(self, img):
+            OneAtATime.calls += 1
+            return {"a": 1.0}
+    assert predict_many(OneAtATime(), [1, 2, 3]) == [{"a": 1.0}] * 3
+    assert OneAtATime.calls == 3
+
+
+def test_grad_cam_hooks_onto_an_hf_cnn(tmp_path):
+    from verifai.metrics.explainability.gradcam import _gradcam
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    assert clf.cam_layer_path == "resnet.encoder.stages[-1]"
+    x = clf.to_tensor(_rgb())
+    x.requires_grad_(True)
+    cam = _gradcam(clf.torch_module, clf.cam_layer, x, 0)
+    assert cam.ndim == 2 and float(cam.min()) >= 0
+
+
+def test_grad_cam_on_a_vision_transformer_is_unavailable_with_the_reason(tmp_path):
+    from verifai.metrics.explainability.gradcam import run
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path, "vit")), "device": "cpu"})
+    assert clf.cam_layer is None
+    f = run(clf, [], {"plot_dir": str(tmp_path / "plots")})
+    assert f.verdict == "unavailable" and f.value is None
+    assert "ViTForImageClassification" in f.summary
+
+
+@pytest.mark.parametrize("override", [{"classes": ["c", "b", "a"]},
+                                      {"architecture": "ConvNextForImageClassification"}])
+def test_a_scenario_that_contradicts_the_repository_is_refused(tmp_path, override):
+    from verifai.models.hf_image import load
+    with pytest.raises(ValueError, match="repository"):
+        load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu", **override})
+
+
+def test_the_hf_loader_fetches_the_declared_revision(tmp_path, monkeypatch):
+    T = pytest.importorskip("transformers")
+    from verifai.models.hf_image import load
+    local = str(_tiny_hf(tmp_path))
+    asked = []
+    real_model = T.AutoModelForImageClassification.from_pretrained
+    real_proc = T.AutoImageProcessor.from_pretrained
+
+    def model_fp(src, revision=None, **kw):
+        asked.append(("model", src, revision))
+        return real_model(local)
+
+    def proc_fp(src, revision=None, **kw):
+        asked.append(("processor", src, revision))
+        return real_proc(local)
+    monkeypatch.setattr(T.AutoModelForImageClassification, "from_pretrained", model_fp)
+    monkeypatch.setattr(T.AutoImageProcessor, "from_pretrained", proc_fp)
+    load({"repo_id": "someone/m", "revision": "a" * 40, "device": "cpu"})
+    assert asked == [("model", "someone/m", "a" * 40), ("processor", "someone/m", "a" * 40)]
