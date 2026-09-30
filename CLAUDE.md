@@ -29,12 +29,19 @@ uv run streamlit run showcase/app.py
 
 # after a metric changes: re-run only the active scenarios (minutes, not all 23)
 uv run python scripts/run_active.py
+
+# draft a scenario from a Hub model or a local .pt (reads metadata, never the weights)
+uv run python scripts/resolve_model.py hf:owner/repo --dataset data/manifests/ham10000_test.csv
 ```
+
+A draft carries `draft: true` and a `TODO: …` wherever the checkpoint could not say
+something. `run_scenario` refuses it, and any scenario with a TODO left; the model registry
+and `run_active.py` skip it.
 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (154 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (168 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q

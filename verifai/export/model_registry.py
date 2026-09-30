@@ -130,6 +130,8 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
     groups: dict[str, dict[str, Any]] = {}
     for p in sorted(Path(scenarios_dir).glob("*.yaml")):
         sc = yaml.safe_load(p.read_text(encoding="utf-8"))
+        if sc.get("draft"):
+            continue            # a resolver draft is not a model yet, only questions about one
         name, model = sc["name"], sc.get("model") or {}
         ck = _checkpoint(model)
         identity, digest = _identity(ck, name, root, known_hashes)
