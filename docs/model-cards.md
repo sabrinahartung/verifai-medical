@@ -67,15 +67,21 @@ The corrections, in order:
 1. **The wording.** *Done 2026-09-30.* `trained_on.basis` in the two active scenarios now names
    the training notebook, and the pages that said *model card* say where the claim really comes
    from. [ADR 0002](adr/0002-verifying-a-foreign-model.md) keeps its original text as the record,
-   with a dated correction. The published reports still quote the old wording until step 3
-   re-runs them.
-2. **The card.** A draft is in the repository at
-   [`model_cards/skin-lesion-resnet18/README.md`](https://github.com/sabrinahartung/verifai-medical/blob/main/model_cards/skin-lesion-resnet18/README.md).
-   Uploading it is the author's step, [below](#uploading-the-card).
-3. **Re-pin and re-run.** Uploading creates a new commit. The weights file does not change, so
-   the three scenarios on the checkpoint can be pinned to the new commit safely, which lets the
-   resolver and the reports see the same card. The two active reports are then re-run. This
-   fits into step C4, which re-runs them anyway.
+   with a dated correction.
+2. **The card.** *Done 2026-09-30.* Uploaded as commit
+   [`d6f877a`](https://huggingface.co/sabrinahartung1010/skin-lesion-resnet18/commit/d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506),
+   byte-identical to
+   [`model_cards/skin-lesion-resnet18/README.md`](https://github.com/sabrinahartung/verifai-medical/blob/main/model_cards/skin-lesion-resnet18/README.md),
+   which stays in this repository as the source of the card. A change to the card is made there
+   first and uploaded again.
+3. **Re-pin and re-run.** *Done 2026-09-30.* The weights file in `d6f877a` is the same LFS object
+   as in `f96683d` (sha256 `58a63e41…`), so the three scenarios on the checkpoint are pinned to
+   the card's commit and the two active reports were re-run. Only the provenance sentence, the
+   quoted basis and the recorded revision changed; every measured value is identical. The
+   archived report is left as it was recorded. Resolved again, the repository now yields
+   `trained_on: {corpora: [ham10000], basis: "model card metadata"}` and the licence from the
+   card's header; architecture, class order and preprocessing remain TODO, since only the
+   card's prose states them.
 
 What the card changes in a report is the `basis`: the training data becomes *declared by the
 author* rather than *inferred*. The integrity verdicts do not change. Corpus ancestry still finds

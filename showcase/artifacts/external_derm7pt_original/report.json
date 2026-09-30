@@ -36,11 +36,11 @@
         "trained_on": [
           "ham10000"
         ],
-        "trained_on_basis": "inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000",
+        "trained_on_basis": "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000",
         "checkable": false
       },
       "verdict": "unavailable",
-      "summary": "Loaded from the Hugging Face repository `sabrinahartung1010/skin-lesion-resnet18` at revision `f96683db1e07243b2e2d3c9ed9c403d1fccd6824`, with no training manifests declared, so none of the 1,003 test images can be checked against what the model saw. Its training data is described as HAM10000 — inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000. No split check is possible; that is not the same as a clean split.",
+      "summary": "Loaded from the Hugging Face repository `sabrinahartung1010/skin-lesion-resnet18` at revision `d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506`, with no training manifests declared, so none of the 1,003 test images can be checked against what the model saw. Its training data is described as HAM10000 — documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000. No split check is possible; that is not the same as a clean split.",
       "details": {
         "explain": {
           "what": "Every other number in this report assumes the model never saw these images. Whether that can be checked depends on where the model came from: a model trained here comes with the list of images it trained on, so the overlap can be counted. A model downloaded from someone else usually comes with no such list, and then the overlap cannot be counted at all.",
@@ -16799,7 +16799,7 @@
     "checkpoint": {
       "repo_id": "sabrinahartung1010/skin-lesion-resnet18",
       "filename": "resnet18_ham10000_classweights.pt",
-      "revision": "f96683db1e07243b2e2d3c9ed9c403d1fccd6824"
+      "revision": "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
     },
     "task": "classification",
     "modality": "pixels",
@@ -16910,5 +16910,5 @@
       }
     ]
   },
-  "created_at": "2026-09-29T20:26:32.483059+00:00"
+  "created_at": "2026-09-30T18:46:45.395271+00:00"
 }
