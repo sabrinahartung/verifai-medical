@@ -34,7 +34,7 @@ model:
   device: "auto"
   trained_on:
     corpora: [ham10000]
-    basis: "inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000"
+    basis: "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
 
 dataset:
   loader: "verifai.datasets.loaders:load_image_manifest"

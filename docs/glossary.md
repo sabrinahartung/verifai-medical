@@ -268,7 +268,7 @@ Provenance
 :   Where a model came from, and what that lets an evaluation check. A model trained here
     comes with the list of images it trained on, so the split can be counted image by image. The
     original checkpoint on the Hugging Face Hub comes with weights only; its training data is
-    *inferred* as HAM10000 from its model card. Its report therefore says *no split check is
+    known as HAM10000 only from the notebook that trained it. Its report therefore says *no split check is
     possible* — which is never the same as a clean split.
 
 Corpus ancestry

@@ -1,9 +1,10 @@
 # The project's one real third-party model, evaluated on the full HAM10000 test set.
 #
 # This checkpoint was not trained here. It came from the Hugging Face Hub, and its
-# author published weights, not a list of training images. Its training set is only
-# inferred: the model card names marmal88/skin_cancer, a repackaging of HAM10000, and
-# the audit in docs/ROADMAP.md found that data covers 9,964 of HAM10000's 10,015
+# author published weights, not a list of training images. Its training corpus is known
+# only from its training notebook (docs/references.md [50]; the Hub repository has no
+# model card, see docs/model-cards.md): marmal88/skin_cancer, a repackaging of HAM10000.
+# The audit in docs/ROADMAP.md found that data covers 9,964 of HAM10000's 10,015
 # images — this test set included.
 #
 # So this configuration exists to show what an evaluation can and cannot say about a
@@ -37,7 +38,7 @@ model:
   device: "auto"
   trained_on:
     corpora: [ham10000]
-    basis: "inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000"
+    basis: "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
 
 dataset:
   loader: "verifai.datasets.loaders:load_image_manifest"
