@@ -31,7 +31,8 @@ model:
   cam_layer: "layer4[-1]"       # Grad-CAM target; defaults per arch
   device: "auto"                # auto | cpu | cuda | mps
   weights_path: "artifacts_training/my_model.pt"
-  # ...or repo_id + filename to pull from the Hugging Face Hub
+  # ...or repo_id + filename to pull from the Hugging Face Hub, and
+  # revision: "<commit sha>" to pin it — without one the report says unpinned
   classes: [...]                # MUST match the checkpoint's output order
 
 dataset:

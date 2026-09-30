@@ -227,6 +227,7 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
      id: "skin-lesion-resnet18",
      repo_id: "sabrinahartung1010/skin-lesion-resnet18",
      filename: "resnet18_ham10000_classweights.pt",
+     revision: "<commit sha>",  # pins the Hub download; omitted = unpinned
      weights_path: "/optional/local/override.pt",  # skips the HF download
      arch: "resnet18",          # any torchvision classifier factory
      classes: [...],            # must match the checkpoint's output order
@@ -264,7 +265,11 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
         path = weights_path
     else:
         from huggingface_hub import hf_hub_download
-        path = hf_hub_download(repo_id=spec["repo_id"], filename=spec["filename"])
+        # The report says "pinned" whenever a revision is declared, so the
+        # download must fetch exactly that commit — not whatever the repository
+        # holds today. No revision means the default branch, reported as unpinned.
+        path = hf_hub_download(repo_id=spec["repo_id"], filename=spec["filename"],
+                               revision=spec.get("revision"))
 
     factory = getattr(tvm, arch, None)
     if factory is None:
