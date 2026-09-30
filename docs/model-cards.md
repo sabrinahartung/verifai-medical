@@ -87,7 +87,7 @@ What the card changes in a report is the `basis`: the training data becomes *dec
 author* rather than *inferred*. The integrity verdicts do not change. Corpus ancestry still finds
 HAM10000 on both sides with no image-by-image check, so leakage still *cannot be ruled out*.
 
-!!! question "Open: a row-level check is now possible"
+!!! question "A row-level check is now possible — deferred 2026-09-30"
     The notebook names the exact split, and `marmal88/skin_cancer` carries `image_id` and
     `lesion_id` for every row. So a training manifest could be built from its `train` split
     and declared under `integrity.train_manifests`, and the split check could then count
@@ -95,7 +95,9 @@ HAM10000 on both sides with no image-by-image check, so leakage still *cannot be
     HAM10000 is in `train` and `validation`), the result would almost certainly be contamination.
     The runner would then refuse the HAM10000 run, and the verdict would move from
     `insufficient` to `invalid`. That is more honest, but it ends the configuration's role as the
-    example of what cannot be verified about someone else's model. Not decided yet.
+    example of what cannot be verified about someone else's model. Deferred on 2026-09-30:
+    the configuration stays the example for now, and the check is revisited when these
+    scenarios are re-run with more metrics.
 
 ## Uploading the card
 
