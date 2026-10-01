@@ -54,6 +54,10 @@ METRIC_REGISTRY: dict[str, MetricSpec | str] = {
         "verifai.metrics.integrity.provenance:run", "integrity", "provenance"),
     "integrity.corpus_ancestry": MetricSpec(
         "verifai.metrics.integrity.corpus_ancestry:run", "integrity", "corpus_ancestry"),
+    # needs what the adapter records about its preprocessing, and the model's side
+    "integrity.preprocessing": MetricSpec(
+        "verifai.metrics.integrity.preprocessing:run", "integrity", "preprocessing",
+        modalities=("pixels",)),
     # needs the model's class list, which every adapter declares
     "integrity.label_space": MetricSpec(
         "verifai.metrics.integrity.label_space:run", "integrity", "label_space"),

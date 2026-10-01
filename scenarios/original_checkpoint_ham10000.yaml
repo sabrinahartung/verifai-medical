@@ -66,6 +66,7 @@ metrics:
   - "integrity.provenance"
   - "integrity.corpus_ancestry"
   - "integrity.label_space"
+  - "integrity.preprocessing"
   - "performance.classification"
   - "explainability.gradcam"
   - "robustness.corruption"

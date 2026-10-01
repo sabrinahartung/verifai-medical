@@ -277,6 +277,33 @@ def test_snapshot_records_what_makes_a_run_comparable(tmp_path):
     assert snap["metrics"]["performance.accuracy"] == 0.8
 
 
+def test_a_failed_preprocessing_check_keeps_a_run_out_of_the_comparison(tmp_path):
+    """A clean split is not enough: the snapshot carries the worst integrity check.
+
+    Before C4 it carried the split check alone, so a run whose images were
+    prepared differently from the model's own would still have been plotted
+    beside the others while its report page said it was unusable.
+    """
+    from verifai.core.findings import Finding
+    from verifai.export.artifacts import write_snapshot
+    r = _report_with({"accuracy": 0.8})
+    for metric, verdict in (("split_leakage", "measured"), ("preprocessing", "invalid"),
+                            ("label_space", "measured")):
+        r.findings.append(Finding(pillar="integrity", metric=metric, domain="image",
+                                  value={}, verdict=verdict))
+    r.meta = {"eval_set": {"manifest": "m.csv", "sha256": "deadbeef", "n": 10}}
+    snap = json.loads(write_snapshot(r, tmp_path).read_text(encoding="utf-8"))
+    assert (snap["integrity"], snap["integrity_by"]) == ("invalid", "preprocessing")
+
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from catalog import _blocked_reason
+    assert "prepared differently" in _blocked_reason(snap)
+    # a snapshot written before C4 has no integrity_by, and was always the split
+    assert "split was contaminated" in _blocked_reason(
+        {"integrity": "invalid", "eval_set": {"sha256": "x"}})
+
+
 def test_eval_set_fingerprint_uses_content_not_filename(tmp_path):
     """A manifest can be regenerated with a different seed and keep its name."""
     from verifai.core.run import _eval_set_fingerprint
@@ -1632,9 +1659,12 @@ def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, r
     weights = tmp_path / "w.pt"
     torch.save(net.state_dict(), weights)
 
+    from huggingface_hub.errors import EntryNotFoundError
     calls = []
     def fake_download(**kwargs):
         calls.append(kwargs)
+        if kwargs["filename"] == "preprocessor_config.json":
+            raise EntryNotFoundError("this repository ships none")
         return str(weights)
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
 
@@ -1642,8 +1672,12 @@ def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, r
             "classes": ["a", "b", "c"], "cam_layer": "features[-1]", "device": "cpu"}
     if revision:
         spec["revision"] = revision
-    load(spec)
-    assert calls == [{"repo_id": "org/net", "filename": "w.pt", "revision": revision}]
+    clf = load(spec)
+    # the weights, then the repository's processor (C4) — both at the same revision
+    assert calls == [{"repo_id": "org/net", "filename": "w.pt", "revision": revision},
+                     {"repo_id": "org/net", "filename": "preprocessor_config.json",
+                      "revision": revision}]
+    assert clf.reference_preprocessing is None
 
 
 def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
@@ -2341,7 +2375,8 @@ def test_the_preprocessing_fingerprint_changes_with_the_preprocessing():
     b = ImageClassifier(torch.nn.Linear(1, 2), ["a", "b"],
                         preprocess_spec={"resize": [256, 256], "mean": [0.5] * 3, "std": [0.5] * 3})
     assert a.metadata["preprocessing_sha256"] != b.metadata["preprocessing_sha256"]
-    assert a.metadata["preprocessing"]["resize"] == [224, 224]
+    assert a.metadata["preprocessing"]["resize"] == {"height": 224, "width": 224}
+    assert a.metadata["preprocessing"]["resample"] == "bilinear"
 
 
 def test_a_scenario_can_say_why_it_left_an_applicable_metric_out():
@@ -2549,7 +2584,7 @@ def test_an_hf_image_model_satisfies_the_adapter_contract(tmp_path):
     assert clf.decide(probs) == max(probs, key=probs.get)
     md = clf.metadata
     assert md["preprocessing"]["processor"] == "ViTImageProcessor"
-    assert md["preprocessing"]["size"] == {"height": 32, "width": 32}
+    assert md["preprocessing"]["resize"] == {"height": 32, "width": 32}
     assert md["architecture"] == "ResNetForImageClassification"
 
 
@@ -2625,3 +2660,104 @@ def test_the_hf_loader_fetches_the_declared_revision(tmp_path, monkeypatch):
     monkeypatch.setattr(T.AutoImageProcessor, "from_pretrained", proc_fp)
     load({"repo_id": "someone/m", "revision": "a" * 40, "device": "cpu"})
     assert asked == [("model", "someone/m", "a" * 40), ("processor", "someone/m", "a" * 40)]
+
+
+# --- C4: the preprocessing, checked against the model's own ------------------------
+class _PrepModel:
+    """Only what integrity.preprocessing reads from an adapter."""
+    def __init__(self, used, reference=None):
+        self.metadata = {"preprocessing": used}
+        self.reference_preprocessing = reference
+
+
+def _prep_run(model, scenario_model=None, n=12):
+    from verifai.metrics.integrity import preprocessing
+    return preprocessing.run(model, list(range(n)),
+                             {"scenario": {"domain": "image", "model": scenario_model or {}}})
+
+
+def _tv(size=224):
+    from verifai.models.image import MEAN, STD
+    from verifai.models.preprocessing import torchvision_spec
+    return torchvision_spec(size, MEAN, STD)
+
+
+def test_a_deliberate_preprocessing_mismatch_is_reported_field_by_field():
+    from verifai.models.preprocessing import processor_spec
+    pp = {"do_resize": True, "size": {"shortest_edge": 256}, "resample": 3,
+          "do_center_crop": True, "crop_size": {"height": 224, "width": 224},
+          "do_rescale": True, "rescale_factor": 1 / 255,
+          "do_normalize": True, "image_mean": [0.5] * 3, "image_std": [0.5] * 3}
+    f = _prep_run(_PrepModel(_tv(), {"source": "processor", "where": "`preprocessor_config.json`",
+                                     "spec": processor_spec(pp)}))
+    assert f.verdict == "invalid"
+    differing = {d["field"] for d in f.value["differences"]}
+    assert differing == {"resize", "center_crop", "resample", "mean", "std"}
+    assert "rescale_factor" not in differing, "1/255 on both sides is a match"
+    assert f.value["fields_differing"] == 5
+    for words in ("resize", "centre crop", "interpolation", "normalisation mean"):
+        assert words in f.summary
+    from verifai.metrics._baseline import preprocessing as ref
+    assert ref(f.value)["cleared"] is False
+
+
+def test_matching_preprocessing_is_measured_and_says_what_was_not_stated():
+    ref = {"source": "processor", "where": "the repository's processor",
+           "spec": {"resize": {"height": 224, "width": 224}}}
+    f = _prep_run(_PrepModel(_tv(), ref))
+    assert f.verdict == "measured" and f.value["fields_differing"] == 0
+    assert "not checked" in f.summary, "a partial reference must say what it did not cover"
+    from verifai.metrics._baseline import preprocessing as base
+    assert base(f.value)["cleared"] is False, "a partial check establishes nothing"
+
+
+def test_no_reference_is_unavailable_never_a_match():
+    f = _prep_run(_PrepModel(_tv()), scenario_model={"repo_id": "someone/model"})
+    assert f.verdict == "unavailable" and f.value["fields_compared"] == 0
+    assert "not the same as a match" in f.summary
+
+
+def test_an_older_training_record_checks_only_the_image_size(tmp_path):
+    w = tmp_path / "m.pt"
+    w.write_bytes(b"")
+    (tmp_path / "m_training.json").write_text(json.dumps({"scenario": "m", "image_size": 256}))
+    f = _prep_run(_PrepModel(_tv(224)), scenario_model={"weights_path": str(w)})
+    assert f.verdict == "invalid"
+    assert [d["field"] for d in f.value["differences"]] == ["resize"]
+
+
+def test_an_hf_model_is_prepared_by_its_own_processor(tmp_path):
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    f = _prep_run(clf)
+    assert f.verdict == "measured" and f.value["source"] == "own_processor"
+    from verifai.metrics._baseline import preprocessing as base
+    assert base(f.value)["cleared"] is True
+
+
+def test_a_hub_state_dict_reads_its_repositorys_processor_at_the_pinned_revision(monkeypatch, tmp_path):
+    import huggingface_hub
+    from huggingface_hub.errors import EntryNotFoundError
+    from verifai.models import image as I
+    asked = []
+    cfg = tmp_path / "preprocessor_config.json"
+    cfg.write_text(json.dumps({"size": {"height": 224, "width": 224}, "resample": 2}))
+
+    def fake(repo_id, filename, revision=None):
+        asked.append((filename, revision))
+        return str(cfg)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    ref = I._hub_processor("someone/m", "a" * 40)
+    assert asked == [("preprocessor_config.json", "a" * 40)]
+    assert ref["spec"] == {"resize": {"height": 224, "width": 224}, "resample": "bilinear"}
+
+    def missing(repo_id, filename, revision=None):
+        raise EntryNotFoundError("no such file")
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", missing)
+    assert I._hub_processor("someone/m", "a" * 40) is None, "absent on the Hub is no reference"
+
+    def offline(repo_id, filename, revision=None):
+        raise OSError("no network")
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", offline)
+    with pytest.raises(OSError):
+        I._hub_processor("someone/m", "a" * 40)      # a failed lookup is never "absent"

@@ -287,8 +287,16 @@ def _blocked_reason(snap: dict) -> str | None:
     if (snap.get("eval_set") or {}).get("sha256") is None:
         return "no evaluation manifest recorded, so there is nothing to match against"
     integrity = normalise_verdict(snap.get("integrity"), "integrity")
+    # Snapshots before C4 carry no `integrity_by`; theirs was always the split check.
+    preprocessing = snap.get("integrity_by") == "preprocessing"
     if integrity == "invalid":
+        if preprocessing:
+            return ("its images were prepared differently from what the model expects — the "
+                    "numbers describe a different model")
         return "its split was contaminated — the numbers are inflated by an unknown amount"
     if integrity != "measured":
+        if preprocessing:
+            return ("its preprocessing could not be checked against the model's own, so the "
+                    "numbers rest on an unchecked assumption")
         return "split integrity was never verified, so the numbers rest on an unchecked assumption"
     return None

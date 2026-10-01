@@ -123,6 +123,48 @@
       "plots": []
     },
     {
+      "pillar": "integrity",
+      "metric": "preprocessing",
+      "domain": "image",
+      "value": {
+        "source": null,
+        "fields_compared": 0,
+        "fields_differing": 0,
+        "differences": [],
+        "not_stated": []
+      },
+      "verdict": "unavailable",
+      "summary": "The 1,493 test images were prepared as the scenario declares, and nothing on the model's side states its preprocessing: no processor file in its repository and no training record. So it cannot be checked; that is not the same as a match.",
+      "details": {
+        "explain": {
+          "what": "Before a model sees an image, the image is resized, perhaps cropped, and its colours are rescaled to the numbers the model was trained on. If the evaluation prepares images differently from training, the same model gives different answers, and every other number in this report describes that different model. So the preparation used here is compared with what the model's own side says it should be.",
+          "how": "Each field the model's side states — resize, crop, interpolation, rescaling and the colour normalisation — is compared with what this evaluation used. Any field that differs is listed with both values, and makes the report unusable as a measurement of that model. Fields nobody stated cannot be checked, and are listed as such.",
+          "limits": "It compares settings, not pixels: two libraries given the same settings can still interpolate very slightly differently. And the model's side can only say what its author wrote down; a processor file that was itself wrong would agree with a wrong evaluation."
+        },
+        "used": {
+          "resize": {
+            "height": 224,
+            "width": 224
+          },
+          "center_crop": null,
+          "resample": "bilinear",
+          "rescale_factor": 0.00392156862745098,
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ]
+        },
+        "baseline": null
+      },
+      "plots": []
+    },
+    {
       "pillar": "performance",
       "metric": "top1_accuracy",
       "domain": "image",
@@ -27734,6 +27776,7 @@
       "integrity.provenance": 1,
       "integrity.corpus_ancestry": 1,
       "integrity.label_space": 1,
+      "integrity.preprocessing": 1,
       "performance.classification": 3,
       "explainability.gradcam": 3,
       "robustness.corruption": 3,
@@ -27759,11 +27802,13 @@
         "vascular_lesions"
       ],
       "preprocessing": {
-        "resize": [
-          224,
-          224
-        ],
-        "to_tensor": true,
+        "resize": {
+          "height": 224,
+          "width": 224
+        },
+        "center_crop": null,
+        "resample": "bilinear",
+        "rescale_factor": 0.00392156862745098,
         "mean": [
           0.485,
           0.456,
@@ -27775,7 +27820,7 @@
           0.225
         ]
       },
-      "preprocessing_sha256": "c650b62d4c28d8c5"
+      "preprocessing_sha256": "f170e3fa7a42b9b3"
     },
     "coverage": [
       {
@@ -27800,6 +27845,14 @@
         "finding": "corpus_ancestry",
         "requires": "labels",
         "status": "insufficient",
+        "reachable": true
+      },
+      {
+        "metric": "integrity.preprocessing",
+        "pillar": "integrity",
+        "finding": "preprocessing",
+        "requires": "labels",
+        "status": "unavailable",
         "reachable": true
       },
       {
@@ -27852,5 +27905,5 @@
       }
     ]
   },
-  "created_at": "2026-09-30T18:44:11.046881+00:00"
+  "created_at": "2026-09-30T21:28:11.459607+00:00"
 }

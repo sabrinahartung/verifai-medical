@@ -90,6 +90,16 @@ def label_space_(value: dict) -> dict | None:
                       "The model and the test images use the same classes.")
 
 
+def preprocessing(value: dict) -> dict | None:
+    if not value.get("source"):
+        return None
+    complete = not value.get("not_stated") or value["source"] == "own_processor"
+    return _reference("ideal", 0, "every preprocessing field the model's side states, all of "
+                      "them stated, and none differing",
+                      value.get("fields_differing") == 0 and complete,
+                      "The images were prepared exactly as the model's own side states.")
+
+
 def classification(value: dict) -> dict | None:
     per_class, n, acc = value.get("per_class") or {}, value.get("n") or 0, value.get("accuracy")
     supports = {c: v.get("support") or 0 for c, v in per_class.items()}
@@ -169,6 +179,7 @@ BY_FINDING = {
     "provenance": provenance,
     "corpus_ancestry": corpus_ancestry,
     "label_space": label_space_,
+    "preprocessing": preprocessing,
     "top1_accuracy": classification,
     "skin_tone_ita": skin_tone,
     "corruption_stability": corruption,

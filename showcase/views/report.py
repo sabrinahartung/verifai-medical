@@ -55,7 +55,11 @@ def _integrity_banner(state: str, finding: dict | None):
     icon, label, _ = VERDICT[state]
     said = (finding or {}).get("summary") or "No split-integrity check was run for this evaluation."
     if state == "invalid":
-        st.error(f"**{label}: the split is contaminated.** {said} Everything below is shown "
+        # Two preconditions can fail: a contaminated split, or images prepared
+        # differently from what the model expects. The heading names which.
+        what = ("the images were prepared differently from what the model expects"
+                if (finding or {}).get("metric") == "preprocessing" else "the split is contaminated")
+        st.error(f"**{label}: {what}.** {said} Everything below is shown "
                  f"for the record and should not be read as a result.", icon=icon)
     else:
         st.warning(f"**Read everything below as provisional.** {said}", icon=icon)
