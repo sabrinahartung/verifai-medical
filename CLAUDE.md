@@ -41,7 +41,7 @@ and `run_active.py` skip it.
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (176 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (184 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -151,6 +151,10 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   row-level check is `insufficient` — leakage cannot be ruled out — never `invalid`, which
   stays reserved for contamination that was found. On such a provisional report every
   *established* mark outside integrity reads *on a split that could not be checked*.
+  `metrics/integrity/preprocessing.py` compares the preprocessing a run used with the model's
+  own (its processor, its Hub `preprocessor_config.json`, or the training record), in the shared
+  vocabulary of `verifai/models/preprocessing.py`; a differing field is `invalid`, a model whose
+  side states nothing is `unavailable` — never a match.
 - `verifai/models/image.py` — `ImageClassifier` wrapper (`SkinLesionModel` is kept as an alias).
   Metrics use `.torch_module` and `.cam_layer` (hooks/Grad-CAM), `.to_tensor()`,
   `.predict_probs()`. Classes, architecture, Grad-CAM layer, image size and device all come from
@@ -178,7 +182,8 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   `showcase/artifacts/<scenario>/`, plus one immutable snapshot per run in `history/`.
   `snapshot_metrics()` flattens each finding's numeric leaves to `<pillar>.<path>` generically,
   so a new metric becomes comparable without this module knowing about it. Every snapshot
-  carries the evaluation manifest's **content hash** and the integrity verdict — those two
+  carries the evaluation manifest's **content hash** and the integrity verdict — the worst of the
+  integrity checks, as the report's banner takes it, with the deciding check in `integrity_by` — those two
   fields are what let `showcase/app.py` refuse a dishonest comparison, so do not drop them.
 - `verifai/export/model_registry.py` — writes `showcase/artifacts/model_registry.json`: every
   declared **model** and its configurations, read from the scenarios, so a model that has never

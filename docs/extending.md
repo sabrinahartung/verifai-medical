@@ -74,9 +74,10 @@ domain possible at all. Read off the metrics as they stand:
 | `model.decide(probs, meta=None)`, `model.rank(probs, meta=None)` | model | all |
 | `model.torch_module`, `model.cam_layer`, `model.to_tensor(payload)` | model | Grad-CAM only |
 | the payload being *pixels* | dataset | the ITA fairness metric only |
-| the scenario (`ctx["scenario"]`) and the manifests — never the model's outputs | scenario | the four integrity checks |
+| the scenario (`ctx["scenario"]`) and the manifests — never the model's outputs | scenario | the first four integrity checks |
+| `model.metadata["preprocessing"]`, `model.reference_preprocessing` — never the model's outputs | model | the preprocessing check |
 
-So **four of the six original metrics never touch anything image-specific**, and the four
+So **four of the six original metrics never touch anything image-specific**, and the five
 integrity checks do not touch the model's outputs at all: they need a payload, a
 probability vector and a decision rule. A text or audio adapter that returns
 `{class: probability}` from `predict_probs` would run them unchanged.

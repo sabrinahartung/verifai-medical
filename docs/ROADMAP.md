@@ -7,7 +7,7 @@
 
 !!! abstract "This page is the plan"
     Everything below the "What has been built" table is **planned, not built**. For what runs
-    today, read [The pillars → Running today](pillars.md#running-today-nine-metrics) — nine
+    today, read [The pillars → Running today](pillars.md#running-today-ten-metrics) — ten
     metrics — or [Current results](results.md) for the numbers they produced. How the parts
     already built work in detail: the [architecture decisions](adr/index.md).
 
@@ -36,9 +36,9 @@ Four things have to become true for that:
 1. **Any model.** A declared adapter contract, not one hardcoded loader. Third-party
    checkpoints arrive in formats this repo has never seen. *The contract and the access gate
    are built (M4), and so is what can be verified about a model someone else trained (M5,
-   Phase B); resolving a Hub link into an adapter is next (Phase C).*
+   Phase B); resolving a Hub link into a draft scenario and the `hf_image` adapter are built, and a Hub model this project did not pick is next (Phase C).*
 2. **Any medical domain.** Images, text, later speech and generated text — with the
-   metric catalogue expanded far beyond the nine metrics that exist today.
+   metric catalogue expanded far beyond the ten metrics that exist today.
 3. **Two honest entry states.** *The model is trained and ready to load*, or *the
    model must be trained first and the data is here.* Both end in the same report.
    *Planned as M6 (Phase D).*
@@ -77,12 +77,12 @@ The route there is the [milestone table](#milestones): M5 to M12, one row each.
 
 ---
 
-## Where things stand (2026-09-30)
+## Where things stand (2026-10-01)
 
-**25 artifact folders — 15 models in 25 configurations, 4 of them active — 176 contract
-tests, three evaluation sets, nine metrics.** [Current results](results.md) has the
+**25 artifact folders — 15 models in 25 configurations, 4 of them active — 184 contract
+tests, three evaluation sets, ten metrics.** [Current results](results.md) has the
 measurements; this is what they add up to. Released: [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0)
-(M3, M4 and M5 Phase B). In progress: M5 Phase C — C1 to C3 built, C4 next, [planned step by step](#phase-c-resolving-a-model-and-the-adapter-catalogue). The four findings
+(M3, M4 and M5 Phase B). In progress: M5 Phase C — C1 to C4 built, a model card view next and then the C5 demo, [planned step by step](#phase-c-resolving-a-model-and-the-adapter-catalogue). The four findings
 below have not moved since 2026-09-16; the fifth is new with Phase B. What else changed is
 recorded in [What has been built](#what-has-been-built).
 
@@ -158,7 +158,7 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | **M7** | **The catalogue as data** — [Phase F](#phase-f-the-metric-catalogue-the-taxonomy-becomes-data), part 1 | `performance.calibration` and `fairness.group` in every active report; one conformance test over the whole registry in place of per-metric tests; `Finding.subaspect`; presets `quick · standard · full`, priced by D2's `cost`; every shipped metric's wording given its source (the note below). Released as 0.6.0 | criteria need something to judge first. Calibration is the first metric that would have exposed `melanoma ×30` without the specificity column beside it. Depends on M6 (`cost`, `per_example` capped) |
 | **M8** | **Measurement and judgement** — [Phase G](#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) | an active report shows criteria from a named, versioned profile, visibly apart from the measurement, each with its rationale, owner and source; criteria gated on the interval; the finer status vocabulary; a comparison levelled down to the weakest access level in it; the delta judgement — a model against its own previous version, with no authored threshold; `explain.impact`. Released as 0.7.0 | the judgement layer comes once there is a catalogue worth judging, and before the case view, whose sentences are its templates. Depends on M7 |
 | ◆ | *Decision point: human-in-the-loop* | whether the reviewer-feedback idea *under consideration* (below this table) becomes a milestone | once the policy layer exists, it shows where a reviewer's feedback could live. After M8 |
-| **M9** | **The case view** — [Phase E](#phase-e-the-interface), second part | on the ISIC model's HAM10000 report: a finding → its failure clusters → one case, every sentence generated from a counted pattern ([a worked example](case-view.md)); the evaluation card export, the report as a document; Derm7pt stated as excluded by its licence. Released as 0.8.0 | depth before breadth: this is what makes the nine metrics that exist convincing. Depends on M8 (the rule templates) and D5 (`per_example` kept) |
+| **M9** | **The case view** — [Phase E](#phase-e-the-interface), second part | on the ISIC model's HAM10000 report: a finding → its failure clusters → one case, every sentence generated from a counted pattern ([a worked example](case-view.md)); the evaluation card export, the report as a document; Derm7pt stated as excluded by its licence. Released as 0.8.0 | depth before breadth: this is what makes the ten metrics that exist convincing. Depends on M8 (the rule templates) and D5 (`per_example` kept) |
 | **M10** | **The catalogue in depth** — Phase F, tiers 2–3 | adversarial robustness with its threat model in `value`; the Quantus adapter for explanation quality, wrapped and never forked; Grad-CAM for Vision Transformers; the corruption severity sweep; near-duplicates; the privacy metrics the access level allows. Released as 0.9.0 | new domains then inherit the catalogue instead of every metric being ported twice. Depends on C3 (batching) and M8 (comparability keys that carry method and access) |
 | **M11** | **A second domain: chest X-ray** — [Phase H](#phase-h-domains-chest-x-ray-then-text), part 1 | a chest X-ray project in the showcase with no change to the app; `fairness.subgroup` in place of the skin-tone proxy; the dataset's licence and its known label noise stated. Released as 0.10.0 | nearly free — same adapter, same manifest format — and it turns the domain-agnostic claim into a demonstration. Depends on M7 (`fairness.group`) |
 | **M12** | **Clinical text** — Phase H, part 2 | a text classifier from the Hub evaluated end to end: `hf_text`, a manifest loader with a `text` column, text perturbation, token occlusion; performance, fairness, privacy and integrity carried over unchanged | the real port, last because it needs the adapter pattern (M5) and deletion faithfulness generalised across modalities (M10) |
@@ -365,8 +365,8 @@ metrics: four of six need only `dataset.load(sample)` → payload and
 !!! success "Built 2026-09-25 (M5, first part)"
     `integrity.provenance`, `integrity.corpus_ancestry` and `integrity.label_space` ship, with
     the ancestry table in `data/corpora.yaml` and a preprocessing fingerprint in every report.
-    Two items stay open: comparing the fingerprint against a Hub checkpoint's own
-    `preprocessor_config.json` needs the resolver (Phase C), and `privacy.mia_shadow` waits for
+    Two items stayed open: comparing the fingerprint against a Hub checkpoint's own
+    `preprocessor_config.json` needed the resolver (Phase C) — *closed by step C4, 2026-10-01* — and `privacy.mia_shadow` waits for
     the privacy metrics in Phase F — until then the access gate already reports any membership
     attack as unavailable for a model without known training data. How it works:
     [ADR 0002](adr/0002-verifying-a-foreign-model.md).
@@ -388,7 +388,8 @@ this project's strongest claim — cannot run. The honest answer is a finding, n
   guessed.
 - **Preprocessing fingerprint** recorded in `report.json`. For a third-party model
   `preprocessor_config.json` is the only record of training-time preprocessing, and
-  a mismatch means every metric silently measures a different model.
+  a mismatch means every metric silently measures a different model. *Compared against
+  the model's own side since C4, as `integrity.preprocessing`.*
 - **The strongest privacy attack is permanently out of reach here, and says so.** A
   shadow-model membership attack needs the training *distribution* to build shadows from;
   for a third-party checkpoint there is none, so `privacy.mia_shadow` reports
@@ -406,7 +407,7 @@ of one half. Which is exactly the open item at the top of this page.
 
 ### Phase C — resolving a model, and the adapter catalogue
 
-!!! info "Planned 2026-09-29 (M5, second part) — C1 to C3 done, C4 next"
+!!! info "Planned 2026-09-29 (M5, second part) — C1 to C4 done, C5 next"
     Broken into six steps, each with its own finish line, so the milestone can be reviewed
     step by step rather than in one pull request. The finish line of the phase is step C5: a
     skin-lesion model from the Hugging Face Hub that this project **neither trained nor
@@ -440,7 +441,7 @@ Four decisions stand behind the steps (2026-09-29):
 | **C1** ✅ | **A pinned revision that is actually loaded.** `integrity.provenance` reads `model.revision` and reports a pinned or unpinned revision. But `verifai/models/image.py::load` calls `hf_hub_download(repo_id, filename)` without `revision=`, so a report can say *pinned* while the weights come from whatever the repository holds today. The loader passes it on. A Hub model's identity in the registry (`model_registry.py::_checkpoint`) becomes `hub:{repo}@{commit sha}`, because an `hf_image` model has no single `filename` | a pinned scenario loads exactly that commit, tested against a mocked download; the registry test covers both identity forms. *Done 2026-09-29. The three scenarios on the original Hub checkpoint are pinned to `f96683d`, the only commit that holds its weights file, so every earlier run loaded those bytes too. Re-running the two active ones changed only the provenance sentence; every measured value is identical* |
 | **C2** | **`verifai/models/resolve.py`.** Turns `hf:owner/repo[@rev]` or a local path into a draft `model:` and `dataset:` block. It reads `HfApi().model_info`, `config.json` (`id2label`, `architectures`), `preprocessor_config.json` and the card's `datasets` and `license`, and pins the commit sha as `revision`, without downloading the weights. Card dataset ids resolve to corpora through a new `hub_aliases:` list per entry in `data/corpora.yaml` (`marmal88/skin_cancer` → `ham10000`). The draft states `trained_on: {corpora, basis: "model card metadata"}`; an unlisted dataset id stays *unknown*, the table's existing rule. A torchvision `state_dict` carries no metadata at all, so for a local `.pt` the resolver says which fields must be declared rather than guessing them | the tests pass offline against mocked responses. Resolving the project's own Hub checkpoint reproduces `original_checkpoint_ham10000.yaml` wherever the Hub can know the value, and marks the rest TODO. *Done 2026-09-30, with `scripts/resolve_model.py` as its command until D1. `run_scenario` refuses a draft and any leftover `TODO:`; the registry and `run_active.py` skip drafts. Resolved live, the project's own repository holds `.gitattributes` and one `.pt` and **no model card**: loader, id, repo, filename and revision reproduce, and architecture, class order, preprocessing, training data and licence come back TODO. So `trained_on.basis` in the three scenarios on it, "inferred from the model card", names a card the repository does not have — the inference itself stands on the audit above. Corrected 2026-09-30: the source is the training notebook, and a card is drafted for upload — see [Model cards](model-cards.md)* |
 | **C3** | **The `hf_image` adapter.** `AutoModelForImageClassification` + `AutoImageProcessor`. The class order comes from `id2label`, the preprocessing from the processor, and `access` is `weights`. For a CNN, `cam_layer` is resolved from the architecture. `predict_probs` batches, which closes the batch-size-1 [scaling gap](#known-scaling-gaps) where it first matters: a transformer at batch size 1, over 1,493 images times the robustness passes. `transformers` (Apache-2.0) goes into the `engine` group only, with `requirements-engine.txt` kept in step, and gets its entry in [the references](references.md) | the adapter satisfies `ModelAdapter`; the contract tests run against a tiny, randomly initialised HF model built in the test; the showcase stays torch-free and `transformers`-free, which a test already asserts. *Done 2026-09-30. `verifai/models/hf_image.py` subclasses `ImageClassifier`, so decision weights and the context prior apply unchanged; the class order and architecture come from the repository, and a scenario that contradicts them is refused. Grad-CAM layers are known for ResNet, ConvNeXt (v1 and v2), RegNet and MobileNetV2, each checked against a randomly initialised model; a ViT gets an `unavailable` Grad-CAM finding with the reason. `predict_probs_batch` is on both adapters, and performance and robustness now batch: robustness scores each image and its four corruptions in one pass. `transformers` 5.17 (Apache-2.0, [[51]](references.md#ref-51)) is in the `engine` group only. The four active reports re-ran identical, every one of their 58,368 values except the timestamp, and the HAM10000 run of the original checkpoint took about 1 min 7 s instead of 2 min 28 s* |
-| **C4** | **The fingerprint, checked against the model's own processor.** The fingerprint Phase B records knows resize, mean and std. An HF `preprocessor_config.json` can also carry a shortest-edge resize, a centre crop, a `rescale_factor` and the resampling filter. The spec gains those fields, and comparing the two becomes a finding that lists each field that differs. It is never a silent pass, because a mismatch there means every metric measured a different model. This is part of `integrity.provenance` or a sibling finding, whichever keeps the report's four integrity checks readable, and the metric's version is bumped | a deliberate mismatch in a test is reported field by field; the three active reports it touches are re-run by `scripts/run_active.py` |
+| **C4** ✅ | **The fingerprint, checked against the model's own processor.** The fingerprint Phase B records knows resize, mean and std. An HF `preprocessor_config.json` can also carry a shortest-edge resize, a centre crop, a `rescale_factor` and the resampling filter. The spec gains those fields, and comparing the two becomes a finding that lists each field that differs. It is never a silent pass, because a mismatch there means every metric measured a different model. This is part of `integrity.provenance` or a sibling finding, whichever keeps the report's four integrity checks readable, and the metric's version is bumped | a deliberate mismatch in a test is reported field by field; the three active reports it touches are re-run by `scripts/run_active.py` | *Done 2026-10-01, as a sibling finding, `integrity.preprocessing`, so provenance keeps answering one question. `verifai/models/preprocessing.py` writes a torchvision pipeline, a Hugging Face processor and a training record in one vocabulary — resize (fixed or shortest edge), centre crop, interpolation, pixel rescaling, mean and std, plus `crop_pct` when a processor states it — and compares them field by field. The reference is the first that exists: the model's own processor (an `hf_image` model, used as is), a `preprocessor_config.json` in its Hub repository at the pinned revision, or this project's training record. A differing field makes the finding `invalid` and names both values, and the report's banner says the images were prepared differently from what the model expects; nothing to compare against is `unavailable`, never a match. A failed Hub lookup is raised, not read as "no file". `train_model.py` now writes the full spec into the training record; older records state only the image size, so on the ISIC model's two reports the resize agrees and the other five fields are listed as not stated. The original checkpoint's repository holds no processor file, so its two reports say the preprocessing cannot be checked. All four active reports were re-run; the new spec also changed every report's `preprocessing_sha256`, which nothing compares across runs. A snapshot's `integrity` field, which decides whether the comparison view plots a run, had been the split check's verdict alone; it is now the worst of the five checks, as on the report's banner, with the check that decided it in `integrity_by`, so a run whose preprocessing differed is kept out with that reason. No published run's standing changed, and 184 contract tests pass* |
 | **C5** | **The demo — the phase's finish line.** A shortlist against the criteria below, one model chosen with Sabrina, and a new active configuration of it on the HAM10000 test set. On Derm7pt as well, if its label space allows. The scenario starts from the resolver's draft, and the draft's TODOs and their answers are kept in the scenario's comments | its report is in the showcase; its integrity findings say what could and could not be verified; [Current results](results.md) gains Experiment 9 |
 | **C6** | **The record.** ADR 0003 records that the resolver drafts but never runs, and the adapter contract for a self-describing model. The pipeline, architecture, extending and glossary pages are updated, and the demo model and its licence go into [the references](references.md) | `mkdocs build --strict` is clean; release **0.4.0** closes M5 |
 
@@ -539,7 +540,7 @@ aspect → sub-aspect → per-modality tree, extended to generative AI and to a 
 pillar, and kept in the medical domain.
 
 **The full catalogue — fifty-one metrics, each with what it establishes and what it needs —
-is [The pillars](pillars.md).** Nine are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
+is [The pillars](pillars.md).** Ten are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
 and says only what order to build in and why.
 
 ```mermaid

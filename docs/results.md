@@ -606,7 +606,9 @@ training notebook [[50]](references.md#ref-50), and the leakage audit behind thi
 
 The integrity checks say what can be said: **provenance** — no training manifests, so no split
 check is possible; **corpus ancestry** — trained on HAM10000, tested on HAM10000, with no
-image-by-image check, so leakage *cannot be ruled out*; the **membership attack** is unavailable,
+image-by-image check, so leakage *cannot be ruled out*; **preprocessing** — the repository holds
+no processor file and there is no training record here, so how the images should be prepared
+cannot be checked (added in step C4, 2026-10-01); the **membership attack** is unavailable,
 because it needs known training members. The report carries the provisional banner, and every
 *established* mark on it reads *on a split that could not be checked*.
 

@@ -288,6 +288,15 @@ Preprocessing fingerprint
     If it differs from how the model was trained, every metric measures a slightly different
     model — so it is written down rather than assumed.
 
+Preprocessing check
+:   The fingerprint compared with what the model's own side says, setting by setting: resize,
+    centre crop, interpolation, pixel rescaling and the colour normalisation. A setting that
+    differs makes the report unusable as a measurement of that model. The ISIC model's training
+    record states only its image size, so on its reports the resize agrees and the other five
+    settings are listed as not checked. The original Hub checkpoint has no processor file and no
+    training record here, so its reports say the preprocessing *cannot be checked* — which is
+    not the same as a match.
+
 Provisional
 :   A report whose split could not be verified. Its results are measured correctly, but they may
     include memory rather than generalisation, so a yellow banner says so and every
@@ -320,7 +329,8 @@ Coverage
 
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content
-    hash** and the integrity verdict — the two things that decide whether a later comparison is
+    hash** and the integrity verdict — the worst of the integrity checks, the same one the report's
+    banner shows — the two things that decide whether a later comparison is
     legitimate.
 
 Comparability

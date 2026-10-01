@@ -116,6 +116,10 @@ class ImageClassifier:
         self.prior_strength = float(prior_strength)
         self.preprocess_spec = dict(preprocess_spec or
                                     {"resize": [224, 224], "mean": MEAN, "std": STD})
+        # What the model's own side says its preprocessing is, when anything does:
+        # {"source", "where", "spec"} — see `verifai.models.preprocessing`. Set by
+        # the loader; `integrity.preprocessing` compares against it.
+        self.reference_preprocessing: dict | None = None
 
     @property
     def metadata(self) -> dict:
@@ -128,10 +132,10 @@ class ImageClassifier:
         """
         import hashlib
         import json as _json
-        spec = {"resize": list(self.preprocess_spec["resize"]),
-                "to_tensor": True,
-                "mean": [float(x) for x in self.preprocess_spec["mean"]],
-                "std": [float(x) for x in self.preprocess_spec["std"]]}
+        from verifai.models.preprocessing import torchvision_spec
+        h, w = self.preprocess_spec["resize"]
+        assert h == w, "build_preprocess only resizes to a square"
+        spec = torchvision_spec(h, self.preprocess_spec["mean"], self.preprocess_spec["std"])
         blob = _json.dumps(spec, sort_keys=True).encode()
         return {"classes": list(self.classes), "preprocessing": spec,
                 "preprocessing_sha256": hashlib.sha256(blob).hexdigest()[:16]}
@@ -317,7 +321,7 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     model.eval()
 
     size = int(spec.get("image_size", 224))
-    return ImageClassifier(
+    clf = ImageClassifier(
         model, classes, device=device,
         cam_layer=spec.get("cam_layer") or DEFAULT_CAM_LAYER.get(arch, "layer4[-1]"),
         preprocess=build_preprocess(size, spec.get("mean"), spec.get("std")),
@@ -327,3 +331,29 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
         preprocess_spec={"resize": [size, size], "mean": spec.get("mean") or MEAN,
                          "std": spec.get("std") or STD},
     )
+    if spec.get("repo_id") and not (weights_path and Path(weights_path).exists()):
+        clf.reference_preprocessing = _hub_processor(spec["repo_id"], spec.get("revision"))
+    return clf
+
+
+def _hub_processor(repo_id: str, revision: str | None) -> dict | None:
+    """The repository's own `preprocessor_config.json` at the pinned revision, if it has one.
+
+    Only a file the Hub says does not exist counts as absent. Any other failure
+    (no network, no cache) is raised: reporting "no reference" because the
+    lookup failed would publish an unchecked preprocessing as uncheckable.
+    """
+    import json as _json
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+    from verifai.models.preprocessing import processor_spec
+    try:
+        path = hf_hub_download(repo_id=repo_id, filename="preprocessor_config.json",
+                               revision=revision)
+    except EntryNotFoundError:
+        return None
+    pp = _json.loads(Path(path).read_text(encoding="utf-8"))
+    return {"source": "processor",
+            "where": f"`preprocessor_config.json` in `{repo_id}`"
+                     + (f" at revision `{revision[:7]}`" if revision else ""),
+            "spec": processor_spec(pp)}

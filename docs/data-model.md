@@ -99,10 +99,12 @@ run had over the model (`labels` … `training_data`), because that decides whic
 exist at all, and `coverage`: one row per registered metric with its status —
 `not_applicable`, `not_requested`, or the verdict it came back with. That is what lets the report
 tell *not asked* from *could not*, and the comparison view say when a missing cell means *could
-not be measured* rather than a worse model. Since Phase B it also records `model`: the model's class list, its preprocessing (resize,
-normalisation) and `preprocessing_sha256`, a fingerprint of that preprocessing — so a report says
-exactly how its images were prepared, and a later run or a Hub checkpoint's own configuration can
-be compared against it ([ADR 0002](adr/0002-verifying-a-foreign-model.md)).
+not be measured* rather than a worse model. Since Phase B it also records `model`: the model's class list, its preprocessing and `preprocessing_sha256`, a fingerprint of that
+preprocessing — so a report says exactly how its images were prepared
+([ADR 0002](adr/0002-verifying-a-foreign-model.md)). Since C4 the preprocessing is written in the
+same six fields whatever produced it — `resize`, `center_crop`, `resample`, `rescale_factor`,
+`mean`, `std` (`verifai/models/preprocessing.py`) — and `integrity.preprocessing` compares it
+with the model's own processor, its Hub `preprocessor_config.json` or its training record.
 
 ## The `explain` contract
 
@@ -188,11 +190,15 @@ before the change keep rendering.
 ## Comparing runs
 
 Every evaluation writes a snapshot to `history/`. The comparison view groups them by the
-evaluation set's content hash and separates three questions:
+evaluation set's content hash and separates three questions. Whether a run may be plotted at all is
+decided by its snapshot's `integrity`: the worst of its integrity checks, as the report's banner
+takes it, with the check that decided it in `integrity_by`, so a run blocked for its preprocessing
+says so rather than blaming its split.
+
 
 ```mermaid
 flowchart TB
-    Q1{"same rows, and<br/>both splits verified?"}
+    Q1{"same rows, and<br/>every integrity check<br/>came back measured?"}
     Q1 -->|no| R1["✋ not compared —<br/>reason shown"]
     Q1 -->|yes| Q2{"is one run better or equal<br/>on EVERY chosen metric?"}
     Q2 -->|yes| R2["that run dominates —<br/>drop the others, no judgement needed"]

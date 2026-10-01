@@ -40,7 +40,7 @@ TODO = "TODO"
 WEIGHT_SUFFIXES = (".pt", ".pth", ".bin", ".safetensors")
 DEFAULT_METRICS = [
     "integrity.split_leakage", "integrity.provenance", "integrity.corpus_ancestry",
-    "integrity.label_space", "performance.classification", "explainability.gradcam",
+    "integrity.label_space", "integrity.preprocessing", "performance.classification", "explainability.gradcam",
     "robustness.corruption", "fairness.skin_tone", "privacy.mia",
 ]
 

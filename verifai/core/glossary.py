@@ -390,6 +390,25 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "accuracy, is taken over the classes both have, so two runs with different "
                    "counts are not averaging the same thing.",
     }),
+    ("integrity.fields_compared", {
+        "term": "Preprocessing settings checked",
+        "measures": "How many of the preprocessing settings — resize, crop, interpolation, "
+                    "pixel rescaling, normalisation — could be checked against what the "
+                    "model's own side states.",
+        "ideal": "All of them: the model's side states every setting, so nothing is left "
+                 "to assumption.",
+        "reading": "Zero means nothing on the model's side states its preprocessing, so the "
+                   "evaluation's own choice went unchecked. That is not the same as a match.",
+    }),
+    ("integrity.fields_differing", {
+        "term": "Preprocessing settings that differ",
+        "measures": "How many preprocessing settings the evaluation used differently from what "
+                    "the model's own side states.",
+        "ideal": "0 — every image prepared exactly as the model expects.",
+        "reading": "Anything above zero means the evaluation fed the model differently prepared "
+                   "images, so every other number describes a model that exists only in this "
+                   "evaluation. Like contamination, it is not traded off against other results.",
+    }),
     ("integrity.affected_rows", {
         "term": "Affected test cases",
         "measures": "How many test cases are implicated by the overlap found.",
@@ -470,6 +489,7 @@ METRIC_NAMES: dict[str, str] = {
     "provenance": "Where the model came from",
     "corpus_ancestry": "Overlap between the archives",
     "label_space": "Classes the model and the data share",
+    "preprocessing": "Preprocessing against the model's own",
     "top1_accuracy": "Classification accuracy",
     "skin_tone_ita": "Accuracy across skin tones",
     "corruption_stability": "Stability under image corruption",

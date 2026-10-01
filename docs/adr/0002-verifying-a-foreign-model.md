@@ -209,6 +209,14 @@ waits for Phase G.
 Phase B **records** the fingerprint. **Comparing** it against what a Hub checkpoint declares in its
 own `preprocessor_config.json` needs the resolver of Phase C, which is where that file is read.
 
+!!! note "Since step C4 (2026-10-01)"
+    The comparison is a fifth integrity finding, `integrity.preprocessing`, beside the four
+    above rather than folded into provenance — for the same reason they are four. The spec is
+    written in six fields (resize, centre crop, interpolation, pixel rescaling, mean, std), which
+    changed every report's `preprocessing_sha256`; a differing field is `invalid`. See
+    [The pillars](../pillars.md#integrity-preprocessing) and the C4 row of the
+    [roadmap](../ROADMAP.md#phase-c-resolving-a-model-and-the-adapter-catalogue).
+
 ### 7 · What the reader sees
 
 ```mermaid
@@ -265,7 +273,7 @@ four findings deep, in the fixed order split · provenance · corpus · label sp
 
 **Moved out of this decision**
 
-- Comparing the fingerprint against `preprocessor_config.json` → Phase C.
+- Comparing the fingerprint against `preprocessor_config.json` → Phase C. *Built in step C4.*
 - `privacy.mia_shadow` → Phase F. The access gate (ADR 0001) already reports any membership
   attack as unavailable for a model without known training data.
 

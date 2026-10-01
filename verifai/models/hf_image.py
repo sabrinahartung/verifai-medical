@@ -22,6 +22,7 @@ from typing import Any
 
 from verifai.models.image import (ImageClassifier, _resolve_module, load_context_prior,
                                   resolve_device)
+from verifai.models.preprocessing import processor_spec
 
 # The last convolutional stage before pooling, per `config.model_type`. Each path
 # was checked against a randomly initialised model of the family (2026-09-30).
@@ -33,11 +34,6 @@ CAM_LAYERS = {
     "regnet": "regnet.encoder.stages[-1]",
     "mobilenet_v2": "mobilenet_v2.conv_1x1",
 }
-
-# What a report records about the processor: every field that changes the pixels
-# a model sees. C4 compares these against the model's own config.
-PROCESSOR_FIELDS = ("do_resize", "size", "resample", "do_center_crop", "crop_size",
-                    "do_rescale", "rescale_factor", "do_normalize", "image_mean", "image_std")
 
 
 def _logits_module(hf_model):
@@ -76,6 +72,12 @@ class HFImageClassifier(ImageClassifier):
         super().__init__(_logits_module(self.hf_model).eval(), classes, device=device,
                          cam_layer=cam_layer or "", preprocess=self._pixels, **kw)
         self.cam_layer_path = cam_layer or CAM_LAYERS.get(self.model_type)
+        # The processor is the model's own and is used as is, so the reference and
+        # what was used are one object. The finding still says so, rather than
+        # leaving the one kind of model with no preprocessing question unanswered.
+        self.reference_preprocessing = {
+            "source": "own_processor", "where": "the model's own image processor, used as is",
+            "spec": processor_spec(self.processor.to_dict())}
 
     def _pixels(self, img):
         """One RGB image -> [3,H,W], exactly as the model's own processor makes it."""
@@ -92,9 +94,8 @@ class HFImageClassifier(ImageClassifier):
     def metadata(self) -> dict:
         import hashlib
         import json as _json
-        pp = self.processor.to_dict()
         spec = {"processor": type(self.processor).__name__,
-                **{k: pp[k] for k in PROCESSOR_FIELDS if k in pp}}
+                **processor_spec(self.processor.to_dict())}
         blob = _json.dumps(spec, sort_keys=True, default=str).encode()
         return {"classes": list(self.classes), "preprocessing": spec,
                 "preprocessing_sha256": hashlib.sha256(blob).hexdigest()[:16],
