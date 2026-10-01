@@ -33,6 +33,14 @@ Hub; its model card names `marmal88/skin_cancer`, a repackaging of HAM10000, and
 found that data covers 9,964 of HAM10000's 10,015 images. Until Phase B it had only been scored on
 7 example images.
 
+!!! note "Correction 2026-09-30"
+    The Hub repository has no model card and never had one; the resolver (step C2) found only
+    the weights file. The dataset is named by the checkpoint's training notebook
+    [[50]](../references.md#ref-50), whose saved file is byte-identical to the Hub weights. The
+    inference stands and none of the decisions below change; only its source was misnamed. The
+    text of this record is kept as written. The scenarios now cite the notebook; see
+    [Model cards](../model-cards.md).
+
 ## Decision
 
 Integrity becomes four checks, each a finding of its own, and none of them may call an

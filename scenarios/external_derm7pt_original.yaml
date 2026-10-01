@@ -26,15 +26,17 @@ model:
   id: "skin-lesion-resnet18"
   repo_id: "sabrinahartung1010/skin-lesion-resnet18"
   filename: "resnet18_ham10000_classweights.pt"
-  # The only commit that holds this file (uploaded 2026-08-05; LFS sha256 58a63e41…),
-  # so every run of this checkpoint loaded these bytes. Pinned 2026-09-29 (C1).
-  revision: "f96683db1e07243b2e2d3c9ed9c403d1fccd6824"
+  # The weights were uploaded 2026-08-05 in f96683d (LFS sha256 58a63e41…); d6f877a
+  # (2026-09-30) added the model card and left that file byte-identical, so every
+  # run of this checkpoint loaded these bytes. Pinned in C1, moved to the card's
+  # commit 2026-09-30 so the reports and the resolver read the same repository.
+  revision: "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
   arch: "resnet18"
   cam_layer: "layer4[-1]"
   device: "auto"
   trained_on:
     corpora: [ham10000]
-    basis: "inferred from the model card, which names `marmal88/skin_cancer`, a repackaging of HAM10000"
+    basis: "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
 
 dataset:
   loader: "verifai.datasets.loaders:load_image_manifest"

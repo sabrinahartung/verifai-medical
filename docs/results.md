@@ -592,8 +592,8 @@ at the internal prevalence it collapses — 0.502 → **0.282** for ISIC, 0.259 
 
 The original checkpoint on the Hugging Face Hub, scored on the same 1,493 HAM10000 test images
 as the ISIC model (configuration `original_checkpoint_ham10000`, Phase B). Its author published
-weights, not a list of training images; its training data is only *inferred* as HAM10000 from the
-model card, and the leakage audit behind this project found that data covers 9,964 of HAM10000's
+weights, not a list of training images; its training data is known as HAM10000 only from its
+training notebook [[50]](references.md#ref-50), and the leakage audit behind this project found that data covers 9,964 of HAM10000's
 10,015 images.
 
 | | Original checkpoint (split not checkable) | ISIC model (split verified) |
@@ -651,7 +651,7 @@ intervals. On melanoma, a J lead of 0.068 becomes a deficit of 0.022: it keeps i
     whose split was verified. The internal 0.867 should not be quoted as its skill.
 
     This run's report still reads as provisional. Corpus ancestry finds no shared archive, but
-    against a training corpus that is itself only inferred from the model card, so no
+    against a training corpus known only from the training notebook, so no
     row-level check is possible and the banner stays.
 
 ## Training run

@@ -2388,15 +2388,22 @@ def test_resolving_the_projects_own_hub_checkpoint_reproduces_its_scenario():
     import yaml
     real = yaml.safe_load((REPO / "scenarios" / "original_checkpoint_ham10000.yaml")
                           .read_text(encoding="utf-8"))
-    # the repository as it is: .gitattributes and one state_dict, no card, no config
-    api = _FakeApi([".gitattributes", "resnet18_ham10000_classweights.pt"])
+    # the repository as it is since d6f877a: one state_dict and a model card, no config
+    card = yaml.safe_load((REPO / "model_cards" / "skin-lesion-resnet18" / "README.md")
+                          .read_text(encoding="utf-8").split("---")[1])
+    api = _FakeApi([".gitattributes", "README.md", "resnet18_ham10000_classweights.pt"],
+                   card=card, sha="d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506")
     fetch = _fetcher({})
     d = RS.resolve("hf:sabrinahartung1010/skin-lesion-resnet18", api=api, fetch_json=fetch,
                    dataset_manifest="data/manifests/ham10000_test.csv")
     m = d.scenario["model"]
     for key in ("loader", "id", "repo_id", "filename", "revision", "device"):
         assert m[key] == real["model"][key], key
-    for key in ("arch", "classes", "cam_layer", "trained_on", "licence"):
+    # the card's header names the training data and the licence ...
+    assert m["trained_on"]["corpora"] == real["model"]["trained_on"]["corpora"]
+    assert m["licence"] == "cc-by-nc-4.0"
+    # ... but a state_dict still records no architecture or class order
+    for key in ("arch", "classes", "cam_layer"):
         assert RS.is_todo(m[key]), key
     assert d.scenario["draft"] is True
     assert d.scenario["dataset"]["manifest"] == real["dataset"]["manifest"]
