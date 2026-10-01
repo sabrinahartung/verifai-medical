@@ -13,6 +13,10 @@
 #   name      how the archive is published
 #   contains  archives distributed as part of this one
 #   refs      entries in docs/references.md
+#   hub_aliases  Hugging Face dataset ids that are a copy or repackaging of this
+#             archive. `verifai.models.resolve` maps a model card's `datasets`
+#             through them; a dataset id listed nowhere stays unknown. An alias
+#             needs the same evidence as `contains` — say where it comes from.
 corpora:
   isic2019:
     name: ISIC 2019
@@ -22,6 +26,9 @@ corpora:
   ham10000:
     name: HAM10000
     contains: []
+    # marmal88/skin_cancer covers 9,964 of HAM10000's 10,015 images, by image_id
+    # (the audit in docs/ROADMAP.md, "Why this exists").
+    hub_aliases: [marmal88/skin_cancer]
     refs: [1]
   bcn20000:
     name: BCN20000

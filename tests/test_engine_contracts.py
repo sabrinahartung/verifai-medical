@@ -2350,3 +2350,153 @@ def test_a_scenario_can_say_why_it_left_an_applicable_metric_out():
                     {"explainability.gradcam": "licence forbids derived images"})
     cam = next(r for r in rows if r["metric"] == "explainability.gradcam")
     assert cam["status"] == "not_requested" and cam["reason"] == "licence forbids derived images"
+
+
+# --- C2: the resolver drafts, and never runs ------------------------------------
+# Offline: `api` stands in for HfApi, `fetch_json` for reading a small file from
+# the repository. Nothing here touches the network or a weights file.
+from types import SimpleNamespace                                   # noqa: E402
+
+from verifai.models import resolve as RS                           # noqa: E402
+
+_SHA = "f96683db1e07243b2e2d3c9ed9c403d1fccd6824"
+
+
+class _FakeApi:
+    def __init__(self, files, card=None, sha=_SHA, gated=False):
+        self.info = SimpleNamespace(sha=sha, gated=gated, card_data=card,
+                                    siblings=[SimpleNamespace(rfilename=f) for f in files])
+        self.asked = []
+
+    def model_info(self, repo, revision=None):
+        self.asked.append((repo, revision))
+        return self.info
+
+
+def _fetcher(files: dict):
+    calls = []
+
+    def fetch(repo, filename, revision):
+        calls.append((filename, revision))
+        return files[filename]
+    fetch.calls = calls
+    return fetch
+
+
+def test_resolving_the_projects_own_hub_checkpoint_reproduces_its_scenario():
+    """What the Hub can know matches the hand-written scenario; the rest is TODO."""
+    import yaml
+    real = yaml.safe_load((REPO / "scenarios" / "original_checkpoint_ham10000.yaml")
+                          .read_text(encoding="utf-8"))
+    # the repository as it is: .gitattributes and one state_dict, no card, no config
+    api = _FakeApi([".gitattributes", "resnet18_ham10000_classweights.pt"])
+    fetch = _fetcher({})
+    d = RS.resolve("hf:sabrinahartung1010/skin-lesion-resnet18", api=api, fetch_json=fetch,
+                   dataset_manifest="data/manifests/ham10000_test.csv")
+    m = d.scenario["model"]
+    for key in ("loader", "id", "repo_id", "filename", "revision", "device"):
+        assert m[key] == real["model"][key], key
+    for key in ("arch", "classes", "cam_layer", "trained_on", "licence"):
+        assert RS.is_todo(m[key]), key
+    assert d.scenario["draft"] is True
+    assert d.scenario["dataset"]["manifest"] == real["dataset"]["manifest"]
+    assert fetch.calls == [], "a bare state_dict repository has no JSON to read"
+
+
+def test_a_self_describing_hub_model_resolves_its_classes_card_and_revision():
+    config = {"architectures": ["ResNetForImageClassification"],
+              # keys out of order and past 9: the order is by index, not by string
+              "id2label": {"10": "k", **{str(i): f"c{i}" for i in range(10)}}}
+    pp = {"size": {"height": 224, "width": 224}, "image_mean": [0.5] * 3, "image_std": [0.5] * 3}
+    api = _FakeApi(["config.json", "preprocessor_config.json", "model.safetensors"],
+                   card={"datasets": ["marmal88/skin_cancer"], "license": "apache-2.0"},
+                   sha="a" * 40)
+    fetch = _fetcher({"config.json": config, "preprocessor_config.json": pp})
+    d = RS.resolve("hf:someone/derm-vit@main", api=api, fetch_json=fetch)
+    m = d.scenario["model"]
+    assert api.asked == [("someone/derm-vit", "main")]
+    assert m["revision"] == "a" * 40, "a branch name is pinned to the commit it pointed at"
+    assert m["loader"] == "verifai.models.hf_image:load"
+    assert m["classes"] == [f"c{i}" for i in range(10)] + ["k"]
+    assert m["trained_on"]["corpora"] == ["ham10000"]
+    assert "model card" in m["trained_on"]["basis"]
+    assert m["licence"] == "apache-2.0"
+    # only the small JSON files are read, at the pinned commit — never the weights
+    assert fetch.calls == [("config.json", "a" * 40), ("preprocessor_config.json", "a" * 40)]
+
+
+def test_a_card_dataset_the_corpus_table_does_not_list_stays_unknown():
+    api = _FakeApi(["config.json"], card={"datasets": ["someone/private-derm-set"]})
+    d = RS.resolve("hf:someone/m", api=api,
+                   fetch_json=_fetcher({"config.json": {"id2label": {"0": "a"}}}))
+    assert RS.is_todo(d.scenario["model"]["trained_on"])
+    assert "someone/private-derm-set" in d.scenario["model"]["trained_on"]
+
+
+def test_every_hub_alias_names_one_corpus():
+    from verifai.core.integrity import load_corpora
+    corpora = load_corpora()
+    aliases = [a for c in corpora.values() for a in (c.get("hub_aliases") or [])]
+    assert len(aliases) == len(set(aliases)), "an alias claimed by two corpora is ambiguous"
+    assert RS.corpus_for_dataset("marmal88/skin_cancer", corpora) == "ham10000"
+
+
+def test_a_label_map_is_proposed_only_on_an_exact_normalised_match():
+    mapping = RS.propose_label_map(
+        model_classes=["Melanoma", "Benign keratosis-like lesions", "nevus"],
+        data_classes=["melanoma", "benign_keratosis-like_lesions", "MEL", "nevus"])
+    assert mapping["melanoma"] == "Melanoma"
+    assert mapping["benign_keratosis-like_lesions"] == "Benign keratosis-like lesions"
+    assert RS.is_todo(mapping["MEL"]), "an abbreviation is a claim, never a match"
+    assert "nevus" not in mapping, "an identical name needs no entry"
+
+
+def test_a_local_state_dict_marks_what_it_cannot_carry(tmp_path):
+    w = tmp_path / "net.pt"
+    w.write_bytes(b"")
+    m = RS.resolve(str(w)).scenario["model"]
+    assert m["weights_path"] == str(w)
+    for key in ("arch", "classes", "cam_layer", "image_size", "mean", "std", "trained_on"):
+        assert RS.is_todo(m[key]), key
+    # a checkpoint this project trained has a record beside it, and that is read
+    (tmp_path / "net_training.json").write_text(json.dumps(
+        {"arch": "resnet18", "classes": ["a", "b"], "image_size": 224}), encoding="utf-8")
+    m = RS.resolve(str(w)).scenario["model"]
+    assert (m["arch"], m["classes"], m["image_size"]) == ("resnet18", ["a", "b"], 224)
+
+
+@pytest.mark.parametrize("ref", ["hf:no-slash", "hf:/repo", "hf:a/b/c"])
+def test_a_malformed_hub_reference_is_refused(ref):
+    with pytest.raises(ValueError):
+        RS.parse_ref(ref)
+
+
+@pytest.mark.parametrize("extra", [{"draft": True}, {"label": "TODO: name it"},
+                                   {"dataset": {"label_map": {"MEL": "TODO: which?"}}}])
+def test_run_scenario_refuses_a_draft_or_an_open_todo(monkeypatch, extra):
+    from verifai.core import run as R
+    monkeypatch.setattr(R, "_build_model", lambda spec: pytest.fail("a draft must not load"))
+    scenario = {"name": "d", "domain": "image", "model": {}, "dataset": {},
+                "metrics": ["performance.classification"], **extra}
+    with pytest.raises(ValueError, match="draft"):
+        R.run_scenario(scenario)
+
+
+def test_the_registry_and_run_active_ignore_a_draft(tmp_path):
+    from scripts.run_active import active_scenarios
+    from verifai.export.model_registry import build_registry
+    api = _FakeApi([".gitattributes", "w.pt"])
+    (tmp_path / "draft.yaml").write_text(
+        RS.resolve("hf:someone/m", api=api, fetch_json=_fetcher({})).to_yaml(), encoding="utf-8")
+    assert active_scenarios(tmp_path) == []
+    assert build_registry(tmp_path, root=tmp_path)["models"] == []
+
+
+def test_a_draft_written_as_yaml_reads_back_as_the_same_scenario():
+    import yaml
+    api = _FakeApi(["config.json"], card={"license": "mit"})
+    d = RS.resolve("hf:someone/m", api=api,
+                   fetch_json=_fetcher({"config.json": {"id2label": {"0": "a"}}}))
+    text = d.to_yaml()
+    assert yaml.safe_load(text) == d.scenario
+    assert text.startswith("# DRAFT"), "the header says what the file is before anything else"

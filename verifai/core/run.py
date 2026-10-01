@@ -245,7 +245,25 @@ def _checkpoint_fingerprint(model_cfg: dict) -> dict:
     return {}
 
 
+def _refuse_draft(scenario: dict[str, Any]) -> None:
+    """A resolved draft is a set of questions, not a configuration.
+
+    `verifai.models.resolve` writes `draft: true` and a `TODO: …` wherever the
+    checkpoint could not say something — its class order, its preprocessing, a
+    label pairing. Running with any of them unanswered would measure a model
+    somebody guessed at, so both the flag and a leftover TODO stop the run.
+    """
+    from verifai.models.resolve import open_todos
+    todos = open_todos(scenario)
+    if scenario.get("draft") or todos:
+        raise ValueError(
+            f"scenario {scenario.get('name')!r} is a draft"
+            + (f" with {len(todos)} open TODO(s): {', '.join(todos)}" if todos else "")
+            + ". Answer each TODO and delete `draft: true` before running it.")
+
+
 def run_scenario(scenario: dict[str, Any]) -> Report:
+    _refuse_draft(scenario)
     seed = scenario.get("seed", 42)
     random.seed(seed)
     try:
