@@ -10,6 +10,24 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance
 
+def predict_many(model, imgs: list, batch_size: int = 32) -> list[dict[str, float]]:
+    """Scores for many images, batched when the adapter can batch.
+
+    `predict_probs_batch` is optional in the contract: an adapter that only has
+    `predict_probs` (a hosted model, a test double) is asked one image at a time.
+    """
+    batch = getattr(model, "predict_probs_batch", None)
+    if batch is not None:
+        return batch(imgs, batch_size=batch_size)
+    return [model.predict_probs(im) for im in imgs]
+
+
+def chunks(items: list, size: int = 32):
+    """Consecutive slices, so a batch never holds more than `size` decoded images."""
+    for start in range(0, len(items), size):
+        yield items[start:start + size]
+
+
 def class_name(label: str) -> str:
     """A class id as a reader says it: `melanocytic_Nevi` -> `melanocytic nevi`.
 

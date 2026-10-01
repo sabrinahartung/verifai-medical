@@ -41,7 +41,7 @@ and `run_active.py` skip it.
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (168 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (176 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -158,6 +158,16 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   the preprocessing must stay byte-for-byte the training-time preprocessing and `classes` must
   match the checkpoint's output order — otherwise every metric silently measures a different
   model. `device: auto` resolves cuda → mps → cpu and is recorded in `report.json`.
+- `verifai/models/hf_image.py` — `HFImageClassifier`, the adapter for a self-describing
+  `transformers` model. A subclass of `ImageClassifier`, so `decide`/`rank`, decision weights and
+  the context prior behave identically; class order comes from `id2label` and preprocessing from
+  the model's own processor, both at the pinned revision, and a scenario contradicting either is
+  refused. Grad-CAM layers are listed per family in `CAM_LAYERS`; a family missing there (a ViT)
+  gets an `unavailable` Grad-CAM finding, never a guessed layer. Metrics that score many images
+  go through `metrics/_common.py::predict_many`, which batches when the adapter has
+  `predict_probs_batch`. `transformers` is in the `engine` group only.
+- `verifai/models/resolve.py` — drafts a scenario from `hf:owner/repo[@rev]` or a local `.pt`
+  (see Commands). Drafts, never runs.
 - `verifai/datasets/loaders.py` — manifest-driven `ImageDataset` (`data/manifests/*.csv`,
   columns `filename,label` plus any extras, which land on `ImageSample.meta` — that is where
   `lesion_id`/`sex`/`age` belong). Paths resolve relative to repo root; samples are sorted for

@@ -570,6 +570,25 @@ implementation of a metric this catalogue still lists as planned.
 
 ---
 
+## Engine libraries
+
+**[51] Transformers** · *Verified* {#ref-51}
+:   Wolf, T., Debut, L., Sanh, V., Chaumond, J., Delangue, C., Moi, A., Cistac, P., Rault, T.,
+    Louf, R., Funtowicz, M., Davison, J., Shleifer, S., von Platen, P., Ma, C., Jernite, Y.,
+    Plu, J., Xu, C., Le Scao, T., Gugger, S., Drame, M., Lhoest, Q. & Rush, A. **Transformers:
+    State-of-the-Art Natural Language Processing.** *Proceedings of EMNLP 2020: System
+    Demonstrations*, 38–45 (2020).
+    [doi:10.18653/v1/2020.emnlp-demos.6](https://doi.org/10.18653/v1/2020.emnlp-demos.6) ·
+    [GitHub](https://github.com/huggingface/transformers)
+
+    Used as: the loader behind `verifai.models.hf_image` (step C3):
+    `AutoModelForImageClassification` and `AutoImageProcessor`, used unmodified. In the
+    `engine` group only; the showcase never installs it, which a test asserts. Citation taken
+    from the ACL Anthology record, licence from the repository: Apache-2.0, actively maintained
+    (last push 2026-09-30), version 5.17 in `uv.lock`.
+
+---
+
 ## Citing this project
 
 Nothing here is a medical device or validated for clinical use. It is an educational
