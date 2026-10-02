@@ -186,8 +186,8 @@ substitute for *"why did this fail"* is three things that can be defended:
 
 [A worked example](case-view.md) shows all three as screens.
 
-**The honest limits.** Report size becomes binding — `details["per_example"]` is written by
-every metric and, at fifty-seven metrics over 1,493 cases, cannot stay a committed JSON file. The
+**The honest limits.** Report size was binding — per-case rows inside `report.json` grow with
+metrics × cases; since step F1 they sit in one `cases.csv` per run instead. The
 prose cannot be authored per case, so it has to come from rule templates, which means the case
 view and the findings layer are the *same feature*. And Derm7pt's licence forbids
 redistributing its images [[4]](references.md#ref-4), so the project's only external validation

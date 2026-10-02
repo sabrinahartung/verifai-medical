@@ -137,8 +137,8 @@ a **counted pattern** and not a cause.
     | Privacy | confidence in the 91st percentile of the membership signal | AUC 0.558, interval spans chance |
     | Integrity | not in any training manifest — verified by `lesion_id` | 0 shared lesions |
 
-    Every row is already computed today and thrown away. `details["per_example"]` is written
-    by every metric and read by nothing.
+    Every row is already computed. Since step F1 (2026-10-02) the per-case rows of every metric
+    that keeps them sit in one `cases.csv` per run, keyed by image id; nothing reads them yet.
 
 === "What it shares with other failures"
 
@@ -185,7 +185,7 @@ Three things, in increasing cost:
 
 | | Work | Blocked by |
 |---|---|---|
-| **1** | Read `per_example` instead of discarding it, and index the artifact by case | report size — the [scaling gap](ROADMAP.md#known-scaling-gaps) becomes binding |
+| **1** | Read the run's case table (`cases.csv`, since step F1) and index the artifact by case | nothing since F1: the rows are kept, outside `report.json` |
 | **2** | Cluster failures by manifest metadata and count shared traits | nothing; the metadata is already on `ImageSample.meta` |
 | **3** | Generate the claim and the remedy text from rule templates | the [findings layer](ROADMAP.md#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) — these are the same feature |
 

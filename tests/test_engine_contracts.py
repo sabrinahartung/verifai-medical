@@ -2895,3 +2895,153 @@ def test_a_model_never_evaluated_says_its_run_time_facts_are_not_read_yet():
              "checkpoint": {"kind": "hub", "repo_id": "o/x", "revision": "b" * 40}}
     facts = {f.label: f.value for rows in MC.facts(model, None).values() for f in rows}
     assert facts["Licence"] == facts["Classes"] == MC.NOT_YET
+
+
+# --- F1: the groundwork a growing catalogue needs ------------------------------------
+def test_per_case_rows_move_into_one_table_per_run(tmp_path):
+    """A report must not grow with metrics × cases. Each metric still returns its
+    rows; the exporter writes them once, into `cases.csv`, and the finding keeps
+    only which columns are its own — namespaced, so two metrics' `pred` never collide."""
+    import csv as _csv
+    from verifai.core.findings import Finding, Report
+    from verifai.export.artifacts import CASES_FILE, write_report
+    r = Report(scenario="s", domain="image", model_id="m", dataset_id="d")
+    r.add(Finding(pillar="performance", metric="top1_accuracy", domain="image", value={"accuracy": 0.5},
+                  verdict="measured", details={"per_example": [
+                      {"id": "a", "pred": "mel", "correct": True},
+                      {"id": "b", "pred": "nv", "correct": False}]}))
+    r.add(Finding(pillar="fairness", metric="skin_tone_ita", domain="image", value={},
+                  verdict="measured", details={"per_example": [
+                      {"id": "b", "pred": "nv", "ita": 41.2}, {"id": "c", "pred": "bcc", "ita": None}]}))
+    write_report(r, out_dir=str(tmp_path))
+    base = tmp_path / "s"
+    data = json.loads((base / "report.json").read_text(encoding="utf-8"))
+    assert "per_example" not in json.dumps(data), "per-case rows stay out of report.json"
+    perf = data["findings"][0]["details"]["cases"]
+    assert perf == {"file": CASES_FILE, "columns": ["top1_accuracy.pred", "top1_accuracy.correct"]}
+    rows = list(_csv.DictReader((base / CASES_FILE).open(encoding="utf-8")))
+    assert [x["id"] for x in rows] == ["a", "b", "c"], "one row per case, in first-seen order"
+    b = rows[1]
+    assert (b["top1_accuracy.pred"], b["skin_tone_ita.pred"], b["top1_accuracy.correct"]) == ("nv", "nv", "false")
+    assert rows[2]["skin_tone_ita.ita"] == "" and rows[0]["skin_tone_ita.ita"] == ""
+    assert r.findings[0].details["per_example"], "the report object itself is left intact"
+
+    # a later run with no per-case rows leaves no stale table behind
+    r2 = Report(scenario="s", domain="image", model_id="m", dataset_id="d")
+    r2.add(Finding(pillar="performance", metric="top1_accuracy", domain="image", value={"accuracy": 0.5},
+                   verdict="measured", details={}))
+    write_report(r2, out_dir=str(tmp_path))
+    assert not (base / CASES_FILE).exists()
+
+
+def test_a_snapshot_says_which_measurement_stands_behind_every_number(tmp_path):
+    from verifai.core.findings import Finding, Report
+    from verifai.core.suite import MEASUREMENT_VERSIONS
+    from verifai.export.artifacts import write_snapshot
+    r = Report(scenario="s", domain="image", model_id="m", dataset_id="d")
+    r.add(Finding(pillar="integrity", metric="label_space", domain="image",
+                  value={"n_model_classes": 7}, verdict="measured"))
+    r.add(Finding(pillar="integrity", metric="preprocessing", domain="image",
+                  value={"fields_differing": 0}, verdict="measured"))
+    r.meta = {"eval_set": {"sha256": "x"},
+              "metric_versions": {"integrity.label_space": 2, "integrity.preprocessing": 1},
+              "metric_ids": {"label_space": "integrity.label_space",
+                             "preprocessing": "integrity.preprocessing"}}
+    snap = json.loads(write_snapshot(r, tmp_path).read_text(encoding="utf-8"))
+    assert snap["key_metric"] == {"integrity.n_model_classes": "integrity.label_space",
+                                  "integrity.fields_differing": "integrity.preprocessing"}, \
+        "keys grouped by pillar are told apart again by the metric that produced them"
+    assert snap["measurement_versions"] == {m: MEASUREMENT_VERSIONS[m]
+                                            for m in ("integrity.label_space", "integrity.preprocessing")}
+
+
+def test_a_value_measured_the_old_way_is_not_compared_with_one_measured_the_new_way():
+    """Grad-CAM changed what it measures on 2026-09-25. A run from before keeps its
+    accuracy in the comparison and loses only its Grad-CAM values; a run after keeps both."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from catalog import align_measurements
+    registry = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    old = {"scenario": "old", "label": "old", "created_at": "2026-09-14T10:00:00+00:00",
+           "metrics": {"performance.accuracy": 0.79, "explainability.mean_deletion_faithfulness": 0.3}}
+    new = {"scenario": "new", "label": "new", "created_at": "2026-10-02T10:00:00+00:00",
+           "metrics": {"performance.accuracy": 0.81, "explainability.mean_deletion_faithfulness": 0.2},
+           "key_metric": {"performance.accuracy": "performance.classification",
+                          "explainability.mean_deletion_faithfulness": "explainability.gradcam"},
+           "measurement_versions": {"performance.classification": 1, "explainability.gradcam": 2}}
+    (o, n), dropped = align_measurements([old, new], registry)
+    assert o["metrics"] == {"performance.accuracy": 0.79}
+    assert n["metrics"] == new["metrics"]
+    assert set(dropped) == {"old"} and dropped["old"] == ["explainability.mean_deletion_faithfulness"]
+    assert old["metrics"]["explainability.mean_deletion_faithfulness"] == 0.3, "the snapshot itself is untouched"
+
+
+def test_the_showcase_dates_a_measurement_exactly_as_the_engine_does():
+    """Two implementations of one rule — the showcase never imports the engine —
+    kept in step here, over every metric and both sides of every recorded change."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from catalog import _measurement_at
+    from verifai.core.suite import MEASUREMENT_SINCE, MEASUREMENT_VERSIONS, measurement_at
+    registry = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    moments = ["2026-09-08T00:00:00+00:00", "2026-10-02T00:00:00+00:00"]
+    for h in MEASUREMENT_SINCE.values():
+        for ts in h.values():
+            moments += [ts.replace("00:14:03", "00:14:02"), ts]
+    for m in MEASUREMENT_VERSIONS:
+        for when in moments:
+            assert _measurement_at(m, when, registry) == measurement_at(m, when), (m, when)
+    assert all(measurement_at(m, "2100-01-01T00:00:00+00:00") == v for m, v in MEASUREMENT_VERSIONS.items()), \
+        "the newest entry in the history must be the current measurement version"
+
+
+def test_every_registered_metric_conforms():
+    """One test over the whole registry, in place of a contract test per metric.
+
+    Registry: a `MetricSpec`, a report version and a measurement version, a human
+    name, and a reference function. Every finding in every active report: a
+    summary; for a value, the three `explain` keys, and — when the value holds a
+    number — a declared `better`, empty when nothing in it is ranked; for no
+    value, the reason it has none.
+    """
+    import importlib.util
+    from verifai.core.glossary import METRIC_NAMES
+    from verifai.core.run import METRIC_REGISTRY, MetricSpec
+    from verifai.core.suite import MEASUREMENT_VERSIONS, METRIC_VERSIONS
+    from verifai.export.artifacts import _flatten
+    from verifai.metrics._baseline import BY_FINDING
+    for mid, spec in METRIC_REGISTRY.items():
+        assert isinstance(spec, MetricSpec), mid
+        assert mid in METRIC_VERSIONS and mid in MEASUREMENT_VERSIONS, mid
+        assert spec.finding in METRIC_NAMES, f"{mid}: no human name for {spec.finding!r}"
+        assert spec.finding in BY_FINDING, f"{mid}: no reference function"
+        assert importlib.util.find_spec(spec.target.split(":")[0]), mid
+
+    registry = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    active = {c["scenario"] for m in registry["models"] for c in m["configurations"]
+              if c["status"] == "active"}
+    for s in sorted(active):
+        report = json.loads((REPO / "showcase/artifacts" / s / "report.json").read_text())
+        for f in report["findings"]:
+            where = f"{s}/{f['metric']}"
+            assert f["summary"].strip(), where
+            d = f.get("details") or {}
+            if f["value"] is None:
+                assert d.get("reason") or d.get("requires"), f"{where}: no value and no reason"
+                continue
+            assert all((d.get("explain") or {}).get(k) for k in ("what", "how", "limits")), where
+            numbers: dict[str, float] = {}
+            _flatten(f["value"], f["pillar"], numbers)
+            if numbers:       # a metric that reports a number declares which way is better
+                assert isinstance(d.get("better"), dict), f"{where}: declare directions, or {{}} for none"
+
+
+def test_no_glossary_pattern_is_hidden_behind_an_earlier_one():
+    """Patterns match in order, so an entry whose pattern an earlier one already
+    covers can never be reached — dead text that looks maintained."""
+    from fnmatch import fnmatch
+    from verifai.core.glossary import GLOSSARY
+    patterns = [p for p, _ in GLOSSARY]
+    for j, later in enumerate(patterns):
+        for earlier in patterns[:j]:
+            assert not fnmatch(later, earlier), f"{later!r} is shadowed by the earlier {earlier!r}"

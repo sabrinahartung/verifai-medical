@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._baseline import NO_DIRECTION
 from verifai.core.integrity import (declared_training, load_corpora, row_check,
                                     shared_corpora)
 
@@ -40,7 +41,7 @@ EXPLAIN = {
 
 def _finding(verdict: str, summary: str, value: dict[str, Any], domain: str) -> Finding:
     return Finding(pillar="integrity", metric="corpus_ancestry", domain=domain, value=value,
-                   verdict=verdict, summary=summary, details={"explain": EXPLAIN})
+                   verdict=verdict, summary=summary, details={"explain": EXPLAIN, "better": NO_DIRECTION})
 
 
 def run(model, dataset, ctx: dict[str, Any]) -> Finding:

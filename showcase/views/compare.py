@@ -4,7 +4,7 @@ from __future__ import annotations
 import streamlit as st
 import plotly.graph_objects as go
 
-from catalog import (ACCESS_LABEL, _blocked_reason, comparability_key, direction_for,
+from catalog import (ACCESS_LABEL, _blocked_reason, align_measurements, comparability_key, direction_for,
                      best_run, dominated_by, group_snapshots, run_label)
 from registry import dataset_name, find_model, load_registry
 from render import GLOSSARY, breadcrumb, explain_metric, placeholder, render_metric_legend
@@ -92,7 +92,11 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
             "2. **A verified split.** A run whose split was contaminated, or never checked, "
             "is excluded from the chart and listed with the reason. Its accuracy is inflated "
             "by an unknown amount, so plotting it beside an honest run would manufacture a "
-            "comparison rather than report one.\n\n"
+            "comparison rather than report one.\n"
+            "3. **The same measurement.** When what a metric measures changes — Grad-CAM "
+            "moved from seven images to every test image against a random control — a value "
+            "taken the old way is not set beside one taken the new way. Only that value is "
+            "left out, with a note; the run's other values stay.\n\n"
             "This is deliberately stricter than most dashboards. A green *+12 points* against "
             "a leaked baseline is exactly the claim this project exists to catch."
         )
@@ -193,6 +197,16 @@ def comparison(snaps: list[dict], cards: list[dict] | None = None):
                         "against this same manifest.")
             )
             st.divider(); continue
+
+        # A number measured under an older version of its metric is not set beside
+        # one measured under the current version; the run keeps its other numbers.
+        usable, withheld = align_measurements(usable, registry)
+        for label, lost in withheld.items():
+            cols = sorted(set(metric_labels(lost).values()))
+            st.caption(f"↳ **{label}**: {plural(len(lost), 'value')} left out — "
+                       f"{', '.join(cols[:3])}{' …' if len(cols) > 3 else ''} — because "
+                       f"the metric was measured differently when this run was made. Its "
+                       f"other values are compared as usual.")
 
         keys = sorted({k for r in usable for k in r["metrics"]})
         names = metric_labels(keys)

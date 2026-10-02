@@ -311,6 +311,9 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
               # what lets the showcase tell a current report from one produced
               # before a metric changed or the checkpoint was retrained.
               "metric_versions": suite_for(scenario["metrics"]),
+              # which registered metric each finding comes from, so a snapshot can
+              # say which measurement version stands behind every number it keeps
+              "metric_ids": {spec_of(m).finding: m for m in scenario["metrics"]},
               "checkpoint": _checkpoint_fingerprint(scenario["model"]),
               # What this evaluation could reach, and what it covered. Kept
               # beside the findings so the showcase can tell "not applicable to

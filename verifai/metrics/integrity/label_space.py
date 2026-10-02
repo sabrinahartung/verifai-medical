@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._baseline import NO_DIRECTION
 from verifai.core.integrity import label_space
 from verifai.metrics._common import class_name
 
@@ -65,4 +66,4 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
                     f"classes by the scenario.")
     return Finding(pillar="integrity", metric="label_space",
                    domain=scenario.get("domain", "image"), value=value, verdict="measured",
-                   summary=summary, details={"explain": EXPLAIN})
+                   summary=summary, details={"explain": EXPLAIN, "better": NO_DIRECTION})

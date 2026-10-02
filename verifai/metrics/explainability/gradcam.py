@@ -128,6 +128,7 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     captions: list[str] = []
     faith: list[float] = []
     control: list[float] = []
+    per_example: list[dict] = []
 
     for i, s in enumerate(dataset):
         img = dataset.load(s)
@@ -152,6 +153,8 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             continue
         faith.append(_drop(model, img, mask, probs[top], top))
         control.append(_drop(model, img, _shifted(mask, rng), probs[top], top))
+        per_example.append({"id": s.id, "faithfulness": round(faith[-1], 3),
+                            "random_control": round(control[-1], 3)})
 
     n = len(faith)
     gains = [f - c for f, c in zip(faith, control)]
@@ -205,8 +208,9 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
             },
             "better": {"mean_deletion_faithfulness": "higher", "faithfulness_gain": "higher"},
             "target_layer": getattr(model, "cam_layer_path", "layer4[-1]"),
-            "faithfulness_per_image": [round(f, 3) for f in faith],
-            "random_control_per_image": [round(c, 3) for c in control],
+            # one row per image with a region to test, keyed by its id; the exporter
+            # moves them into the run's case table
+            "per_example": per_example,
             "chart": {"kind": "images", "title": "Where the model looks (Grad-CAM)",
                       "paths": rel_plots, "captions": captions},
             "chart2": {

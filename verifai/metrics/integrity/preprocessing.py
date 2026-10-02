@@ -24,6 +24,7 @@ from __future__ import annotations
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._baseline import NO_DIRECTION
 from verifai.metrics.integrity.provenance import _training_record
 from verifai.models.preprocessing import compare, record_spec
 
@@ -92,7 +93,9 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
                    f"the same as a match.")
         return Finding(pillar="integrity", metric="preprocessing", domain=domain, value=value,
                        verdict="unavailable", summary=summary,
-                       details={"explain": EXPLAIN, "used": used})
+                       # its zeros mean "nothing was compared", not "nothing differed",
+                       # so none of them is ranked beside a run that was checked
+                       details={"explain": EXPLAIN, "used": used, "better": NO_DIRECTION})
 
     c = compare(used, reference["spec"])
     value = {"source": reference["source"], "fields_compared": len(c["compared"]),

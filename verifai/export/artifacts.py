@@ -15,12 +15,14 @@ No DB, no server — just files that get committed into the showcase.
 """
 from __future__ import annotations
 
+import csv
 import json
 import re
 from pathlib import Path
 from typing import Any
 
 from verifai.core.findings import Report
+from verifai.core.suite import MEASUREMENT_VERSIONS
 
 # Worst last. A verdict outside the vocabulary (a legacy word) ranks with `measured`,
 # so on its own it still travels unchanged.
@@ -38,8 +40,10 @@ def write_report(report: Report, out_dir: str = "showcase/artifacts",
     base = Path(out_dir) / report.scenario
     (base / "plots").mkdir(parents=True, exist_ok=True)
 
+    data = report.to_dict()
+    write_cases(data, base)
     with open(base / "report.json", "w", encoding="utf-8") as f:
-        json.dump(report.to_dict(), f, ensure_ascii=False, indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
     card_out = {
         "id": report.scenario,
@@ -56,6 +60,63 @@ def write_report(report: Report, out_dir: str = "showcase/artifacts",
 
     write_snapshot(report, base)
     return base / "report.json"
+
+
+CASES_FILE = "cases.csv"
+
+
+def _cell(v: Any) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
+
+
+def write_cases(data: dict, base: Path) -> Path | None:
+    """Move every finding's per-case rows into one table per run: `cases.csv`.
+
+    A metric still returns `details["per_example"]` — one dict per case, with
+    its `id` — and keeps no copy in `report.json`, where the rows of every
+    metric for every case would make a report grow with metrics × cases. In
+    their place the finding says which columns are its own:
+    `details["cases"] = {"file": "cases.csv", "columns": [...]}`.
+
+    One row per case, in the order the cases were first seen; a column per
+    metric field, named `<finding>.<field>`, so two metrics never overwrite each
+    other's `pred`. Booleans as `true`/`false`, a missing value empty. Written
+    once per run and replaced by the next, never edited. A file, never a
+    database: what the planned case view indexes.
+    """
+    rows: dict[str, dict[str, str]] = {}
+    columns: list[str] = []
+    for f in data.get("findings", []):
+        details = f.get("details") or {}
+        per = details.pop("per_example", None)
+        if not per:
+            continue
+        own: list[str] = []
+        for entry in per:
+            row = rows.setdefault(str(entry["id"]), {})
+            for k, v in entry.items():
+                if k == "id":
+                    continue
+                col = f"{f['metric']}.{k}"
+                if col not in own:
+                    own.append(col)
+                row[col] = _cell(v)
+        columns += [c for c in own if c not in columns]
+        details["cases"] = {"file": CASES_FILE, "columns": own}
+    path = base / CASES_FILE
+    if not rows:
+        path.unlink(missing_ok=True)   # a run with no per-case rows leaves none behind
+        return None
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["id", *columns])
+        for case_id, row in rows.items():
+            w.writerow([case_id, *(row.get(c, "") for c in columns)])
+    return path
 
 
 # Deep enough to reach value["per_class"]["melanoma"]["sensitivity"] — the number
@@ -87,6 +148,24 @@ def snapshot_metrics(report: Report) -> dict[str, float]:
     for f in report.findings:
         _flatten(f.value, f.pillar, flat)
     return flat
+
+
+def snapshot_key_metric(report: Report) -> dict[str, str]:
+    """Which registered metric each flattened key comes from.
+
+    Keys are grouped by pillar, so five integrity checks share `integrity.*`;
+    this is what tells them apart again. Empty for a report whose runner did not
+    record `meta["metric_ids"]` (before F1).
+    """
+    ids = (report.meta or {}).get("metric_ids") or {}
+    out: dict[str, str] = {}
+    for f in report.findings:
+        if f.metric not in ids:
+            continue
+        keys: dict[str, float] = {}
+        _flatten(f.value, f.pillar, keys)
+        out.update({k: ids[f.metric] for k in keys})
+    return out
 
 
 def snapshot_directions(report: Report) -> dict[str, str]:
@@ -136,6 +215,14 @@ def write_snapshot(report: Report, base: Path) -> Path:
         "verdicts": {f.pillar: f.verdict for f in report.findings},
         "metrics": snapshot_metrics(report),
         "directions": snapshot_directions(report),
+        # Since F1: which metric each number came from, and the measurement version
+        # it was taken under. The comparison sets a value only beside values of the
+        # same measurement version. Older snapshots carry neither; the showcase
+        # dates them from the registry's measurement history instead.
+        "measurement_versions": {m: MEASUREMENT_VERSIONS[m]
+                                 for m in (meta.get("metric_versions") or {})
+                                 if m in MEASUREMENT_VERSIONS},
+        "key_metric": snapshot_key_metric(report),
     }
     name = re.sub(r"[^0-9A-Za-z]", "-", report.created_at) + ".json"
     path = hist / name

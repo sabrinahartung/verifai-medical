@@ -47,8 +47,8 @@ PLANNED: dict[str, dict[str, str]] = {
         "title": "Reach the cases behind this number",
         "shows": "the individual cases that produced a finding, and what they "
                  "share with each other",
-        "blocked_by": "details[\"per_example\"] is written by every metric and "
-                      "read by nothing; at scale it needs a cap first",
+        "blocked_by": "the case table (cases.csv, since step F1) is written but read "
+                      "by nothing yet; clustering needs the findings layer's rule templates",
         "phase": "case-view.md#screen-2-the-failure-cluster",
     },
     "tensions": {

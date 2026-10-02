@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from verifai.core.findings import Finding
+from verifai.metrics._baseline import NO_DIRECTION
 from verifai.core.integrity import (REPO_ROOT, declared_training, load_corpora,
                                     train_manifests_from_scenario)
 
@@ -91,4 +92,4 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
         verdict = "unavailable"
 
     return Finding(pillar="integrity", metric="provenance", domain=domain, value=value,
-                   verdict=verdict, summary=summary, details={"explain": EXPLAIN})
+                   verdict=verdict, summary=summary, details={"explain": EXPLAIN, "better": NO_DIRECTION})

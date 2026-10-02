@@ -344,6 +344,22 @@ Coverage
     6 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
     passed.
 
+Measurement version
+:   Every metric carries two version numbers. Its *version* changes with anything it reports,
+    down to a reworded sentence, and is how a report knows it is behind. Its *measurement
+    version* changes only when what its number means changes. Grad-CAM's did on 2026-09-25,
+    when it moved from seven images to every test image against a random control; every other
+    metric is still on its first. The comparison never sets a value beside one taken under
+    another measurement version: a Grad-CAM score from 2026-09-14 is left out next to one from
+    October, while the same run's accuracy is still compared.
+
+Case table
+:   One file per run, `cases.csv`, with one row per test image and a column for everything a
+    metric recorded about that image: what the model called it and how sure it was, its
+    estimated skin tone, how much confidence it lost when Grad-CAM's region was hidden. The
+    report keeps the totals and intervals; the case table keeps the cases they were counted
+    from.
+
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content
     hash** and the integrity verdict — the worst of the integrity checks, the same one the report's

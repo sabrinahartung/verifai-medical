@@ -306,6 +306,72 @@ def dominated_by(runs: list[dict], keys: list[str], dirs: dict[str, str | None])
     return out
 
 
+def _measurement_at(metric: str, created_at: str | None, registry: dict | None) -> int | None:
+    """The measurement version `metric` ran under when a snapshot was written.
+
+    From the registry's dated history, for snapshots that predate recording it.
+    Mirrors `verifai.core.suite.measurement_at`; the showcase never imports the
+    engine, so the history travels in `model_registry.json`.
+    """
+    from datetime import datetime
+    since = ((registry or {}).get("measurement_since") or {}).get(metric) or {}
+    if not created_at:
+        return None
+    when, version = datetime.fromisoformat(created_at), 1
+    for v, ts in sorted(((int(v), ts) for v, ts in since.items())):
+        if when >= datetime.fromisoformat(ts):
+            version = v
+    return version
+
+
+def measurement_of(snap: dict, key: str, registry: dict | None,
+                   known: dict[str, str] | None = None) -> int | None:
+    """The measurement version behind one number in a snapshot.
+
+    Recorded since step F1. For an older snapshot the metric is taken from what
+    later snapshots record for the same key (`known`), and failing that from its
+    pillar when every metric of the pillar agrees on the answer; the version is
+    then dated from the registry's history. `None` when that cannot be decided.
+    """
+    metric = (snap.get("key_metric") or {}).get(key) or (known or {}).get(key)
+    recorded = (snap.get("measurement_versions") or {}).get(metric) if metric else None
+    if recorded is not None:
+        return recorded
+    if metric:
+        return _measurement_at(metric, snap.get("created_at"), registry)
+    pillar = key.split(".", 1)[0]
+    candidates = [m for m in (registry or {}).get("measurement_versions") or {}
+                  if m.startswith(pillar + ".")]
+    versions = {_measurement_at(m, snap.get("created_at"), registry) for m in candidates}
+    return versions.pop() if len(versions) == 1 else None
+
+
+def align_measurements(runs: list[dict], registry: dict | None) -> tuple[list[dict], dict[str, list[str]]]:
+    """Keep, for every number, only the runs that measured it the same way.
+
+    Two values of one metric are compared only when they were taken under the
+    same measurement version — the manifest-hash rule, one level down. For each
+    key the newest version among the runs is the reference; a run measured under
+    an older or undecidable one loses that value, and only that value. Returns
+    copies of the runs, and per run label the keys it lost.
+    """
+    known = {k: m for r in runs for k, m in (r.get("key_metric") or {}).items()}
+    keys = {k for r in runs for k in r.get("metrics") or {}}
+    out = [dict(r, metrics=dict(r.get("metrics") or {})) for r in runs]
+    dropped: dict[str, list[str]] = {}
+    for key in sorted(keys):
+        have = [(r, measurement_of(r, key, registry, known)) for r in out if key in r["metrics"]]
+        versions = [v for _, v in have if v is not None]
+        if not versions:
+            continue
+        current = max(versions)
+        for r, v in have:
+            if v != current:
+                del r["metrics"][key]
+                dropped.setdefault(run_label(r), []).append(key)
+    return out, dropped
+
+
 def _blocked_reason(snap: dict) -> str | None:
     """Why this run must not be plotted alongside the others."""
     if (snap.get("eval_set") or {}).get("sha256") is None:
