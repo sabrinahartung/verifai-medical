@@ -51,6 +51,15 @@ card.json, plots/ with Grad-CAM overlays). Runs on a laptop in seconds.
 > Tip: point `weights_path:` in `scenarios/skin_cancer.yaml` at your local `.pt` and even the
 > Hugging Face download goes away.
 
+**Your own model from the Hub:**
+
+```bash
+uv run python scripts/resolve_model.py hf:owner/repo --dataset data/manifests/ham10000_test.csv -o scenarios/<new>.yaml
+```
+
+This drafts a scenario from what the repository says about itself, with a `TODO` for anything it
+cannot say. Answer them, delete `draft: true`, and run it like any other scenario.
+
 **The app — take a look:**
 
 ```bash
@@ -67,7 +76,7 @@ Mac does **not** have to compute the full subset.
 ```
 verifai/            ← ENGINE (offline: local / Kaggle / Colab)
   core/             findings data model + runner + metric registry
-  models/           domain adapters (image: ResNet18 from Hugging Face)
+  models/           adapters (torchvision and transformers image classifiers) + the Hub resolver
   datasets/         small, pinned subsets via manifests (reproducible)
   metrics/          the pillars: integrity / performance / fairness / robustness / explainability / privacy
   export/           findings -> static artifacts (JSON + plots), and the model registry
@@ -156,7 +165,8 @@ That is a deliberate design decision, not obfuscation:
 - [x] A usability pass: one card per pillar, every summary written for a reader and tested for its sample size and interval
 - [x] Adapter contract + capability gating, so a metric that cannot run says why instead of vanishing ([ADR 0001](docs/adr/0001-capability-gating.md))
 - [x] Provenance, corpus ancestry and label-space checks, for models whose training data we cannot inspect — the original Hub checkpoint is the first ([ADR 0002](docs/adr/0002-verifying-a-foreign-model.md))
-- [ ] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapters
+- [x] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapter: a ViT-Large this project neither trained nor picked, evaluated end to end, with a model card per model ([ADR 0003](docs/adr/0003-a-model-that-describes-itself.md))
+- [ ] One command — `verifai resolve / preflight / run` — and a step-by-step guide to evaluating your own model
 - [ ] A far larger metric catalogue: calibration, subgroup fairness, adversarial robustness, XAI evaluation
 - [ ] A second domain (chest X-ray), then text
 - [ ] Generative AI: contamination, groundedness, extraction — see the roadmap

@@ -12,3 +12,4 @@ page and is marked superseded by the one that replaced it.
 |---|---|---|
 | [0001](0001-capability-gating.md) | Capability gating: a model declares what it exposes, a metric what it needs, and a metric that cannot run is a row with a reason | Accepted · 2026-09-25 |
 | [0002](0002-verifying-a-foreign-model.md) | What can, and cannot, be verified about someone else's model: provenance, corpus ancestry, label space, a preprocessing fingerprint, and claims qualified on an unverified split | Accepted · 2026-09-25 |
+| [0003](0003-a-model-that-describes-itself.md) | A model that describes itself: the resolver drafts from the Hub and never runs, the model is the authority on its own classes and preprocessing, and its card is read at the evaluated commit | Accepted · 2026-10-02 |

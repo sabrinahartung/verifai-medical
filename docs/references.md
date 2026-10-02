@@ -589,6 +589,24 @@ implementation of a metric this catalogue still lists as planned.
 
 ---
 
+## Models evaluated from the Hub
+
+**[52] ViT-Large skin cancer classifier** · *Verified* {#ref-52}
+:   Hugging Face user `Kuldeepmishra3` (no further author name given). **ViT-Large — Skin
+    Cancer Classification (HAM10000).**
+    [huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000](https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000),
+    commit `21cb7e3988db0869def888bf3d056888dc3e9497` (2026).
+
+    Used as: the C5 demo, a model this project neither trained nor picked
+    ([Experiment 9](results.md#experiment-9-a-model-this-project-neither-trained-nor-picked)).
+    `google/vit-large-patch16-224` fine-tuned on `marmal88/skin_cancer` [[48]](#ref-48), as its
+    card states. Licence **MIT**, from the card's header, which permits evaluating it and
+    publishing the scores; the card itself calls it a personal learning project and not a
+    clinical tool. Name, licence, training data and commit taken from the repository
+    2026-10-02.
+
+---
+
 ## Citing this project
 
 Nothing here is a medical device or validated for clinical use. It is an educational

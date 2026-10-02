@@ -60,6 +60,28 @@ Supported architectures are anything in `torchvision.models` with an `fc` head (
 family) or a `classifier` head (DenseNet, EfficientNet, MobileNet). `DEFAULT_CAM_LAYER` maps
 common families to a sensible Grad-CAM target.
 
+### A model from the Hugging Face Hub
+
+Do not write the scenario by hand. Let the repository describe itself first:
+
+```bash
+uv run python scripts/resolve_model.py hf:owner/repo --dataset data/manifests/ham10000_test.csv \
+    -o scenarios/<new>.yaml
+```
+
+The resolver reads the repository's metadata at one pinned commit — never the weights — and
+writes a scenario marked `draft: true`. A `transformers` model (one with a `config.json`) gets
+the `hf_image` loader, its class order from `id2label`, its preprocessing from its own processor,
+and its name, licence and training data from its model card. Whatever the repository cannot say
+is a `TODO: …` naming what to declare: typically the configuration's `label` and `project`, the
+evaluation set, and one `dataset.label_map` entry per data label that is not an exact match.
+Answer each, keep the answers as comments, delete `draft: true`, then run it as above.
+`run_scenario` refuses a draft or a leftover TODO, and the loader refuses a scenario whose
+classes or architecture contradict the repository. A ViT runs on every pillar except Grad-CAM,
+which reports *not computable*. Why it works this way:
+[ADR 0003](adr/0003-a-model-that-describes-itself.md); a worked case:
+`scenarios/vit_large_skin_cancer_ham10000.yaml`.
+
 ## The contract a metric may rely on today
 
 Worth writing down, because it is narrower than it looks and is what makes a second
