@@ -268,7 +268,7 @@ Provenance
 :   Where a model came from, and what that lets an evaluation check. A model trained here
     comes with the list of images it trained on, so the split can be counted image by image. The
     original checkpoint on the Hugging Face Hub comes with weights only; its training data is
-    *inferred* as HAM10000 from its model card. Its report therefore says *no split check is
+    known as HAM10000 only from the notebook that trained it. Its report therefore says *no split check is
     possible* — which is never the same as a clean split.
 
 Corpus ancestry
@@ -287,6 +287,32 @@ Preprocessing fingerprint
 :   A hash of how a model's input images were resized and normalised, recorded in every report.
     If it differs from how the model was trained, every metric measures a slightly different
     model — so it is written down rather than assumed.
+
+Preprocessing check
+:   The fingerprint compared with what the model's own side says, setting by setting: resize,
+    centre crop, interpolation, pixel rescaling and the colour normalisation. A setting that
+    differs makes the report unusable as a measurement of that model. The ISIC model's training
+    record states only its image size, so on its reports the resize agrees and the other five
+    settings are listed as not checked. The original Hub checkpoint has no processor file and no
+    training record here, so its reports say the preprocessing *cannot be checked* — which is
+    not the same as a match.
+
+Resolver · draft scenario
+:   The resolver turns a Hugging Face link into a *draft* scenario: everything the repository
+    says about the model at one commit — its class order, its preprocessing, its licence, what it
+    was trained on — filled in, and a `TODO` for everything it cannot say. A draft never runs; a
+    person answers the TODOs first. The C5 model resolved with twelve, all about the evaluation
+    rather than the model: which test set, and which of the test set's labels is which of the
+    model's classes.
+
+Model card
+:   What a model *is*, as opposed to how it did: where the weights come from and at which
+    version, the licence, the architecture, the classes, how images are prepared, and what it
+    was trained on. On this site every line of it is read from a file — the scenario, the
+    training record, the report, or the header of the model card its author published on the
+    Hugging Face Hub — and says which. It carries no result: the original checkpoint's card
+    states CC BY-NC 4.0 and HAM10000, and that no image-by-image check is possible, but not its
+    accuracy, which belongs in a report beside every other pillar.
 
 Provisional
 :   A report whose split could not be verified. Its results are measured correctly, but they may
@@ -320,7 +346,8 @@ Coverage
 
 Snapshot
 :   One immutable record per run, in `history/`. Carries the evaluation manifest's **content
-    hash** and the integrity verdict — the two things that decide whether a later comparison is
+    hash** and the integrity verdict — the worst of the integrity checks, the same one the report's
+    banner shows — the two things that decide whether a later comparison is
     legitimate.
 
 Comparability

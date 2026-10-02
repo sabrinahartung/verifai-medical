@@ -54,6 +54,10 @@ METRIC_REGISTRY: dict[str, MetricSpec | str] = {
         "verifai.metrics.integrity.provenance:run", "integrity", "provenance"),
     "integrity.corpus_ancestry": MetricSpec(
         "verifai.metrics.integrity.corpus_ancestry:run", "integrity", "corpus_ancestry"),
+    # needs what the adapter records about its preprocessing, and the model's side
+    "integrity.preprocessing": MetricSpec(
+        "verifai.metrics.integrity.preprocessing:run", "integrity", "preprocessing",
+        modalities=("pixels",)),
     # needs the model's class list, which every adapter declares
     "integrity.label_space": MetricSpec(
         "verifai.metrics.integrity.label_space:run", "integrity", "label_space"),
@@ -245,7 +249,25 @@ def _checkpoint_fingerprint(model_cfg: dict) -> dict:
     return {}
 
 
+def _refuse_draft(scenario: dict[str, Any]) -> None:
+    """A resolved draft is a set of questions, not a configuration.
+
+    `verifai.models.resolve` writes `draft: true` and a `TODO: …` wherever the
+    checkpoint could not say something — its class order, its preprocessing, a
+    label pairing. Running with any of them unanswered would measure a model
+    somebody guessed at, so both the flag and a leftover TODO stop the run.
+    """
+    from verifai.models.resolve import open_todos
+    todos = open_todos(scenario)
+    if scenario.get("draft") or todos:
+        raise ValueError(
+            f"scenario {scenario.get('name')!r} is a draft"
+            + (f" with {len(todos)} open TODO(s): {', '.join(todos)}" if todos else "")
+            + ". Answer each TODO and delete `draft: true` before running it.")
+
+
 def run_scenario(scenario: dict[str, Any]) -> Report:
+    _refuse_draft(scenario)
     seed = scenario.get("seed", 42)
     random.seed(seed)
     try:
@@ -297,6 +319,10 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
               # how the model turns a payload into input — Phase B's fingerprint
               "model": dict(getattr(model, "metadata", None) or {})},
     )
+    # The Hub card's header as it was at the evaluated commit — the model card
+    # view quotes it, and the showcase never contacts the Hub itself.
+    if getattr(model, "hub_card", None) is not None:
+        report.meta["hub_card"] = model.hub_card
 
     ctx = {"scenario": scenario, "seed": seed, "plot_dir": scenario.get("_plot_dir", "plots")}
     outcome: dict[str, list[str]] = {}

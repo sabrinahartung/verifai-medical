@@ -14,10 +14,17 @@ seed: 42
 sample_size: 7            # small -> runs on CPU in seconds
 
 model:
+  # the model card's own title; every configuration of these weights must agree
+  name: "Skin-Lesion ResNet18 (HAM10000, class-weighted)"
   loader: "verifai.models.image:load"
   id: "skin-lesion-resnet18"
   repo_id: "sabrinahartung1010/skin-lesion-resnet18"
   filename: "resnet18_ham10000_classweights.pt"
+  # The weights were uploaded 2026-08-05 in f96683d (LFS sha256 58a63e41…); d6f877a
+  # (2026-09-30) added the model card and left that file byte-identical, so every
+  # run of this checkpoint loaded these bytes. Pinned in C1, moved to the card's
+  # commit 2026-09-30 so the reports and the resolver read the same repository.
+  revision: "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
   # weights_path: "/Users/sabrina/Development/ML_Training_Dojo/resnet18_ham10000_classweights.pt"
   #   ^ uncomment to use local weights and skip the Hugging Face download entirely.
   arch: "resnet18"          # any torchvision classifier factory

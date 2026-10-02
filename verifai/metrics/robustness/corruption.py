@@ -17,7 +17,7 @@ from typing import Any
 import numpy as np
 
 from verifai.core.findings import Finding
-from verifai.metrics._common import CORRUPTIONS
+from verifai.metrics._common import CORRUPTIONS, predict_many
 from verifai.metrics._stats import fmt, mean_ci, wilson
 
 
@@ -33,13 +33,15 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
 
     for s in dataset:
         img = dataset.load(s)
-        clean = model.predict_probs(img)
+        # the clean image and its corruptions in one forward pass; the corruptions
+        # are drawn in the same order as before, so the noise rng is unchanged
+        variants = [CORRUPTIONS[c](img, rng=rng) if c == "noise" else CORRUPTIONS[c](img)
+                    for c in names]
+        clean, *scored = predict_many(model, [img, *variants])
         clean_top = model.decide(clean, getattr(s, "meta", None))
         n += 1
         kept = 0
-        for c in names:
-            corrupted = CORRUPTIONS[c](img, rng=rng) if c == "noise" else CORRUPTIONS[c](img)
-            probs = model.predict_probs(corrupted)
+        for c, probs in zip(names, scored):
             if model.decide(probs, getattr(s, "meta", None)) == clean_top:
                 stable[c] += 1
                 kept += 1

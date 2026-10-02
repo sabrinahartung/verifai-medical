@@ -22,6 +22,10 @@ from typing import Any
 
 from verifai.core.findings import Report
 
+# Worst last. A verdict outside the vocabulary (a legacy word) ranks with `measured`,
+# so on its own it still travels unchanged.
+_INTEGRITY_ORDER = {"measured": 0, "insufficient": 1, "unavailable": 2, "invalid": 3}
+
 
 def write_report(report: Report, out_dir: str = "showcase/artifacts",
                  card: dict | None = None) -> Path:
@@ -106,7 +110,12 @@ def write_snapshot(report: Report, base: Path) -> Path:
     hist.mkdir(parents=True, exist_ok=True)
     meta = report.meta or {}
 
-    integrity = next((f.verdict for f in report.findings if f.pillar == "integrity"), None)
+    # The worst of the integrity checks, as the report page's banner takes it, so the
+    # comparison and the report cannot disagree about whether a run is usable. Before
+    # C4 this was the first check alone — the split — and a run whose images were
+    # prepared differently from the model's own would still have been plotted.
+    checks = [f for f in report.findings if f.pillar == "integrity"]
+    decided = max(checks, key=lambda f: _INTEGRITY_ORDER.get(f.verdict, 0), default=None)
     snap = {
         "created_at": report.created_at,
         "scenario": report.scenario,
@@ -115,7 +124,9 @@ def write_snapshot(report: Report, base: Path) -> Path:
         "dataset_id": report.dataset_id,
         # the comparability key: same rows, and an evaluation worth believing
         "eval_set": meta.get("eval_set") or {},
-        "integrity": integrity,
+        "integrity": decided.verdict if decided else None,
+        # which check decided it, so a blocked run can say why
+        "integrity_by": decided.metric if decided else None,
         "device": meta.get("device"),
         "seed": meta.get("seed"),
         # how much of the model this run could reach: a comparison between a

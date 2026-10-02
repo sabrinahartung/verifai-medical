@@ -33,6 +33,14 @@ Hub; its model card names `marmal88/skin_cancer`, a repackaging of HAM10000, and
 found that data covers 9,964 of HAM10000's 10,015 images. Until Phase B it had only been scored on
 7 example images.
 
+!!! note "Correction 2026-09-30"
+    The Hub repository has no model card and never had one; the resolver (step C2) found only
+    the weights file. The dataset is named by the checkpoint's training notebook
+    [[50]](../references.md#ref-50), whose saved file is byte-identical to the Hub weights. The
+    inference stands and none of the decisions below change; only its source was misnamed. The
+    text of this record is kept as written. The scenarios now cite the notebook; see
+    [Model cards](../model-cards.md).
+
 ## Decision
 
 Integrity becomes four checks, each a finding of its own, and none of them may call an
@@ -159,13 +167,14 @@ flowchart TD
     style M2 fill:#CDE8D5,stroke:#2E9E5B,color:#1a1a2e
 ```
 
-On the three active configurations this produces all three kinds of answer:
+On the four active configurations this produces all three kinds of answer:
 
 | Configuration | Trained on → tested on | Row check | Verdict |
 |---|---|---|---|
 | ISIC corpus | ISIC 2019 → HAM10000 (contained) | clean | **measured** — the overlap was held back |
 | ISIC corpus — as deployed | ISIC 2019 → Derm7pt | clean | **measured** — no shared archive |
 | Original checkpoint — HAM10000 test | HAM10000 (inferred) → HAM10000 | not possible | **insufficient** — cannot be ruled out |
+| Original checkpoint — Derm7pt | HAM10000 (inferred) → Derm7pt | not possible | **measured** — no shared archive |
 
 The first row is the project's origin story, now stated by the engine: ISIC 2019 contains HAM10000,
 so the ISIC model *could* have seen its test images; the lesion-level split check is what shows
@@ -199,6 +208,14 @@ waits for Phase G.
 
 Phase B **records** the fingerprint. **Comparing** it against what a Hub checkpoint declares in its
 own `preprocessor_config.json` needs the resolver of Phase C, which is where that file is read.
+
+!!! note "Since step C4 (2026-10-01)"
+    The comparison is a fifth integrity finding, `integrity.preprocessing`, beside the four
+    above rather than folded into provenance — for the same reason they are four. The spec is
+    written in six fields (resize, centre crop, interpolation, pixel rescaling, mean, std), which
+    changed every report's `preprocessing_sha256`; a differing field is `invalid`. See
+    [The pillars](../pillars.md#integrity-preprocessing) and the C4 row of the
+    [roadmap](../ROADMAP.md#phase-c-resolving-a-model-and-the-adapter-catalogue).
 
 ### 7 · What the reader sees
 
@@ -243,6 +260,12 @@ four findings deep, in the fixed order split · provenance · corpus · label sp
   keeps the gap visible rather than silently favourable.
 - **`trained_on` for a foreign model is a claim someone makes.** The `basis` field records how it
   is known, and the report quotes it; nothing verifies it.
+- **So a disjoint archive does not lift the banner on its own** (decided 2026-09-29). The
+  original checkpoint on Derm7pt measures *no shared archive*, but against a corpus inferred from
+  the model card; with no training manifests, split leakage and provenance stay `unavailable`,
+  the report still reads as provisional, and its established marks stay qualified. Lifting it
+  would mean trusting the model card as far as the table is trusted. A declared, not inferred,
+  `trained_on` disjoint from the test corpus is the case to revisit if it ever arises.
 - **The qualified mark is a wording rule, not a statistical adjustment.** Nothing estimates how
   much of a number is memory; the report only refuses to present it without the caveat.
 - **Only active configurations carry the new checks.** The 21 archived reports keep their single
@@ -250,7 +273,7 @@ four findings deep, in the fixed order split · provenance · corpus · label sp
 
 **Moved out of this decision**
 
-- Comparing the fingerprint against `preprocessor_config.json` → Phase C.
+- Comparing the fingerprint against `preprocessor_config.json` → Phase C. *Built in step C4.*
 - `privacy.mia_shadow` → Phase F. The access gate (ADR 0001) already reports any membership
   attack as unavailable for a model without known training data.
 

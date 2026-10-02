@@ -29,6 +29,7 @@ METRIC_VERSIONS: dict[str, int] = {
     "integrity.provenance": 1,
     "integrity.corpus_ancestry": 1,
     "integrity.label_space": 1,
+    "integrity.preprocessing": 1,       # C4: the preprocessing against the model's own
     "performance.classification": 3,
     "explainability.gradcam": 3,        # 2: every test image, against a random control
     "robustness.corruption": 3,         # 3: an interval on the mean, and n

@@ -70,7 +70,8 @@ sequenceDiagram
     CLI->>Run: run_scenario(yaml dict)
     Run->>Run: seed random / numpy / torch
     Run->>Mod: _build_model(spec["model"])
-    Mod-->>Run: ImageClassifier (on device)
+    Note over Mod: a Hub model: weights, processor<br/>and model card at the pinned commit
+    Mod-->>Run: ImageClassifier or HFImageClassifier (on device)
     Run->>DS: _build_dataset(spec["dataset"])
     DS-->>Run: ImageDataset (from manifest)
 
@@ -100,6 +101,10 @@ detect and would otherwise produce a full report of flattering numbers.
 | `core/run.py` | `METRIC_REGISTRY`, seeding, the integrity guard, the capability gate | import a metric directly |
 | `core/integrity.py` | `audit_split()` — the one leakage implementation | be duplicated anywhere |
 | `models/image.py` | `ImageClassifier`, device resolution, Grad-CAM layer lookup | hardcode a class list |
+| `models/hf_image.py` | `HFImageClassifier`: a `transformers` model with its own class order and processor | reconcile a scenario that contradicts the repository |
+| `models/resolve.py` | a draft scenario from a Hub link or a local `.pt`, read at one pinned commit | run anything, or guess a value it cannot read |
+| `models/preprocessing.py` | one vocabulary for how an image becomes a tensor, and the field-by-field comparison | import torch |
+| `models/hub_card.py` | the model card's header fields and title, read at the pinned commit | parse the card's prose |
 | `datasets/loaders.py` | manifest → `ImageDataset`, extra columns → `ImageSample.meta` | import from `verifai.models` |
 | `metrics/**` | one `run(model, dataset, ctx) -> Finding` each | know the app exists |
 | `export/artifacts.py` | `report.json` + `card.json` + `plots/` | compute anything |

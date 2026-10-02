@@ -1,0 +1,12 @@
+{
+  "id": "external_derm7pt_original",
+  "name": "Skin-Lesion ResNet18 (original checkpoint) — Derm7pt",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "The original Hub checkpoint on Derm7pt, a clinic it cannot have trained on. Beside the ISIC model on the same images, the one comparison of the two that leakage cannot inflate.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ResNet18 · original checkpoint",
+  "hf_url": "https://huggingface.co/sabrinahartung1010/skin-lesion-resnet18"
+}

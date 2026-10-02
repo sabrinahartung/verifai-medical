@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -275,6 +276,33 @@ def test_snapshot_records_what_makes_a_run_comparable(tmp_path):
     assert snap["integrity"] == "pass", "the integrity verdict must travel with the snapshot"
     assert snap["label"] == "baseline"
     assert snap["metrics"]["performance.accuracy"] == 0.8
+
+
+def test_a_failed_preprocessing_check_keeps_a_run_out_of_the_comparison(tmp_path):
+    """A clean split is not enough: the snapshot carries the worst integrity check.
+
+    Before C4 it carried the split check alone, so a run whose images were
+    prepared differently from the model's own would still have been plotted
+    beside the others while its report page said it was unusable.
+    """
+    from verifai.core.findings import Finding
+    from verifai.export.artifacts import write_snapshot
+    r = _report_with({"accuracy": 0.8})
+    for metric, verdict in (("split_leakage", "measured"), ("preprocessing", "invalid"),
+                            ("label_space", "measured")):
+        r.findings.append(Finding(pillar="integrity", metric=metric, domain="image",
+                                  value={}, verdict=verdict))
+    r.meta = {"eval_set": {"manifest": "m.csv", "sha256": "deadbeef", "n": 10}}
+    snap = json.loads(write_snapshot(r, tmp_path).read_text(encoding="utf-8"))
+    assert (snap["integrity"], snap["integrity_by"]) == ("invalid", "preprocessing")
+
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from catalog import _blocked_reason
+    assert "prepared differently" in _blocked_reason(snap)
+    # a snapshot written before C4 has no integrity_by, and was always the split
+    assert "split was contaminated" in _blocked_reason(
+        {"integrity": "invalid", "eval_set": {"sha256": "x"}})
 
 
 def test_eval_set_fingerprint_uses_content_not_filename(tmp_path):
@@ -1570,6 +1598,61 @@ def test_a_model_belongs_to_one_project(tmp_path):
         build_registry(sc, root=tmp_path)
 
 
+def _write_named(dir_, name, model_name=None, **model):
+    import yaml as _yaml
+    m = {"weights_path": "ck/a.pt", **model}
+    if model_name:
+        m["name"] = model_name
+    sc = {"name": name, "label": f"{name} label", "project": "P", "model": m,
+          "dataset": {"manifest": "m.csv", "id": "d"}, "metrics": ["x.y"]}
+    (dir_ / f"{name}.yaml").write_text(_yaml.safe_dump(sc), encoding="utf-8")
+
+
+def test_a_model_has_one_declared_name(tmp_path):
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_named(sc, "a", "Net A")
+    _write_named(sc, "b", "Net B")
+    with pytest.raises(ValueError, match="named 2 ways"):
+        build_registry(sc, root=tmp_path)
+
+
+def test_a_model_is_never_named_after_one_of_its_configurations(tmp_path):
+    """Regression: the original checkpoint's page was headed "Original checkpoint —
+    Derm7pt", the label of whichever configuration sorted first, so the model and
+    one of its runs read as the same thing."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_named(sc, "a")
+    _write_named(sc, "b", "Net", arch="resnet18")          # one configuration names it
+    (m,) = build_registry(sc, root=tmp_path)["models"]
+    assert m["name"] == "Net"
+    assert m["declared"]["arch"] == "resnet18"
+    (sc / "b.yaml").unlink()
+    (m,) = build_registry(sc, root=tmp_path)["models"]
+    assert m["name"] == "a.pt", "no declared name and no trainer: the file, not a run's label"
+    real = {m["checkpoint"].get("repo_id"): m["name"] for m in
+            json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())["models"]}
+    assert real["sabrinahartung1010/skin-lesion-resnet18"] == \
+        "Skin-Lesion ResNet18 (HAM10000, class-weighted)", "the Hub card's own title"
+
+
+def test_a_hub_card_header_and_title_are_read_and_the_prose_is_not():
+    from verifai.models.hub_card import parse_card
+    text = (REPO / "model_cards" / "skin-lesion-resnet18" / "README.md").read_text(encoding="utf-8")
+    card = parse_card(text)
+    assert card["license"] == "cc-by-nc-4.0"
+    assert card["datasets"] == ["marmal88/skin_cancer"]
+    assert card["title"] == "Skin-Lesion ResNet18 (HAM10000, class-weighted)"
+    assert set(card) <= {"present", "title", "license", "datasets", "tags", "base_model",
+                         "library_name", "pipeline_tag"}, "only fixed header fields, no prose"
+    # one string where the Hub means a list; and a card with no header at all
+    assert parse_card("---\ndatasets: x/y\n---\n")["datasets"] == ["x/y"]
+    assert parse_card("# Just a title\n\nProse.") == {"present": True, "title": "Just a title"}
+
+
 def test_models_without_declared_weights_are_never_merged(tmp_path):
     """Two scenarios that name no weights are not therefore the same model.
     An invented shared identity would let a comparison treat them as one."""
@@ -1597,6 +1680,63 @@ def test_a_missing_checkpoint_keeps_the_identity_it_had(tmp_path):
     assert build_registry(sc, root=tmp_path, previous=first) == first
     orphaned = build_registry(sc, root=tmp_path)["models"][0]
     assert orphaned["identity"] == "path:ck/m.pt" and orphaned["sha256"] is None
+
+
+def test_a_hub_model_is_identified_by_its_revision(tmp_path):
+    """A Hub checkpoint at two commits is two models, and a self-describing one
+    (no single weights file) is the repository at a commit — never `repo/None`."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    hub = {"repo_id": "org/net", "filename": "w.pt"}
+    _write_scenario(sc, "pinned", model={**hub, "revision": "abc123"})
+    _write_scenario(sc, "other_commit", model={**hub, "revision": "def456"})
+    _write_scenario(sc, "unpinned", model=hub)
+    _write_scenario(sc, "whole_repo", model={"repo_id": "org/vit", "revision": "abc123"})
+    identities = {m["configurations"][0]["scenario"]: m["identity"]
+                  for m in build_registry(sc, root=tmp_path)["models"]}
+    assert identities == {"pinned": "hub:org/net/w.pt@abc123",
+                          "other_commit": "hub:org/net/w.pt@def456",
+                          "unpinned": "hub:org/net/w.pt@unpinned",
+                          "whole_repo": "hub:org/vit@abc123"}
+
+
+@pytest.mark.parametrize("revision", ["abc123", None])
+def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, revision):
+    """Regression: the report said "pinned" while the loader fetched whatever the
+    repository held today, because the revision was recorded but never passed on."""
+    torch = pytest.importorskip("torch")
+    tvm = pytest.importorskip("torchvision.models")
+    huggingface_hub = pytest.importorskip("huggingface_hub")
+    from verifai.models.image import load
+
+    net = tvm.mobilenet_v3_small(weights=None)
+    net.classifier[-1] = torch.nn.Linear(net.classifier[-1].in_features, 3)
+    weights = tmp_path / "w.pt"
+    torch.save(net.state_dict(), weights)
+
+    from huggingface_hub.errors import EntryNotFoundError
+    calls = []
+    def fake_download(**kwargs):
+        calls.append(kwargs)
+        if kwargs["filename"] in ("preprocessor_config.json", "README.md"):
+            raise EntryNotFoundError("this repository ships none")
+        return str(weights)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+
+    spec = {"repo_id": "org/net", "filename": "w.pt", "arch": "mobilenet_v3_small",
+            "classes": ["a", "b", "c"], "cam_layer": "features[-1]", "device": "cpu"}
+    if revision:
+        spec["revision"] = revision
+    clf = load(spec)
+    # the weights, then the repository's processor (C4) and its model card — all
+    # at the same revision
+    assert calls == [{"repo_id": "org/net", "filename": "w.pt", "revision": revision},
+                     {"repo_id": "org/net", "filename": "preprocessor_config.json",
+                      "revision": revision},
+                     {"repo_id": "org/net", "filename": "README.md", "revision": revision}]
+    assert clf.hub_card == {"present": False, "repo_id": "org/net", "revision": revision}
+    assert clf.reference_preprocessing is None
 
 
 def test_the_showcase_derives_status_and_keeps_unclaimed_evaluations():
@@ -2294,7 +2434,8 @@ def test_the_preprocessing_fingerprint_changes_with_the_preprocessing():
     b = ImageClassifier(torch.nn.Linear(1, 2), ["a", "b"],
                         preprocess_spec={"resize": [256, 256], "mean": [0.5] * 3, "std": [0.5] * 3})
     assert a.metadata["preprocessing_sha256"] != b.metadata["preprocessing_sha256"]
-    assert a.metadata["preprocessing"]["resize"] == [224, 224]
+    assert a.metadata["preprocessing"]["resize"] == {"height": 224, "width": 224}
+    assert a.metadata["preprocessing"]["resample"] == "bilinear"
 
 
 def test_a_scenario_can_say_why_it_left_an_applicable_metric_out():
@@ -2303,3 +2444,454 @@ def test_a_scenario_can_say_why_it_left_an_applicable_metric_out():
                     {"explainability.gradcam": "licence forbids derived images"})
     cam = next(r for r in rows if r["metric"] == "explainability.gradcam")
     assert cam["status"] == "not_requested" and cam["reason"] == "licence forbids derived images"
+
+
+# --- C2: the resolver drafts, and never runs ------------------------------------
+# Offline: `api` stands in for HfApi, `fetch_json` for reading a small file from
+# the repository. Nothing here touches the network or a weights file.
+from types import SimpleNamespace                                   # noqa: E402
+
+from verifai.models import resolve as RS                           # noqa: E402
+
+_SHA = "f96683db1e07243b2e2d3c9ed9c403d1fccd6824"
+
+
+class _FakeApi:
+    def __init__(self, files, card=None, sha=_SHA, gated=False):
+        self.info = SimpleNamespace(sha=sha, gated=gated, card_data=card,
+                                    siblings=[SimpleNamespace(rfilename=f) for f in files])
+        self.asked = []
+
+    def model_info(self, repo, revision=None):
+        self.asked.append((repo, revision))
+        return self.info
+
+
+def _fetcher(files: dict):
+    calls = []
+
+    def fetch(repo, filename, revision):
+        calls.append((filename, revision))
+        return files[filename]
+    fetch.calls = calls
+    return fetch
+
+
+def test_resolving_the_projects_own_hub_checkpoint_reproduces_its_scenario():
+    """What the Hub can know matches the hand-written scenario; the rest is TODO."""
+    import yaml
+    real = yaml.safe_load((REPO / "scenarios" / "original_checkpoint_ham10000.yaml")
+                          .read_text(encoding="utf-8"))
+    # the repository as it is since d6f877a: one state_dict and a model card, no config
+    card = yaml.safe_load((REPO / "model_cards" / "skin-lesion-resnet18" / "README.md")
+                          .read_text(encoding="utf-8").split("---")[1])
+    api = _FakeApi([".gitattributes", "README.md", "resnet18_ham10000_classweights.pt"],
+                   card=card, sha="d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506")
+    fetch = _fetcher({})
+    readme = (REPO / "model_cards" / "skin-lesion-resnet18" / "README.md").read_text(encoding="utf-8")
+    d = RS.resolve("hf:sabrinahartung1010/skin-lesion-resnet18", api=api, fetch_json=fetch,
+                   fetch_text=lambda repo, f, rev: readme,
+                   dataset_manifest="data/manifests/ham10000_test.csv")
+    m = d.scenario["model"]
+    for key in ("name", "loader", "id", "repo_id", "filename", "revision", "device"):
+        assert m[key] == real["model"][key], key
+    # the card's header names the training data and the licence ...
+    assert m["trained_on"]["corpora"] == real["model"]["trained_on"]["corpora"]
+    assert m["licence"] == "cc-by-nc-4.0"
+    # ... but a state_dict still records no architecture or class order
+    for key in ("arch", "classes", "cam_layer"):
+        assert RS.is_todo(m[key]), key
+    assert d.scenario["draft"] is True
+    assert d.scenario["dataset"]["manifest"] == real["dataset"]["manifest"]
+    assert fetch.calls == [], "a bare state_dict repository has no JSON to read"
+
+
+def test_a_self_describing_hub_model_resolves_its_classes_card_and_revision():
+    config = {"architectures": ["ResNetForImageClassification"],
+              # keys out of order and past 9: the order is by index, not by string
+              "id2label": {"10": "k", **{str(i): f"c{i}" for i in range(10)}}}
+    pp = {"size": {"height": 224, "width": 224}, "image_mean": [0.5] * 3, "image_std": [0.5] * 3}
+    api = _FakeApi(["config.json", "preprocessor_config.json", "model.safetensors"],
+                   card={"datasets": ["marmal88/skin_cancer"], "license": "apache-2.0"},
+                   sha="a" * 40)
+    fetch = _fetcher({"config.json": config, "preprocessor_config.json": pp})
+    d = RS.resolve("hf:someone/derm-vit@main", api=api, fetch_json=fetch)
+    m = d.scenario["model"]
+    assert api.asked == [("someone/derm-vit", "main")]
+    assert m["revision"] == "a" * 40, "a branch name is pinned to the commit it pointed at"
+    assert m["loader"] == "verifai.models.hf_image:load"
+    assert m["classes"] == [f"c{i}" for i in range(10)] + ["k"]
+    assert m["trained_on"]["corpora"] == ["ham10000"]
+    assert "model card" in m["trained_on"]["basis"]
+    assert m["licence"] == "apache-2.0"
+    # only the small JSON files are read, at the pinned commit — never the weights
+    assert fetch.calls == [("config.json", "a" * 40), ("preprocessor_config.json", "a" * 40)]
+
+
+def test_a_card_dataset_the_corpus_table_does_not_list_stays_unknown():
+    api = _FakeApi(["config.json"], card={"datasets": ["someone/private-derm-set"]})
+    d = RS.resolve("hf:someone/m", api=api,
+                   fetch_json=_fetcher({"config.json": {"id2label": {"0": "a"}}}))
+    assert RS.is_todo(d.scenario["model"]["trained_on"])
+    assert "someone/private-derm-set" in d.scenario["model"]["trained_on"]
+
+
+def test_every_hub_alias_names_one_corpus():
+    from verifai.core.integrity import load_corpora
+    corpora = load_corpora()
+    aliases = [a for c in corpora.values() for a in (c.get("hub_aliases") or [])]
+    assert len(aliases) == len(set(aliases)), "an alias claimed by two corpora is ambiguous"
+    assert RS.corpus_for_dataset("marmal88/skin_cancer", corpora) == "ham10000"
+
+
+def test_a_label_map_is_proposed_only_on_an_exact_normalised_match():
+    mapping = RS.propose_label_map(
+        model_classes=["Melanoma", "Benign keratosis-like lesions", "nevus"],
+        data_classes=["melanoma", "benign_keratosis-like_lesions", "MEL", "nevus"])
+    assert mapping["melanoma"] == "Melanoma"
+    assert mapping["benign_keratosis-like_lesions"] == "Benign keratosis-like lesions"
+    assert RS.is_todo(mapping["MEL"]), "an abbreviation is a claim, never a match"
+    assert "nevus" not in mapping, "an identical name needs no entry"
+
+
+def test_a_local_state_dict_marks_what_it_cannot_carry(tmp_path):
+    w = tmp_path / "net.pt"
+    w.write_bytes(b"")
+    m = RS.resolve(str(w)).scenario["model"]
+    assert m["weights_path"] == str(w)
+    for key in ("arch", "classes", "cam_layer", "image_size", "mean", "std", "trained_on"):
+        assert RS.is_todo(m[key]), key
+    # a checkpoint this project trained has a record beside it, and that is read
+    (tmp_path / "net_training.json").write_text(json.dumps(
+        {"arch": "resnet18", "classes": ["a", "b"], "image_size": 224}), encoding="utf-8")
+    m = RS.resolve(str(w)).scenario["model"]
+    assert (m["arch"], m["classes"], m["image_size"]) == ("resnet18", ["a", "b"], 224)
+
+
+@pytest.mark.parametrize("ref", ["hf:no-slash", "hf:/repo", "hf:a/b/c"])
+def test_a_malformed_hub_reference_is_refused(ref):
+    with pytest.raises(ValueError):
+        RS.parse_ref(ref)
+
+
+@pytest.mark.parametrize("extra", [{"draft": True}, {"label": "TODO: name it"},
+                                   {"dataset": {"label_map": {"MEL": "TODO: which?"}}}])
+def test_run_scenario_refuses_a_draft_or_an_open_todo(monkeypatch, extra):
+    from verifai.core import run as R
+    monkeypatch.setattr(R, "_build_model", lambda spec: pytest.fail("a draft must not load"))
+    scenario = {"name": "d", "domain": "image", "model": {}, "dataset": {},
+                "metrics": ["performance.classification"], **extra}
+    with pytest.raises(ValueError, match="draft"):
+        R.run_scenario(scenario)
+
+
+def test_the_registry_and_run_active_ignore_a_draft(tmp_path):
+    from scripts.run_active import active_scenarios
+    from verifai.export.model_registry import build_registry
+    api = _FakeApi([".gitattributes", "w.pt"])
+    (tmp_path / "draft.yaml").write_text(
+        RS.resolve("hf:someone/m", api=api, fetch_json=_fetcher({})).to_yaml(), encoding="utf-8")
+    assert active_scenarios(tmp_path) == []
+    assert build_registry(tmp_path, root=tmp_path)["models"] == []
+
+
+def test_a_draft_written_as_yaml_reads_back_as_the_same_scenario():
+    import yaml
+    api = _FakeApi(["config.json"], card={"license": "mit"})
+    d = RS.resolve("hf:someone/m", api=api,
+                   fetch_json=_fetcher({"config.json": {"id2label": {"0": "a"}}}))
+    text = d.to_yaml()
+    assert yaml.safe_load(text) == d.scenario
+    assert text.startswith("# DRAFT"), "the header says what the file is before anything else"
+
+
+# --- C3: the hf_image adapter ---------------------------------------------------
+# A tiny, randomly initialised transformers model saved to a temp directory: the
+# adapter is exercised end to end with no download and no checkpoint.
+def _tiny_hf(tmp_path, family="resnet", labels=("a", "b", "c")):
+    T = pytest.importorskip("transformers")
+    id2label = dict(enumerate(labels))
+    if family == "resnet":
+        cfg = T.ResNetConfig(embedding_size=8, hidden_sizes=[8, 16], depths=[1, 1],
+                             num_labels=len(labels), id2label=id2label)
+        model = T.ResNetForImageClassification(cfg)
+    else:
+        cfg = T.ViTConfig(image_size=32, patch_size=8, hidden_size=16, num_hidden_layers=1,
+                          num_attention_heads=2, intermediate_size=32,
+                          num_labels=len(labels), id2label=id2label)
+        model = T.ViTForImageClassification(cfg)
+    d = tmp_path / family
+    model.save_pretrained(d)
+    T.ViTImageProcessor(size={"height": 32, "width": 32}).save_pretrained(d)
+    return d
+
+
+def _rgb(seed=0, size=(40, 30)):
+    import numpy as np
+    from PIL import Image
+    rng = np.random.default_rng(seed)
+    return Image.fromarray(rng.integers(0, 255, (*size[::-1], 3), dtype=np.uint8))
+
+
+def test_an_hf_image_model_satisfies_the_adapter_contract(tmp_path):
+    from verifai.models.base import ModelAdapter
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    assert isinstance(clf, ModelAdapter)
+    assert clf.classes == ["a", "b", "c"], "the class order is the repository's id2label"
+    assert (clf.access, clf.modality) == ("weights", "pixels")
+    probs = clf.predict_probs(_rgb())
+    assert set(probs) == {"a", "b", "c"} and abs(sum(probs.values()) - 1) < 1e-5
+    assert clf.decide(probs) == max(probs, key=probs.get)
+    md = clf.metadata
+    assert md["preprocessing"]["processor"] == "ViTImageProcessor"
+    assert md["preprocessing"]["resize"] == {"height": 32, "width": 32}
+    assert md["architecture"] == "ResNetForImageClassification"
+
+
+def test_batched_scores_equal_one_at_a_time_scores(tmp_path):
+    from verifai.metrics._common import predict_many
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    imgs = [_rgb(i) for i in range(5)]
+    batched = predict_many(clf, imgs, batch_size=2)          # crosses a batch boundary
+    for img, b in zip(imgs, batched):
+        single = clf.predict_probs(img)
+        assert all(abs(single[c] - b[c]) < 1e-5 for c in single)
+
+
+def test_an_adapter_without_batching_is_asked_one_image_at_a_time():
+    from verifai.metrics._common import predict_many
+
+    class OneAtATime:
+        calls = 0
+
+        def predict_probs(self, img):
+            OneAtATime.calls += 1
+            return {"a": 1.0}
+    assert predict_many(OneAtATime(), [1, 2, 3]) == [{"a": 1.0}] * 3
+    assert OneAtATime.calls == 3
+
+
+def test_grad_cam_hooks_onto_an_hf_cnn(tmp_path):
+    from verifai.metrics.explainability.gradcam import _gradcam
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    assert clf.cam_layer_path == "resnet.encoder.stages[-1]"
+    x = clf.to_tensor(_rgb())
+    x.requires_grad_(True)
+    cam = _gradcam(clf.torch_module, clf.cam_layer, x, 0)
+    assert cam.ndim == 2 and float(cam.min()) >= 0
+
+
+def test_grad_cam_on_a_vision_transformer_is_unavailable_with_the_reason(tmp_path):
+    from verifai.metrics.explainability.gradcam import run
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path, "vit")), "device": "cpu"})
+    assert clf.cam_layer is None
+    f = run(clf, [], {"plot_dir": str(tmp_path / "plots")})
+    assert f.verdict == "unavailable" and f.value is None
+    assert "ViTForImageClassification" in f.summary
+
+
+@pytest.mark.parametrize("override", [{"classes": ["c", "b", "a"]},
+                                      {"architecture": "ConvNextForImageClassification"}])
+def test_a_scenario_that_contradicts_the_repository_is_refused(tmp_path, override):
+    from verifai.models.hf_image import load
+    with pytest.raises(ValueError, match="repository"):
+        load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu", **override})
+
+
+def test_the_hf_loader_fetches_the_declared_revision(tmp_path, monkeypatch):
+    T = pytest.importorskip("transformers")
+    from verifai.models.hf_image import load
+    local = str(_tiny_hf(tmp_path))
+    asked = []
+    real_model = T.AutoModelForImageClassification.from_pretrained
+    real_proc = T.AutoImageProcessor.from_pretrained
+
+    def model_fp(src, revision=None, **kw):
+        asked.append(("model", src, revision))
+        return real_model(local)
+
+    def proc_fp(src, revision=None, **kw):
+        asked.append(("processor", src, revision))
+        return real_proc(local)
+    monkeypatch.setattr(T.AutoModelForImageClassification, "from_pretrained", model_fp)
+    monkeypatch.setattr(T.AutoImageProcessor, "from_pretrained", proc_fp)
+    import huggingface_hub
+    card = tmp_path / "README.md"
+    card.write_text("---\nlicense: apache-2.0\n---\n# Tiny\n", encoding="utf-8")
+
+    def card_download(**kw):
+        asked.append(("card", kw["repo_id"], kw["revision"]))
+        return str(card)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", card_download)
+    clf = load({"repo_id": "someone/m", "revision": "a" * 40, "device": "cpu"})
+    assert asked == [("model", "someone/m", "a" * 40), ("processor", "someone/m", "a" * 40),
+                     ("card", "someone/m", "a" * 40)]
+    assert clf.hub_card["license"] == "apache-2.0" and clf.hub_card["title"] == "Tiny"
+
+
+# --- C4: the preprocessing, checked against the model's own ------------------------
+class _PrepModel:
+    """Only what integrity.preprocessing reads from an adapter."""
+    def __init__(self, used, reference=None):
+        self.metadata = {"preprocessing": used}
+        self.reference_preprocessing = reference
+
+
+def _prep_run(model, scenario_model=None, n=12):
+    from verifai.metrics.integrity import preprocessing
+    return preprocessing.run(model, list(range(n)),
+                             {"scenario": {"domain": "image", "model": scenario_model or {}}})
+
+
+def _tv(size=224):
+    from verifai.models.image import MEAN, STD
+    from verifai.models.preprocessing import torchvision_spec
+    return torchvision_spec(size, MEAN, STD)
+
+
+def test_a_deliberate_preprocessing_mismatch_is_reported_field_by_field():
+    from verifai.models.preprocessing import processor_spec
+    pp = {"do_resize": True, "size": {"shortest_edge": 256}, "resample": 3,
+          "do_center_crop": True, "crop_size": {"height": 224, "width": 224},
+          "do_rescale": True, "rescale_factor": 1 / 255,
+          "do_normalize": True, "image_mean": [0.5] * 3, "image_std": [0.5] * 3}
+    f = _prep_run(_PrepModel(_tv(), {"source": "processor", "where": "`preprocessor_config.json`",
+                                     "spec": processor_spec(pp)}))
+    assert f.verdict == "invalid"
+    differing = {d["field"] for d in f.value["differences"]}
+    assert differing == {"resize", "center_crop", "resample", "mean", "std"}
+    assert "rescale_factor" not in differing, "1/255 on both sides is a match"
+    assert f.value["fields_differing"] == 5
+    for words in ("resize", "centre crop", "interpolation", "normalisation mean"):
+        assert words in f.summary
+    from verifai.metrics._baseline import preprocessing as ref
+    assert ref(f.value)["cleared"] is False
+
+
+def test_matching_preprocessing_is_measured_and_says_what_was_not_stated():
+    ref = {"source": "processor", "where": "the repository's processor",
+           "spec": {"resize": {"height": 224, "width": 224}}}
+    f = _prep_run(_PrepModel(_tv(), ref))
+    assert f.verdict == "measured" and f.value["fields_differing"] == 0
+    assert "not checked" in f.summary, "a partial reference must say what it did not cover"
+    from verifai.metrics._baseline import preprocessing as base
+    assert base(f.value)["cleared"] is False, "a partial check establishes nothing"
+
+
+def test_no_reference_is_unavailable_never_a_match():
+    f = _prep_run(_PrepModel(_tv()), scenario_model={"repo_id": "someone/model"})
+    assert f.verdict == "unavailable" and f.value["fields_compared"] == 0
+    assert "not the same as a match" in f.summary
+
+
+def test_an_older_training_record_checks_only_the_image_size(tmp_path):
+    w = tmp_path / "m.pt"
+    w.write_bytes(b"")
+    (tmp_path / "m_training.json").write_text(json.dumps({"scenario": "m", "image_size": 256}))
+    f = _prep_run(_PrepModel(_tv(224)), scenario_model={"weights_path": str(w)})
+    assert f.verdict == "invalid"
+    assert [d["field"] for d in f.value["differences"]] == ["resize"]
+
+
+def test_an_hf_model_is_prepared_by_its_own_processor(tmp_path):
+    from verifai.models.hf_image import load
+    clf = load({"weights_path": str(_tiny_hf(tmp_path)), "device": "cpu"})
+    f = _prep_run(clf)
+    assert f.verdict == "measured" and f.value["source"] == "own_processor"
+    from verifai.metrics._baseline import preprocessing as base
+    assert base(f.value)["cleared"] is True
+
+
+def test_a_hub_state_dict_reads_its_repositorys_processor_at_the_pinned_revision(monkeypatch, tmp_path):
+    import huggingface_hub
+    from huggingface_hub.errors import EntryNotFoundError
+    from verifai.models import image as I
+    asked = []
+    cfg = tmp_path / "preprocessor_config.json"
+    cfg.write_text(json.dumps({"size": {"height": 224, "width": 224}, "resample": 2}))
+
+    def fake(repo_id, filename, revision=None):
+        asked.append((filename, revision))
+        return str(cfg)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    ref = I._hub_processor("someone/m", "a" * 40)
+    assert asked == [("preprocessor_config.json", "a" * 40)]
+    assert ref["spec"] == {"resize": {"height": 224, "width": 224}, "resample": "bilinear"}
+
+    def missing(repo_id, filename, revision=None):
+        raise EntryNotFoundError("no such file")
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", missing)
+    assert I._hub_processor("someone/m", "a" * 40) is None, "absent on the Hub is no reference"
+
+    def offline(repo_id, filename, revision=None):
+        raise OSError("no network")
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", offline)
+    with pytest.raises(OSError):
+        I._hub_processor("someone/m", "a" * 40)      # a failed lookup is never "absent"
+
+
+# --- the model card view: facts a machine can check, each with its source ----------
+def _card_for(repo_or_key):
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    model = next(m for m in reg["models"]
+                 if repo_or_key in (m["key"], m["checkpoint"].get("repo_id")))
+    reports = MC.reports_of(model)
+    report = MC.reference_report(model, reports)
+    facts = {(s, f.label): f for s, rows in MC.facts(model, report).items() for f in rows}
+    return MC, model, reports, facts
+
+
+def test_the_hub_models_card_quotes_its_own_card_and_says_what_cannot_be_checked():
+    MC, model, reports, facts = _card_for("sabrinahartung1010/skin-lesion-resnet18")
+    lic = facts[("General", "Licence")]
+    assert lic.value == "CC BY-NC 4.0" and "model card's header" in lic.source
+    assert facts[("General", "Trained")].value == "elsewhere"
+    assert facts[("Model", "Architecture")].value == "ResNet18 (declared)", \
+        "a state_dict records no architecture: the scenario's word, marked as such"
+    assert facts[("Training data", "Image-by-image check")].value.startswith("not possible")
+    assert facts[("Model", "Preparation check")].value == "nothing to check against"
+    assert MC.hub_card_url(model, MC.reference_report(model, reports)).endswith(
+        "/blob/d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506/README.md"), "the card at the evaluated commit"
+
+
+def test_a_model_trained_here_is_described_from_its_training_record():
+    MC, model, reports, facts = _card_for("skin_cancer_isic")
+    assert facts[("Model", "Architecture")].source.startswith("The training record")
+    assert facts[("Training data", "Corpus")].value.endswith("21,770 images")
+    assert facts[("Training data", "Image-by-image check")].value.startswith("possible")
+    assert facts[("General", "Licence")].value == "not declared"
+
+
+def test_every_fact_has_a_source_and_no_card_states_a_result():
+    """The card says what a model is. A number from a report on it would read as
+    the model's score; that is the report's business, beside every other pillar."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    for model in reg["models"]:
+        reports = MC.reports_of(model)
+        for rows in MC.facts(model, MC.reference_report(model, reports)).values():
+            for f in rows:
+                assert f.source.strip(), f"{model['key']}: {f.label} has no source"
+        for r in reports.values():
+            line = MC.evaluation_line(r)
+            assert not re.search(r"\d\.\d", line), f"{model['key']}: a value in {line!r}"
+
+
+def test_a_model_never_evaluated_says_its_run_time_facts_are_not_read_yet():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    model = {"name": "X", "key": "x", "sha256": None, "trained_by": None, "provenance": None,
+             "declared": {}, "configurations": [],
+             "checkpoint": {"kind": "hub", "repo_id": "o/x", "revision": "b" * 40}}
+    facts = {f.label: f.value for rows in MC.facts(model, None).values() for f in rows}
+    assert facts["Licence"] == facts["Classes"] == MC.NOT_YET

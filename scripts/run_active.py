@@ -22,8 +22,13 @@ sys.path.insert(0, str(ROOT))
 
 
 def active_scenarios(scenarios_dir: Path = ROOT / "scenarios") -> list[Path]:
-    return [p for p in sorted(scenarios_dir.glob("*.yaml"))
-            if yaml.safe_load(p.read_text(encoding="utf-8")).get("status") == "active"]
+    out = []
+    for p in sorted(scenarios_dir.glob("*.yaml")):
+        sc = yaml.safe_load(p.read_text(encoding="utf-8"))
+        # a resolver draft says `status: active` for when it is answered, not before
+        if sc.get("status") == "active" and not sc.get("draft"):
+            out.append(p)
+    return out
 
 
 def main(argv: list[str]) -> None:

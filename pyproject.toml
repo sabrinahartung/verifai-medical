@@ -1,6 +1,6 @@
 [project]
 name = "verifai"
-version = "0.3.0"
+version = "0.4.0"
 description = "File-based Responsible-AI evaluation of medical AI models across six pillars."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -22,6 +22,7 @@ engine = [
   "matplotlib>=3.11",          # Grad-CAM overlays
   "huggingface-hub>=1.30",
   "certifi>=2026.7",           # imported by train_model.py for the macOS CA bundle
+  "transformers>=5.0",
 ]
 # Dataset preparation only: build_splits.py and materialize_images.py query
 # the Hugging Face parquet metadata with DuckDB.

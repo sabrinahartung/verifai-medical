@@ -31,7 +31,8 @@ model:
   cam_layer: "layer4[-1]"       # Grad-CAM target; defaults per arch
   device: "auto"                # auto | cpu | cuda | mps
   weights_path: "artifacts_training/my_model.pt"
-  # ...or repo_id + filename to pull from the Hugging Face Hub
+  # ...or repo_id + filename to pull from the Hugging Face Hub, and
+  # revision: "<commit sha>" to pin it — without one the report says unpinned
   classes: [...]                # MUST match the checkpoint's output order
 
 dataset:
@@ -59,6 +60,28 @@ Supported architectures are anything in `torchvision.models` with an `fc` head (
 family) or a `classifier` head (DenseNet, EfficientNet, MobileNet). `DEFAULT_CAM_LAYER` maps
 common families to a sensible Grad-CAM target.
 
+### A model from the Hugging Face Hub
+
+Do not write the scenario by hand. Let the repository describe itself first:
+
+```bash
+uv run python scripts/resolve_model.py hf:owner/repo --dataset data/manifests/ham10000_test.csv \
+    -o scenarios/<new>.yaml
+```
+
+The resolver reads the repository's metadata at one pinned commit — never the weights — and
+writes a scenario marked `draft: true`. A `transformers` model (one with a `config.json`) gets
+the `hf_image` loader, its class order from `id2label`, its preprocessing from its own processor,
+and its name, licence and training data from its model card. Whatever the repository cannot say
+is a `TODO: …` naming what to declare: typically the configuration's `label` and `project`, the
+evaluation set, and one `dataset.label_map` entry per data label that is not an exact match.
+Answer each, keep the answers as comments, delete `draft: true`, then run it as above.
+`run_scenario` refuses a draft or a leftover TODO, and the loader refuses a scenario whose
+classes or architecture contradict the repository. A ViT runs on every pillar except Grad-CAM,
+which reports *not computable*. Why it works this way:
+[ADR 0003](adr/0003-a-model-that-describes-itself.md); a worked case:
+`scenarios/vit_large_skin_cancer_ham10000.yaml`.
+
 ## The contract a metric may rely on today
 
 Worth writing down, because it is narrower than it looks and is what makes a second
@@ -73,9 +96,10 @@ domain possible at all. Read off the metrics as they stand:
 | `model.decide(probs, meta=None)`, `model.rank(probs, meta=None)` | model | all |
 | `model.torch_module`, `model.cam_layer`, `model.to_tensor(payload)` | model | Grad-CAM only |
 | the payload being *pixels* | dataset | the ITA fairness metric only |
-| the scenario (`ctx["scenario"]`) and the manifests — never the model's outputs | scenario | the four integrity checks |
+| the scenario (`ctx["scenario"]`) and the manifests — never the model's outputs | scenario | the first four integrity checks |
+| `model.metadata["preprocessing"]`, `model.reference_preprocessing` — never the model's outputs | model | the preprocessing check |
 
-So **four of the six original metrics never touch anything image-specific**, and the four
+So **four of the six original metrics never touch anything image-specific**, and the five
 integrity checks do not touch the model's outputs at all: they need a payload, a
 probability vector and a decision rule. A text or audio adapter that returns
 `{class: probability}` from `predict_probs` would run them unchanged.

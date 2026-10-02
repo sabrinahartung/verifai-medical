@@ -1,0 +1,75 @@
+# The original Hub checkpoint on Derm7pt [4]: the one comparison in Experiment 8 that
+# no leakage can inflate.
+#
+# On the HAM10000 test set this checkpoint scores 0.867 against the ISIC model's 0.806,
+# and nothing there can separate skill from memory: its training data is only inferred
+# (HAM10000, via marmal88/skin_cancer) and very likely contains those test images.
+# Derm7pt is a different clinic and archive that neither model can have seen, so here
+# both numbers are clean. Set beside external_derm7pt_isic.yaml, this says how much of
+# the internal gap survives a new clinic.
+#
+# Corpus ancestry has no row-level check to do: HAM10000 and Derm7pt share no archive
+# in data/corpora.yaml. Provenance still reads as unverified — the weights came from
+# the Hub with no training record — which is true of the model, not of this split.
+#
+# Same exclusions as the ISIC model's Derm7pt run, for the same reasons.
+name: external_derm7pt_original
+label: "Original checkpoint — Derm7pt"
+project: "Skin lesion classification"
+status: active
+domain: image
+seed: 42
+sample_size: null          # the whole Derm7pt manifest (1,003 images)
+
+model:
+  # the model card's own title; every configuration of these weights must agree
+  name: "Skin-Lesion ResNet18 (HAM10000, class-weighted)"
+  loader: "verifai.models.image:load"
+  id: "skin-lesion-resnet18"
+  repo_id: "sabrinahartung1010/skin-lesion-resnet18"
+  filename: "resnet18_ham10000_classweights.pt"
+  # The weights were uploaded 2026-08-05 in f96683d (LFS sha256 58a63e41…); d6f877a
+  # (2026-09-30) added the model card and left that file byte-identical, so every
+  # run of this checkpoint loaded these bytes. Pinned in C1, moved to the card's
+  # commit 2026-09-30 so the reports and the resolver read the same repository.
+  revision: "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
+  arch: "resnet18"
+  cam_layer: "layer4[-1]"
+  device: "auto"
+  trained_on:
+    corpora: [ham10000]
+    basis: "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
+
+dataset:
+  loader: "verifai.datasets.loaders:load_image_manifest"
+  id: "derm7pt-external"
+  manifest: "data/manifests/derm7pt_test.csv"
+  images_dir: "data/raw/derm7pt_release_v0/images"
+  source: "Derm7pt (Kawahara et al. 2019) — external"
+  corpus: derm7pt
+
+card:
+  group: "External validation — Derm7pt (unseen clinic)"
+  lineage: "ResNet18 · original checkpoint"
+  name: "Skin-Lesion ResNet18 (original checkpoint) — Derm7pt"
+  emoji: "🌍"
+  description: "The original Hub checkpoint on Derm7pt, a clinic it cannot have trained on. Beside the ISIC model on the same images, the one comparison of the two that leakage cannot inflate."
+  hf_url: "https://huggingface.co/sabrinahartung1010/skin-lesion-resnet18"
+
+metrics:
+  - "integrity.split_leakage"
+  - "integrity.provenance"
+  - "integrity.corpus_ancestry"
+  - "integrity.label_space"
+  - "integrity.preprocessing"
+  - "performance.classification"
+  - "robustness.corruption"
+  - "fairness.skin_tone"
+
+not_requested:
+  explainability.gradcam: >-
+    Derm7pt's licence forbids redistributing its images, and a Grad-CAM overlay is a
+    derived image, so none is rendered
+  privacy.mia: >-
+    the membership attack needs this model's training members, which were never
+    published, and asks a different question from the one this external test asks

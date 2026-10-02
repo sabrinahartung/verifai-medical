@@ -60,8 +60,9 @@ VERDICT = {
     "unavailable":  ("➖", "Not computable",   "Could not be computed. The result line says "
                                               "what was missing; no number is invented."),
     "invalid":      ("⛔", "Not usable",      "A precondition failed — the split was "
-                                              "contaminated, so these numbers measure "
-                                              "memory rather than generalisation."),
+                                              "contaminated, or the images were prepared "
+                                              "differently from what the model expects — so "
+                                              "these numbers do not measure the model named."),
 }
 # Where a metric stands when it produced no finding. Deliberately apart from
 # VERDICT: these are statements about the evaluation's scope, not about a
@@ -139,6 +140,29 @@ def load_catalog() -> list[dict]:
         _SCENARIO_LABELS.update({c["scenario"]: c["label"] for m in models
                                  for c in m["configurations"] if c.get("label")})
     return cards
+
+
+# ---------- one report's standing ----------
+def integrity_state(findings: list[dict]) -> tuple[str, dict | None]:
+    """The report's integrity status, and the finding that decided it.
+
+    No integrity finding at all is `unavailable` — an evaluation that never
+    checked its split has exactly the standing of one that could not.
+    """
+    items = [f for f in findings if f.get("pillar") == "integrity"]
+    if not items:
+        return "unavailable", None
+    worst = max(items, key=lambda f: VERDICT_ORDER.get(
+        normalise_verdict(f.get("verdict"), "integrity"), 1))
+    return normalise_verdict(worst.get("verdict"), "integrity"), worst
+
+
+def coverage_counts(rows: list[dict]) -> dict[str, int]:
+    """How many registered metrics stand where. Counts completeness, never quality."""
+    out: dict[str, int] = {}
+    for r in rows:
+        out[r["status"]] = out.get(r["status"], 0) + 1
+    return out
 
 
 # ---------- snapshots: comparing runs, and refusing to ----------
@@ -287,8 +311,16 @@ def _blocked_reason(snap: dict) -> str | None:
     if (snap.get("eval_set") or {}).get("sha256") is None:
         return "no evaluation manifest recorded, so there is nothing to match against"
     integrity = normalise_verdict(snap.get("integrity"), "integrity")
+    # Snapshots before C4 carry no `integrity_by`; theirs was always the split check.
+    preprocessing = snap.get("integrity_by") == "preprocessing"
     if integrity == "invalid":
+        if preprocessing:
+            return ("its images were prepared differently from what the model expects — the "
+                    "numbers describe a different model")
         return "its split was contaminated — the numbers are inflated by an unknown amount"
     if integrity != "measured":
+        if preprocessing:
+            return ("its preprocessing could not be checked against the model's own, so the "
+                    "numbers rest on an unchecked assumption")
         return "split integrity was never verified, so the numbers rest on an unchecked assumption"
     return None

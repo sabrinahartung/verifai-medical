@@ -87,8 +87,12 @@ def _identity(ck: dict, scenario: str, root: Path, known: dict[str, str]) -> tup
         digest = _sha256(path) if path.is_file() else known.get(ck["path"])
         return (f"sha256:{digest}", digest) if digest else (f"path:{ck['path']}", None)
     if ck["kind"] == "hub":
+        # A pinned revision is a commit; "unpinned" is whatever the default branch
+        # held when it ran. A self-describing model (hf_image) is the whole
+        # repository at that commit, with no single weights file to name.
         rev = ck.get("revision") or "unpinned"
-        return f"hub:{ck['repo_id']}/{ck.get('filename')}@{rev}", None
+        where = f"{ck['repo_id']}/{ck['filename']}" if ck.get("filename") else ck["repo_id"]
+        return f"hub:{where}@{rev}", None
     return f"unidentified:{scenario}", None
 
 
@@ -110,6 +114,26 @@ def _provenance(ck: dict, root: Path, previous: dict | None) -> dict | None:
     return (previous or {}).get("provenance")
 
 
+# Scenario fields the model card view quotes, marked there as declared.
+DECLARED_KEYS = ("loader", "arch", "architecture", "trained_on")
+
+
+def _name(g: dict, declared: set[str], trainer: dict | None) -> str:
+    """What the model page is headed with.
+
+    A declared `model.name` first, then the trainer's label, then the repository
+    or file the weights come from. Never a configuration's label: a model is not
+    one of its runs, and naming it after one made "Original checkpoint — Derm7pt"
+    read as a model of its own.
+    """
+    if declared:
+        return next(iter(declared))
+    if trainer and trainer.get("label"):
+        return trainer["label"]
+    ck = g["checkpoint"]
+    return ck.get("repo_id") or (Path(ck["path"]).name if ck.get("path") else g["key"])
+
+
 def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = ".",
                    previous: dict | None = None) -> dict:
     """Every declared model, its provenance and its configurations.
@@ -126,16 +150,27 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
     groups: dict[str, dict[str, Any]] = {}
     for p in sorted(Path(scenarios_dir).glob("*.yaml")):
         sc = yaml.safe_load(p.read_text(encoding="utf-8"))
+        if sc.get("draft"):
+            continue            # a resolver draft is not a model yet, only questions about one
         name, model = sc["name"], sc.get("model") or {}
         ck = _checkpoint(model)
         identity, digest = _identity(ck, name, root, known_hashes)
         g = groups.setdefault(identity, {
             "identity": identity, "sha256": digest, "checkpoint": ck,
             "key": _key(ck, name), "configurations": [], "_projects": {}, "_trainer": None,
+            "_names": {}, "declared": {},
         })
         if ck["kind"] == "local" and Path(ck["path"]).stem == name and sc.get("training"):
             g["_trainer"] = sc
         g["_projects"][name] = sc.get("project") or UNASSIGNED
+        if model.get("name"):
+            g["_names"][name] = model["name"]
+        # What the scenarios state about the checkpoint, for the model card view to
+        # quote with that source. The first configuration that states a field wins;
+        # the loader refuses one that contradicts the repository's own config.
+        for k in DECLARED_KEYS:
+            if model.get(k) is not None:
+                g["declared"].setdefault(k, model[k])
         status = sc.get("status", "archived")
         if status not in STATUSES:
             raise ValueError(f"{name}: status must be one of {STATUSES}, not {status!r}")
@@ -159,12 +194,16 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
                 f"checkpoint {g['key']} is declared under {len(projects)} projects "
                 f"({', '.join(sorted(projects))}). A model belongs to one project; "
                 f"its configurations must agree.")
+        names = set(g.pop("_names").values())
+        if len(names) > 1:
+            raise ValueError(
+                f"checkpoint {g['key']} is named {len(names)} ways in model.name "
+                f"({', '.join(sorted(names))}). A model has one name; its configurations "
+                f"must agree.")
         trainer = g.pop("_trainer")
         g["project"] = projects.pop()
         g["trained_by"] = trainer["name"] if trainer else None
-        # The trainer's label names the checkpoint; failing that, the only or
-        # first configuration's, which is what the gallery called it before.
-        g["name"] = (trainer.get("label") if trainer else None) or g["configurations"][0]["label"]
+        g["name"] = _name(g, names, trainer)
         g["provenance"] = _provenance(g["checkpoint"], root, prev_models.get(g["key"]))
         g["identified"] = not g["identity"].startswith("unidentified:")
         g["active"] = any(c["status"] == "active" for c in g["configurations"])

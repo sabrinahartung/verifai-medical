@@ -36,19 +36,19 @@ four cannot:
 
 !!! tip "How to read this page"
     **Running today** means implemented, registered, and producing findings in the published
-    artifacts — nine metrics. **Planned** means designed and argued for, and not yet written.
+    artifacts — ten metrics. **Planned** means designed and argued for, and not yet written.
     Every table row carries its own status, and the [roadmap](ROADMAP.md) holds the order.
     The distinction is kept visible on purpose: a catalogue that reads as though it all exists
     would be the same kind of overclaim this project was built to catch.
 
 ---
 
-## Running today — nine metrics
+## Running today — ten metrics
 
 Everything in this section is implemented, registered, and producing findings in the published
-artifacts. One metric per pillar, and four for integrity — the split check, plus the three checks
+artifacts. One metric per pillar, and five for integrity — the split check, the three checks
 added for models this project did not train
-([ADR 0002](adr/0002-verifying-a-foreign-model.md)). Each states its own evidence gate, and none of them scores the
+([ADR 0002](adr/0002-verifying-a-foreign-model.md)), and the preprocessing check. Each states its own evidence gate, and none of them scores the
 model against a threshold — the vocabulary is `measured` · `insufficient` · `unavailable` ·
 `invalid`, which says what is *known*, not whether it is good.
 
@@ -91,6 +91,21 @@ above cannot run. Three further checks say what *can* be known:
 
 A report whose split cannot be checked carries a *read as provisional* banner, and every
 *established* mark outside integrity reads *on a split that could not be checked*.
+
+### Integrity — `preprocessing`
+
+Whether each test image was prepared — resized, cropped, rescaled, normalised — the way the model
+expects. The same weights fed differently prepared pixels give different answers, and nothing
+crashes when that happens. The preparation the evaluation used is compared field by field with
+the first reference that exists: the model's own image processor (a Hugging Face model, used as
+is), a `preprocessor_config.json` in its Hub repository at the pinned revision, or this
+project's training record.
+
+Reports `measured` when every stated field agrees, and lists the fields nobody stated as not
+checked; `invalid` when any field differs, naming both values, because every other number
+then describes a model that exists only in this evaluation; and `unavailable` when nothing on
+the model's side states its preprocessing — the original Hub checkpoint's case — which is not
+the same as a match. It compares settings, not pixels.
 
 ### Performance — `top1_accuracy`
 
@@ -267,7 +282,7 @@ reason, never a silent absence and never an invented number.
 | `split_leakage` | row overlap | shared `image_id` / `lesion_id` between the evaluation manifest and everything the model trained on | **shipped** |
 | `provenance` | declared origin | what is *known* about a checkpoint's training data — `unavailable`, never "clean", when it is undeclared | **shipped** |
 | `label_space` | compatibility | model classes against dataset classes; a disjoint pair requires an explicit `label_map`, and is never guessed | **shipped** |
-| `preprocessing_fingerprint` | compatibility | the transform actually used, recorded with a hash in every report — **shipped**; compared against what a Hub checkpoint declares in its `preprocessor_config.json` — Phase C | recorded |
+| `preprocessing` | compatibility | the transform actually used, recorded with a hash in every report, and compared field by field against the model's own processor, its `preprocessor_config.json` or its training record | **shipped** |
 | `corpus_ancestry` | corpus overlap | the model's declared datasets against the evaluation corpus, via an ancestry table (`data/corpora.yaml`: HAM10000 ⊂ ISIC 2019). The only leakage check possible for a model whose row ids we do not hold | **shipped** |
 | `near_duplicates` | row overlap | perceptual hashing (images) or shingling (text) across splits — catches the second photograph of one lesion that identifier matching misses | tier 2 |
 | `benchmark_contamination` | corpus overlap | was the evaluation benchmark inside the training corpus? n-gram and canary overlap where the corpus is known; perplexity on the benchmark against a paraphrase where it is not [[30]](references.md#ref-30) | tier 5 |
@@ -332,6 +347,7 @@ reason, never a silent absence and never an invented number.
 |-------------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
 | `gradcam_faithfulness`  | faithfulness | Grad-CAM overlays [[7]](references.md#ref-7), plus a deletion test: mask the highlighted region and measure the drop in confidence [[8]](references.md#ref-8)                                                                                                | **shipped**            |
 | `faithfulness`          | faithfulness | deletion **and** insertion, generalised to any modality through a masking function (pixels, tokens, audio frames). Deletion alone is gameable [[42]](references.md#ref-42)                                                             | tier 2                 |
+| `transformer_attribution` | faithfulness | an attribution map for a Vision Transformer, where Grad-CAM has no convolutional layer to target: attention rollout, or a gradient-weighted relevance over the patch tokens reshaped to the image grid. Scored by the same deletion test against a random control as `gradcam_faithfulness`, so a ViT and a CNN answer the same question. Sources are added when it is built | tier 3 · M10 |
 | `complexity`            | complexity   | attribution sparseness and entropy — an explanation that highlights everything explains nothing                                                                                                                | tier 2 · **port** [[27]](references.md#ref-27) |
 | `randomisation`         | sanity       | randomise the model's parameters layer by layer. An attribution that barely changes is an edge detector, not an explanation [[25]](references.md#ref-25). Needs `weights`, not merely `gradients`                                      | tier 2 · **port** [[27]](references.md#ref-27) |
 | `stability`             | robustness   | max-sensitivity: does a tiny change to the input rewrite the explanation [[26]](references.md#ref-26)                                                                                                                                  | tier 2 · **port** [[27]](references.md#ref-27) |

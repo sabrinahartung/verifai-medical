@@ -5,6 +5,7 @@
     "fairness.skin_tone": 4,
     "integrity.corpus_ancestry": 1,
     "integrity.label_space": 1,
+    "integrity.preprocessing": 1,
     "integrity.provenance": 1,
     "integrity.split_leakage": 2,
     "performance.classification": 3,
@@ -29,7 +30,8 @@
         "skin_cancer_isic",
         "skin_cancer_isic_probe",
         "skin_cancer_isic_r50",
-        "skin_cancer_oversample"
+        "skin_cancer_oversample",
+        "vit-large-skin-cancer-ham10000"
       ]
     }
   ],
@@ -56,6 +58,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n100",
       "name": "fine-tuned, n=100",
@@ -112,6 +118,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n2000",
       "name": "fine-tuned, n=2,000",
@@ -168,6 +178,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n500",
       "name": "fine-tuned, n=500",
@@ -224,6 +238,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n7014",
       "name": "fine-tuned, n=7,014",
@@ -280,6 +298,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n100",
       "name": "linear probe, n=100",
@@ -336,6 +358,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n2000",
       "name": "linear probe, n=2,000",
@@ -392,6 +418,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n500",
       "name": "linear probe, n=500",
@@ -448,6 +478,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n7014",
       "name": "linear probe, n=7,014",
@@ -483,16 +517,34 @@
       "active": false
     },
     {
-      "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@unpinned",
+      "identity": "hub:sabrinahartung1010/skin-lesion-resnet18/resnet18_ham10000_classweights.pt@d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506",
       "sha256": null,
       "checkpoint": {
         "kind": "hub",
         "repo_id": "sabrinahartung1010/skin-lesion-resnet18",
         "filename": "resnet18_ham10000_classweights.pt",
-        "revision": null
+        "revision": "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
       },
       "key": "resnet18_ham10000_classweights",
       "configurations": [
+        {
+          "scenario": "external_derm7pt_original",
+          "label": "Original checkpoint — Derm7pt",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "integrity.preprocessing",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
         {
           "scenario": "original_checkpoint_ham10000",
           "label": "Original checkpoint — HAM10000 test",
@@ -505,6 +557,7 @@
             "integrity.provenance",
             "integrity.corpus_ancestry",
             "integrity.label_space",
+            "integrity.preprocessing",
             "performance.classification",
             "explainability.gradcam",
             "robustness.corruption",
@@ -529,9 +582,19 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18",
+        "trained_on": {
+          "corpora": [
+            "ham10000"
+          ],
+          "basis": "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
+        }
+      },
       "project": "Skin lesion classification",
       "trained_by": null,
-      "name": "Original checkpoint — HAM10000 test",
+      "name": "Skin-Lesion ResNet18 (HAM10000, class-weighted)",
       "provenance": null,
       "identified": true,
       "active": true
@@ -612,6 +675,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_clean",
       "name": "HAM10000 corpus (clean split)",
@@ -668,6 +735,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_focal",
       "name": "Focal loss (γ=2)",
@@ -722,6 +793,7 @@
             "integrity.provenance",
             "integrity.corpus_ancestry",
             "integrity.label_space",
+            "integrity.preprocessing",
             "performance.classification",
             "robustness.corruption",
             "fairness.skin_tone"
@@ -771,6 +843,7 @@
             "integrity.provenance",
             "integrity.corpus_ancestry",
             "integrity.label_space",
+            "integrity.preprocessing",
             "performance.classification",
             "explainability.gradcam",
             "robustness.corruption",
@@ -797,6 +870,13 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18",
+        "trained_on": [
+          "isic2019"
+        ]
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic",
       "name": "ISIC corpus",
@@ -870,6 +950,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic_probe",
       "name": "Linear probe (frozen features)",
@@ -930,6 +1014,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet50"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic_r50",
       "name": "ResNet50 · ISIC corpus",
@@ -989,6 +1077,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_oversample",
       "name": "Balanced oversampling",
@@ -1021,6 +1113,73 @@
       },
       "identified": true,
       "active": false
+    },
+    {
+      "identity": "hub:Kuldeepmishra3/vit-large-skin-cancer-ham10000@21cb7e3988db0869def888bf3d056888dc3e9497",
+      "sha256": null,
+      "checkpoint": {
+        "kind": "hub",
+        "repo_id": "Kuldeepmishra3/vit-large-skin-cancer-ham10000",
+        "filename": null,
+        "revision": "21cb7e3988db0869def888bf3d056888dc3e9497"
+      },
+      "key": "vit-large-skin-cancer-ham10000",
+      "configurations": [
+        {
+          "scenario": "external_derm7pt_vit_large",
+          "label": "ViT-Large (Hub) — Derm7pt",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "integrity.preprocessing",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "vit_large_skin_cancer_ham10000",
+          "label": "ViT-Large (Hub) — HAM10000 test",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "integrity.preprocessing",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "declared": {
+        "loader": "verifai.models.hf_image:load",
+        "architecture": "ViTForImageClassification",
+        "trained_on": {
+          "corpora": [
+            "ham10000"
+          ],
+          "basis": "model card metadata (datasets: `marmal88/skin_cancer`)"
+        }
+      },
+      "project": "Skin lesion classification",
+      "trained_by": null,
+      "name": "ViT-Large — Skin Cancer Classification (HAM10000)",
+      "provenance": null,
+      "identified": true,
+      "active": true
     }
   ]
 }

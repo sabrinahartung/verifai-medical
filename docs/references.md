@@ -25,6 +25,9 @@ write `[1]` in a page and link it here.
     and as part of the ISIC 2019 training corpus. The ISIC organisers ask specifically for
     this published version rather than the earlier preprint.
 
+    Licence: CC BY-NC 4.0, per the terms of use on its
+    [Harvard Dataverse record](https://doi.org/10.7910/DVN/DBW86T), checked 2026-09-30.
+
 **[2] BCN20000** · *Verified* {#ref-2}
 :   Combalia, M., Codella, N. C. F., Rotemberg, V., Helba, B., Vilaplana, V., Reiter, O.,
     Halpern, A. C., Puig, S. & Malvehy, J. **BCN20000: Dermoscopic Lesions in the Wild.**
@@ -528,6 +531,79 @@ implementation of a metric this catalogue still lists as planned.
     attack, and it needs `gradients` — so it is white-box only and cannot be run against a
     hosted model at all. Verified 2026-09-18: MIT, last commit 2024-08-02, i.e. two years stale;
     the attack remains the standard baseline but the repository is not maintained.
+
+---
+
+## Where the original checkpoint came from
+
+**[48] marmal88/skin_cancer** · *Verified* {#ref-48}
+:   [huggingface.co/datasets/marmal88/skin_cancer](https://huggingface.co/datasets/marmal88/skin_cancer)
+    — a repackaging of HAM10000 [[1]](#ref-1) on the Hugging Face Hub, with `train`
+    (9.58k rows), `validation` (2.49k) and `test` (1.29k) splits.
+
+    Used as: the training data of the original checkpoint, and the corpus behind the leakage
+    audit in [the roadmap](ROADMAP.md#why-this-exists): its splits share lesions, and `train`
+    plus `validation` cover 9,964 of HAM10000's 10,015 images. Listed as a `hub_aliases` entry
+    of `ham10000` in `data/corpora.yaml`. Its card states no licence and says the uploader
+    does not own the images, so HAM10000's own terms are the ones that apply. Checked on the
+    dataset page 2026-09-30.
+
+**[49] Model cards** · *Verified* {#ref-49}
+:   Mitchell, M., Wu, S., Zaldivar, A., Barnes, P., Vasserman, L., Hutchinson, B., Spitzer, E.,
+    Raji, I. D. & Gebru, T. **Model Cards for Model Reporting.** *Proceedings of the Conference
+    on Fairness, Accountability, and Transparency (FAT\* '19)*, 220–229 (2019).
+    [arXiv:1810.03993](https://arxiv.org/abs/1810.03993)
+
+    Used as: the reference for what a published model should document, and for the draft card
+    of the original checkpoint; see [Model cards](model-cards.md). Title, authors and venue
+    taken from the arXiv record 2026-09-30.
+
+**[50] The original checkpoint's training notebook** · *Verified* {#ref-50}
+:   Hartung, S. **Skin Lesion Classification – HAM10000.** `SkinLesions.ipynb` in
+    [github.com/sabrinahartung/ham10000-skin-lesion-classification](https://github.com/sabrinahartung/ham10000-skin-lesion-classification)
+    (2026).
+
+    Used as: the documented source of the original checkpoint's training data, class order,
+    preprocessing and training procedure. It loads `marmal88/skin_cancer` [[48]](#ref-48) and
+    trains on its `train` split; the file it saves is byte-identical to the Hub weights
+    (sha256 `58a63e41…`), checked 2026-09-30. The repository carries no licence file.
+
+---
+
+## Engine libraries
+
+**[51] Transformers** · *Verified* {#ref-51}
+:   Wolf, T., Debut, L., Sanh, V., Chaumond, J., Delangue, C., Moi, A., Cistac, P., Rault, T.,
+    Louf, R., Funtowicz, M., Davison, J., Shleifer, S., von Platen, P., Ma, C., Jernite, Y.,
+    Plu, J., Xu, C., Le Scao, T., Gugger, S., Drame, M., Lhoest, Q. & Rush, A. **Transformers:
+    State-of-the-Art Natural Language Processing.** *Proceedings of EMNLP 2020: System
+    Demonstrations*, 38–45 (2020).
+    [doi:10.18653/v1/2020.emnlp-demos.6](https://doi.org/10.18653/v1/2020.emnlp-demos.6) ·
+    [GitHub](https://github.com/huggingface/transformers)
+
+    Used as: the loader behind `verifai.models.hf_image` (step C3):
+    `AutoModelForImageClassification` and `AutoImageProcessor`, used unmodified. In the
+    `engine` group only; the showcase never installs it, which a test asserts. Citation taken
+    from the ACL Anthology record, licence from the repository: Apache-2.0, actively maintained
+    (last push 2026-09-30), version 5.17 in `uv.lock`.
+
+---
+
+## Models evaluated from the Hub
+
+**[52] ViT-Large skin cancer classifier** · *Verified* {#ref-52}
+:   Hugging Face user `Kuldeepmishra3` (no further author name given). **ViT-Large — Skin
+    Cancer Classification (HAM10000).**
+    [huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000](https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000),
+    commit `21cb7e3988db0869def888bf3d056888dc3e9497` (2026).
+
+    Used as: the C5 demo, a model this project neither trained nor picked
+    ([Experiment 9](results.md#experiment-9-a-model-this-project-neither-trained-nor-picked)).
+    `google/vit-large-patch16-224` fine-tuned on `marmal88/skin_cancer` [[48]](#ref-48), as its
+    card states. Licence **MIT**, from the card's header, which permits evaluating it and
+    publishing the scores; the card itself calls it a personal learning project and not a
+    clinical tool. Name, licence, training data and commit taken from the repository
+    2026-10-02.
 
 ---
 

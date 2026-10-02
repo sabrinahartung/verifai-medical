@@ -29,12 +29,19 @@ uv run streamlit run showcase/app.py
 
 # after a metric changes: re-run only the active scenarios (minutes, not all 23)
 uv run python scripts/run_active.py
+
+# draft a scenario from a Hub model or a local .pt (reads metadata, never the weights)
+uv run python scripts/resolve_model.py hf:owner/repo --dataset data/manifests/ham10000_test.csv
 ```
+
+A draft carries `draft: true` and a `TODO: …` wherever the checkpoint could not say
+something. `run_scenario` refuses it, and any scenario with a TODO left; the model registry
+and `run_active.py` skip it.
 
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (151 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (191 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -144,6 +151,10 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   row-level check is `insufficient` — leakage cannot be ruled out — never `invalid`, which
   stays reserved for contamination that was found. On such a provisional report every
   *established* mark outside integrity reads *on a split that could not be checked*.
+  `metrics/integrity/preprocessing.py` compares the preprocessing a run used with the model's
+  own (its processor, its Hub `preprocessor_config.json`, or the training record), in the shared
+  vocabulary of `verifai/models/preprocessing.py`; a differing field is `invalid`, a model whose
+  side states nothing is `unavailable` — never a match.
 - `verifai/models/image.py` — `ImageClassifier` wrapper (`SkinLesionModel` is kept as an alias).
   Metrics use `.torch_module` and `.cam_layer` (hooks/Grad-CAM), `.to_tensor()`,
   `.predict_probs()`. Classes, architecture, Grad-CAM layer, image size and device all come from
@@ -151,6 +162,16 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   the preprocessing must stay byte-for-byte the training-time preprocessing and `classes` must
   match the checkpoint's output order — otherwise every metric silently measures a different
   model. `device: auto` resolves cuda → mps → cpu and is recorded in `report.json`.
+- `verifai/models/hf_image.py` — `HFImageClassifier`, the adapter for a self-describing
+  `transformers` model. A subclass of `ImageClassifier`, so `decide`/`rank`, decision weights and
+  the context prior behave identically; class order comes from `id2label` and preprocessing from
+  the model's own processor, both at the pinned revision, and a scenario contradicting either is
+  refused. Grad-CAM layers are listed per family in `CAM_LAYERS`; a family missing there (a ViT)
+  gets an `unavailable` Grad-CAM finding, never a guessed layer. Metrics that score many images
+  go through `metrics/_common.py::predict_many`, which batches when the adapter has
+  `predict_probs_batch`. `transformers` is in the `engine` group only.
+- `verifai/models/resolve.py` — drafts a scenario from `hf:owner/repo[@rev]` or a local `.pt`
+  (see Commands). Drafts, never runs.
 - `verifai/datasets/loaders.py` — manifest-driven `ImageDataset` (`data/manifests/*.csv`,
   columns `filename,label` plus any extras, which land on `ImageSample.meta` — that is where
   `lesion_id`/`sex`/`age` belong). Paths resolve relative to repo root; samples are sorted for
@@ -161,7 +182,8 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   `showcase/artifacts/<scenario>/`, plus one immutable snapshot per run in `history/`.
   `snapshot_metrics()` flattens each finding's numeric leaves to `<pillar>.<path>` generically,
   so a new metric becomes comparable without this module knowing about it. Every snapshot
-  carries the evaluation manifest's **content hash** and the integrity verdict — those two
+  carries the evaluation manifest's **content hash** and the integrity verdict — the worst of the
+  integrity checks, as the report's banner takes it, with the deciding check in `integrity_by` — those two
   fields are what let `showcase/app.py` refuse a dishonest comparison, so do not drop them.
 - `verifai/export/model_registry.py` — writes `showcase/artifacts/model_registry.json`: every
   declared **model** and its configurations, read from the scenarios, so a model that has never
@@ -208,12 +230,25 @@ them: `"Skin lesion classification"`). The overview groups models by it. All con
 one checkpoint must agree on it; the registry builder raises if they do not. Like `card.group`
 it is presentation: it never widens what may be compared.
 
+A scenario may declare `model.name` — the model's own name, which heads its page and its model
+card. All configurations of one checkpoint must agree on it, as on `project:`; without one the
+page falls back to the trainer's label, then the repository or file name, never a
+configuration's label. The resolver drafts it from the Hub card's title.
+
+The **model card view** (`showcase/model_card.py`) heads the model page and opens from every
+report. It states only facts a machine can check, each with its source on hover — the
+registry, the training record, the report's `meta` and its `hub_card` — and names **no
+result**: an evaluation appears there as its integrity state and coverage counts only, since
+a number on the card would read as the model's score. Prose such as intended use is linked
+to, never restated.
+
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an
 experiment — never re-run, never deleted, and labelled as evaluated with the metrics of their
-day. Archived is not *wrong*; it lacks what was added since. Today three are active — the ISIC
-model on its internal test and on Derm7pt "as deployed", and the original Hub checkpoint on the
-HAM10000 test set, the project's one model it did not train — and twenty-one archived. Re-running
+day. Archived is not *wrong*; it lacks what was added since. Today six are active — the ISIC
+model on its internal test and on Derm7pt "as deployed", the original Hub checkpoint on the
+HAM10000 test set and on Derm7pt, and the C5 demo, a ViT-Large from the Hub this project neither
+trained nor picked, on the same two — and twenty-one archived. Re-running
 the ISIC two reproduced all 274 published values exactly, which is what makes freezing the rest
 safe. A scenario may say why it leaves an applicable metric out, in `not_requested:
 {metric id: reason}`; the report shows the reason instead of a bare "not requested".

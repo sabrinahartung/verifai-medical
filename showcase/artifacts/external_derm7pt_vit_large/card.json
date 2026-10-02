@@ -1,0 +1,12 @@
+{
+  "id": "external_derm7pt_vit_large",
+  "name": "ViT-Large (Hub) — Derm7pt",
+  "emoji": "🌍",
+  "domain": "image",
+  "dataset": "derm7pt-external",
+  "description": "The Hub ViT-Large on Derm7pt, a clinic its training data does not include. Beside the ISIC model and the original checkpoint on the same images: a comparison leakage cannot inflate.",
+  "sample": false,
+  "group": "External validation — Derm7pt (unseen clinic)",
+  "lineage": "ViT-Large · Hub model",
+  "hf_url": "https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+}

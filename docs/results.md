@@ -24,7 +24,9 @@ here can be justified (see [the glossary](glossary.md)).
 
 `skin_cancer_clean` is **archived**: this is the record of its run, with the metrics of its day.
 The configurations kept current are the ISIC model on this same test set and on Derm7pt, and
-the original Hub checkpoint ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)).
+the original Hub checkpoint on both ([Experiment 8](#experiment-8-a-model-this-project-did-not-train)),
+and a ViT-Large from the Hub that this project neither trained nor picked, on both
+([Experiment 9](#experiment-9-a-model-this-project-neither-trained-nor-picked)).
 
 ## What the headline number hides
 
@@ -592,8 +594,8 @@ at the internal prevalence it collapses — 0.502 → **0.282** for ISIC, 0.259 
 
 The original checkpoint on the Hugging Face Hub, scored on the same 1,493 HAM10000 test images
 as the ISIC model (configuration `original_checkpoint_ham10000`, Phase B). Its author published
-weights, not a list of training images; its training data is only *inferred* as HAM10000 from the
-model card, and the leakage audit behind this project found that data covers 9,964 of HAM10000's
+weights, not a list of training images; its training data is known as HAM10000 only from its
+training notebook [[50]](references.md#ref-50), and the leakage audit behind this project found that data covers 9,964 of HAM10000's
 10,015 images.
 
 | | Original checkpoint (split not checkable) | ISIC model (split verified) |
@@ -606,7 +608,9 @@ model card, and the leakage audit behind this project found that data covers 9,9
 
 The integrity checks say what can be said: **provenance** — no training manifests, so no split
 check is possible; **corpus ancestry** — trained on HAM10000, tested on HAM10000, with no
-image-by-image check, so leakage *cannot be ruled out*; the **membership attack** is unavailable,
+image-by-image check, so leakage *cannot be ruled out*; **preprocessing** — the repository holds
+no processor file and there is no training record here, so how the images should be prepared
+cannot be checked (added in step C4, 2026-10-01); the **membership attack** is unavailable,
 because it needs known training members. The report carries the provisional banner, and every
 *established* mark on it reads *on a split that could not be checked*.
 
@@ -617,6 +621,96 @@ because it needs known training members. The report carries the provisional bann
     higher. And it very likely saw most of these test images. The honest statement
     is the one the report makes: the number is measured correctly and may not describe
     generalisation at all.
+
+### On Derm7pt, where neither model trained
+
+The ISIC model is the wrong control for the first explanation: it trained on a different mix of
+archives. The right one is `skin_cancer_clean` — the project's own ResNet18 on HAM10000, with a
+lesion-grouped split that was verified. Same archive, same architecture; only the
+checkability of the split differs. On HAM10000 it cannot separate skill from memory either,
+because only one of the two could have memorised. On **Derm7pt** — 1,003 images from another
+clinic, an archive that shares nothing with HAM10000 — neither can
+(configuration `external_derm7pt_original`, 2026-09-29).
+
+| | Original checkpoint | HAM10000 model (split verified) | ISIC model |
+|---|---|---|---|
+| Top-1, HAM10000 test (1,493) | **0.867** [0.85–0.88] | 0.796 [0.78–0.82] | 0.806 [0.79–0.83] |
+| Top-1, Derm7pt (1,003) | 0.628 [0.60–0.66] | 0.591 [0.56–0.62] | **0.677** [0.65–0.71] |
+| Change | −0.239 | −0.205 | −0.129 |
+| Melanoma J, HAM10000 → Derm7pt | 0.626 → 0.292 | 0.558 → 0.314 | 0.544 → 0.497 |
+| Melanoma sensitivity on Derm7pt | 0.337 [0.28–0.40] | 0.460 [0.40–0.52] | 0.722 [0.66–0.77] |
+
+Against the HAM10000 model, the original checkpoint's lead is 7.1 points on the test set it may
+have seen, with separated intervals, and 3.7 points on the one it cannot have, with overlapping
+intervals. On melanoma, a J lead of 0.068 becomes a deficit of 0.022: it keeps its specificity
+(0.955) by flagging a third of the melanomas.
+
+!!! note "What this does and does not establish"
+    It is what memory would look like: an advantage that exists only on data the model may have
+    trained on. It does not prove memory. The two checkpoints also differ in how they were
+    trained (epochs, augmentation, class weights), and a model that fits HAM10000 better is
+    expected to lose more when the clinic changes — overfitting to one archive and memorising
+    its images predict the same pattern here. What it does establish is narrower and firm: on
+    unseen data, nothing in this evaluation distinguishes the original checkpoint from a model
+    whose split was verified. The internal 0.867 should not be quoted as its skill.
+
+    This run's report still reads as provisional. Corpus ancestry finds no shared archive, but
+    against a training corpus known only from the training notebook, so no
+    row-level check is possible and the banner stays.
+
+## Experiment 9 — a model this project neither trained nor picked
+
+The finish line of Phase C (step C5, 2026-10-02): a skin-lesion classifier from the Hugging Face
+Hub, `Kuldeepmishra3/vit-large-skin-cancer-ham10000` at commit `21cb7e3` [[52]](references.md#ref-52) — a ViT-Large (303M
+parameters), MIT-licensed, whose model card names `marmal88/skin_cancer`, the HAM10000
+repackaging, as its training data. It was chosen from the Hub's 235 skin-lesion image
+classifiers against the [C5 criteria](ROADMAP.md#phase-c-resolving-a-model-and-the-adapter-catalogue).
+None passed all six; this one passes every required check and misses only the preference for a
+CNN. Its scenario began as the resolver's draft, and the twelve questions the draft left open
+are answered in the scenario's comments. Scored on the same images as the two models above
+(configurations `vit_large_skin_cancer_ham10000` and `external_derm7pt_vit_large`), in about
+five and four minutes on Apple silicon.
+
+| | ViT-Large (Hub) | Original checkpoint | ISIC model |
+|---|---|---|---|
+| Top-1, HAM10000 test (1,493) | **0.932** [0.92–0.94] | 0.867 [0.85–0.88] | 0.806 [0.79–0.83] |
+| Top-1, Derm7pt (1,003) | **0.742** [0.71–0.77] | 0.628 [0.60–0.66] | 0.677 [0.65–0.71] |
+| Change | −0.190 | −0.239 | −0.129 |
+| Balanced accuracy on Derm7pt (6 classes) | 0.519 | 0.508 | 0.500 |
+| Melanoma sensitivity, HAM10000 | 0.853 [0.79–0.90] | 0.650 [0.57–0.72] | 0.620 [0.54–0.69] |
+| Melanoma sensitivity, Derm7pt | 0.496 [0.43–0.56] | 0.337 [0.28–0.40] | **0.722** [0.66–0.77] |
+| Melanoma J, HAM10000 → Derm7pt | 0.828 → 0.449 | 0.626 → 0.292 | 0.544 → 0.497 |
+| Mean prediction stability, HAM10000 | **0.927** | 0.766 | 0.765 |
+| Largest skin-tone accuracy gap, HAM10000 | 14 points | 17 points | 33 points |
+
+**What could and could not be verified.** The same as for the original checkpoint, and for the
+same reason: its card names HAM10000 and publishes no list of training images, so on the
+HAM10000 test set **leakage cannot be ruled out** and the report reads as provisional. On
+Derm7pt, corpus ancestry finds **no shared archive**. Two things are new. The **preparation
+check** is *measured* for the first time on a model from outside: the model's own image
+processor (224×224, mean and std 0.5) prepares every image, so there is nothing to get wrong.
+And **Grad-CAM is not computable**: a Vision Transformer has no convolutional layer for it to
+target, and the report says so instead of inventing a map. An explanation metric for
+transformers is planned for M10 (`transformer_attribution` in [the pillars](pillars.md)).
+
+### Highest accuracy on the unseen clinic, and the accuracy trap again
+
+On Derm7pt the ViT has the highest top-1 of the three, and its interval clears the ISIC
+model's — barely. It is also the most stable under corruption on both sets, by a wide margin.
+But read melanoma beside it: it finds half the melanomas (0.496) where the ISIC model finds
+0.722, with separated intervals, and keeps a specificity of 0.953 against 0.775. Balanced
+accuracy over the six classes Derm7pt holds is a tie (0.519 against 0.500). The lead in top-1
+comes from the commonest class: 575 of the 1,003 images are nevi. Which model is better depends
+on what a missed melanoma costs against a false alarm — the trade-off
+[Experiment 7](#experiment-7-the-first-numbers-not-measured-on-ham10000) found, now
+across three models instead of two decision rules.
+
+!!! note "Two more things to keep with these numbers"
+    Its internal 0.932 is an upper bound for the same reason as the original checkpoint's
+    0.867, and matches the 92.7% its own card reports on a HAM10000 validation split. And the
+    model names its classes by HAM10000's own codes (`mel`, `nv`, `akiec`, …); reports keep a
+    model's own names, so in the comparison view its per-class rows sit apart from the two
+    ResNets', which use the long names.
 
 ## Training run
 

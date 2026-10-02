@@ -100,11 +100,23 @@ def run(model, dataset, ctx: dict[str, Any]) -> Finding:
     from verifai.metrics._stats import mean_ci
     from verifai.metrics.performance.classification import VERDICT_MIN_N
 
+    cam_layer = model.cam_layer
+    if cam_layer is None:
+        # A transformer has no convolutional feature map to weight. Grad-CAM for
+        # attention models is a different method (Phase F), not this one forced.
+        arch = (getattr(model, "metadata", None) or {}).get("architecture") or "this architecture"
+        return Finding(
+            pillar="explainability", metric="gradcam_faithfulness", domain="image",
+            value=None, verdict="unavailable",
+            summary=(f"Not run: Grad-CAM needs a convolutional layer to hook onto, and "
+                     f"{arch} has none named. This says what could be measured, not how "
+                     f"the model behaves."),
+            details={"reason": "no_cam_layer", "architecture": arch})
+
     plot_dir = Path(ctx.get("plot_dir", "plots"))
     plot_dir.mkdir(parents=True, exist_ok=True)
     classes = model.classes
     tm = model.torch_module
-    cam_layer = model.cam_layer
     rng = np.random.default_rng(ctx.get("seed", 42))
 
     # Every test image is scored; only the first few are drawn. The cap used to

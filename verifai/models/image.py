@@ -116,6 +116,13 @@ class ImageClassifier:
         self.prior_strength = float(prior_strength)
         self.preprocess_spec = dict(preprocess_spec or
                                     {"resize": [224, 224], "mean": MEAN, "std": STD})
+        # What the model's own side says its preprocessing is, when anything does:
+        # {"source", "where", "spec"} — see `verifai.models.preprocessing`. Set by
+        # the loader; `integrity.preprocessing` compares against it.
+        self.reference_preprocessing: dict | None = None
+        # The Hub model card's header at the pinned revision, for a model loaded
+        # from the Hub (`verifai.models.hub_card`); None for a local file.
+        self.hub_card: dict | None = None
 
     @property
     def metadata(self) -> dict:
@@ -128,10 +135,10 @@ class ImageClassifier:
         """
         import hashlib
         import json as _json
-        spec = {"resize": list(self.preprocess_spec["resize"]),
-                "to_tensor": True,
-                "mean": [float(x) for x in self.preprocess_spec["mean"]],
-                "std": [float(x) for x in self.preprocess_spec["std"]]}
+        from verifai.models.preprocessing import torchvision_spec
+        h, w = self.preprocess_spec["resize"]
+        assert h == w, "build_preprocess only resizes to a square"
+        spec = torchvision_spec(h, self.preprocess_spec["mean"], self.preprocess_spec["std"])
         blob = _json.dumps(spec, sort_keys=True).encode()
         return {"classes": list(self.classes), "preprocessing": spec,
                 "preprocessing_sha256": hashlib.sha256(blob).hexdigest()[:16]}
@@ -216,9 +223,46 @@ class ImageClassifier:
             probs = self.model(x).softmax(dim=1)[0].cpu()
         return {self.classes[i]: float(probs[i]) for i in range(len(self.classes))}
 
+    def predict_probs_batch(self, imgs, batch_size: int = 32) -> list[dict[str, float]]:
+        """`predict_probs` for many images, one forward pass per `batch_size`.
+
+        The model is in eval mode, so batch norm uses its stored statistics and an
+        image's scores do not depend on what it is batched with; they can differ
+        from the one-at-a-time pass only in the last float bits.
+        """
+        import torch
+        out: list[dict[str, float]] = []
+        for start in range(0, len(imgs), batch_size):
+            x = torch.stack([self._pre(im.convert("RGB")) for im in imgs[start:start + batch_size]])
+            with torch.no_grad():
+                probs = self.model(x.to(self.device)).softmax(dim=1).cpu()
+            out.extend({self.classes[i]: float(row[i]) for i in range(len(self.classes))}
+                       for row in probs)
+        return out
+
 
 # Kept so older imports/pickles keep resolving.
 SkinLesionModel = ImageClassifier
+
+
+def load_context_prior(prior_path: str | None) -> dict | None:
+    """The age/site prior a scenario points at, or None.
+
+    A path rather than an inline table: the prior is a measured artifact of one
+    training manifest, so it belongs on disk where it can be read, diffed and
+    pointed at, next to the manifests it was derived from.
+    """
+    if not prior_path:
+        return None
+    import json as _json
+    path_obj = Path(prior_path)
+    if not path_obj.is_absolute():
+        path_obj = Path(__file__).resolve().parents[2] / path_obj
+    if not path_obj.exists():
+        raise FileNotFoundError(
+            f"context_prior {prior_path} not found — build it with "
+            f"scripts/build_context_prior.py")
+    return _json.loads(path_obj.read_text(encoding="utf-8"))
 
 
 def load(spec: dict[str, Any]) -> ImageClassifier:
@@ -227,6 +271,7 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
      id: "skin-lesion-resnet18",
      repo_id: "sabrinahartung1010/skin-lesion-resnet18",
      filename: "resnet18_ham10000_classweights.pt",
+     revision: "<commit sha>",  # pins the Hub download; omitted = unpinned
      weights_path: "/optional/local/override.pt",  # skips the HF download
      arch: "resnet18",          # any torchvision classifier factory
      classes: [...],            # must match the checkpoint's output order
@@ -243,28 +288,18 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     arch = spec.get("arch", "resnet18")
     device = resolve_device(spec.get("device", "auto"))
 
-    # A path rather than an inline table: the prior is a measured artifact of one
-    # training manifest, so it belongs on disk where it can be read, diffed and
-    # pointed at, next to the manifests it was derived from.
-    prior = None
-    prior_path = spec.get("context_prior")
-    if prior_path:
-        import json as _json
-        path_obj = Path(prior_path)
-        if not path_obj.is_absolute():
-            path_obj = Path(__file__).resolve().parents[2] / path_obj
-        if not path_obj.exists():
-            raise FileNotFoundError(
-                f"context_prior {prior_path} not found — build it with "
-                f"scripts/build_context_prior.py")
-        prior = _json.loads(path_obj.read_text(encoding="utf-8"))
+    prior = load_context_prior(spec.get("context_prior"))
 
     weights_path = spec.get("weights_path")
     if weights_path and Path(weights_path).exists():
         path = weights_path
     else:
         from huggingface_hub import hf_hub_download
-        path = hf_hub_download(repo_id=spec["repo_id"], filename=spec["filename"])
+        # The report says "pinned" whenever a revision is declared, so the
+        # download must fetch exactly that commit — not whatever the repository
+        # holds today. No revision means the default branch, reported as unpinned.
+        path = hf_hub_download(repo_id=spec["repo_id"], filename=spec["filename"],
+                               revision=spec.get("revision"))
 
     factory = getattr(tvm, arch, None)
     if factory is None:
@@ -289,7 +324,7 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     model.eval()
 
     size = int(spec.get("image_size", 224))
-    return ImageClassifier(
+    clf = ImageClassifier(
         model, classes, device=device,
         cam_layer=spec.get("cam_layer") or DEFAULT_CAM_LAYER.get(arch, "layer4[-1]"),
         preprocess=build_preprocess(size, spec.get("mean"), spec.get("std")),
@@ -299,3 +334,31 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
         preprocess_spec={"resize": [size, size], "mean": spec.get("mean") or MEAN,
                          "std": spec.get("std") or STD},
     )
+    if spec.get("repo_id") and not (weights_path and Path(weights_path).exists()):
+        clf.reference_preprocessing = _hub_processor(spec["repo_id"], spec.get("revision"))
+        from verifai.models.hub_card import read_hub_card
+        clf.hub_card = read_hub_card(spec["repo_id"], spec.get("revision"))
+    return clf
+
+
+def _hub_processor(repo_id: str, revision: str | None) -> dict | None:
+    """The repository's own `preprocessor_config.json` at the pinned revision, if it has one.
+
+    Only a file the Hub says does not exist counts as absent. Any other failure
+    (no network, no cache) is raised: reporting "no reference" because the
+    lookup failed would publish an unchecked preprocessing as uncheckable.
+    """
+    import json as _json
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+    from verifai.models.preprocessing import processor_spec
+    try:
+        path = hf_hub_download(repo_id=repo_id, filename="preprocessor_config.json",
+                               revision=revision)
+    except EntryNotFoundError:
+        return None
+    pp = _json.loads(Path(path).read_text(encoding="utf-8"))
+    return {"source": "processor",
+            "where": f"`preprocessor_config.json` in `{repo_id}`"
+                     + (f" at revision `{revision[:7]}`" if revision else ""),
+            "spec": processor_spec(pp)}

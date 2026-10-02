@@ -50,6 +50,7 @@ _trust_certifi()
 
 from verifai.datasets.loaders import load_image_manifest          # noqa: E402
 from verifai.models.image import build_preprocess, resolve_device  # noqa: E402
+from verifai.models.preprocessing import torchvision_spec  # noqa: E402
 
 
 def _augment(size: int, mean, std):
@@ -279,6 +280,9 @@ def main(scenario_path: str) -> None:
         "scenario": sc["name"], "arch": arch, "classes": classes, "seed": seed,
         "epochs": epochs, "batch_size": bs, "lr": lr, "device": str(device),
         "image_size": size, "class_weights": use_w,
+        # the evaluation-time preprocessing, in the vocabulary integrity.preprocessing
+        # compares against; older records state only image_size
+        "preprocessing": torchvision_spec(size, MEAN, STD),
         "loss": loss_name, "focal_gamma": gamma if loss_name == "focal" else None,
         "sampling": sampling,
         # Which regime produced this checkpoint, and the count that proves it.
