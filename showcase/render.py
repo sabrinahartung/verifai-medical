@@ -212,8 +212,25 @@ def render_chart(spec: dict, base: Path):
         fig.update_layout(title=title, xaxis_title=spec.get("x_title", ""), yaxis_title=spec.get("y_title", ""))
         st.plotly_chart(fig, width="stretch")
     elif kind == "line":
-        fig = go.Figure(go.Scatter(x=spec["x"], y=spec["y"], mode="lines+markers"))
-        fig.update_layout(title=title, xaxis_title=spec.get("x_title", ""), yaxis_title=spec.get("y_title", ""))
+        line = go.Scatter(x=spec["x"], y=spec["y"], mode="lines+markers", name="measured")
+        if spec.get("y_lo") and spec.get("y_hi"):
+            line.error_y = dict(
+                type="data", symmetric=False,
+                array=[hi - y for y, hi in zip(spec["y"], spec["y_hi"])],
+                arrayminus=[y - lo for y, lo in zip(spec["y"], spec["y_lo"])],
+                thickness=1.4, width=6, color="#455A64")
+        if spec.get("hover"):
+            line.text = spec["hover"]
+            line.hovertemplate = "%{text}<extra></extra>"
+        fig = go.Figure(line)
+        if spec.get("diagonal"):
+            # where the two axes agree — perfect calibration, for a reliability chart
+            fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="agreement",
+                                     line=dict(dash="dash", color="#90A4AE"), hoverinfo="skip"))
+            fig.update_xaxes(range=[0, 1])
+            fig.update_yaxes(range=[0, 1.02])
+        fig.update_layout(title=title, xaxis_title=spec.get("x_title", ""), yaxis_title=spec.get("y_title", ""),
+                          showlegend=bool(spec.get("diagonal")))
         st.plotly_chart(fig, width="stretch")
     elif kind == "heatmap":
         hm = go.Heatmap(z=spec["z"], x=_readable_all(spec.get("x")),

@@ -8,6 +8,7 @@
     "integrity.preprocessing": 3,
     "integrity.provenance": 3,
     "integrity.split_leakage": 3,
+    "performance.calibration": 1,
     "performance.classification": 4,
     "privacy.mia": 4,
     "robustness.corruption": 4
@@ -20,6 +21,7 @@
     "integrity.preprocessing": 1,
     "integrity.provenance": 1,
     "integrity.split_leakage": 1,
+    "performance.calibration": 1,
     "performance.classification": 1,
     "privacy.mia": 1,
     "robustness.corruption": 1
@@ -558,6 +560,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "robustness.corruption",
             "fairness.skin_tone"
           ]
@@ -576,6 +579,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "explainability.gradcam",
             "robustness.corruption",
             "fairness.skin_tone",
@@ -812,6 +816,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "robustness.corruption",
             "fairness.skin_tone"
           ]
@@ -862,6 +867,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "explainability.gradcam",
             "robustness.corruption",
             "fairness.skin_tone",
@@ -1156,6 +1162,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "robustness.corruption",
             "fairness.skin_tone"
           ]
@@ -1174,6 +1181,7 @@
             "integrity.label_space",
             "integrity.preprocessing",
             "performance.classification",
+            "performance.calibration",
             "explainability.gradcam",
             "robustness.corruption",
             "fairness.skin_tone",

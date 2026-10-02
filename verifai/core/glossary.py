@@ -178,6 +178,87 @@ GLOSSARY: list[tuple[str, dict[str, str]]] = [
                    "rather than results.",
     }),
 
+    # ---------- calibration (F3) --------------------------------------------
+    ("performance.per_class_calibration.*.predicted", {
+        "term": "Average probability given to a class",
+        "measures": "The probability the model gives one class, averaged over every image — "
+                    "how often it expects that class, if its percentages are to be believed.",
+        "ideal": "The share of images that really belong to the class.",
+        "reading": "Read it beside how often the class actually occurs. A model that gives "
+                   "melanoma 0.20 on average where 0.11 of the images are melanomas expects "
+                   "almost twice as many as there are.",
+    }),
+    ("performance.per_class_calibration.*.observed", {
+        "term": "How often a class occurs",
+        "measures": "The share of the evaluated images whose true label is this class.",
+        "ideal": "No ideal value: it describes the data, not the model.",
+        "reading": "The yardstick for the average probability beside it. It also says what "
+                   "the class's PPV and calibration rest on: a class present in 1% of images "
+                   "is measured on few cases.",
+    }),
+    ("performance.ece_if_calibrated", {
+        "term": "Calibration error a calibrated model would show",
+        "measures": "The expected calibration error a perfectly calibrated model reaches by "
+                    "chance on this many images, 95 times in 100 — computed by redrawing the "
+                    "outcomes from the model's own stated confidences.",
+        "ideal": "No ideal value: it is the control, and it shrinks as the sample grows.",
+        "reading": "The error is never exactly zero on a finite sample, so this is what the "
+                   "real error is compared with. Below it, nothing distinguishes the model "
+                   "from a calibrated one; above it, the percentages are off.",
+    }),
+    ("performance.ece", {
+        "term": "Expected calibration error",
+        "measures": "How far the model's stated confidence sits from how often it is right, "
+                    "averaged over groups of similarly confident predictions.",
+        "ideal": "0 — when it says 80%, it is right 80% of the time — but read it against "
+                 "what a calibrated model would show at this sample size.",
+        "reading": "A small error means the percentages can be taken at their word. A large "
+                   "one usually means overconfidence: the model says 90% where it is right "
+                   "70% of the time. It says nothing about which class is chosen.",
+        "tension": "Accuracy: a model can gain accuracy and lose calibration at once.",
+    }),
+    ("performance.brier", {
+        "term": "Brier score",
+        "measures": "The squared distance between every predicted probability and what "
+                    "actually happened, summed over the classes and averaged over images.",
+        "ideal": "0 — full probability on the right class every time. 2 is the worst.",
+        "reading": "It rewards being right and being honestly unsure at once, so it moves "
+                   "with both accuracy and calibration. Compare it between models on the same "
+                   "images, never across evaluation sets.",
+    }),
+    ("performance.mean_confidence", {
+        "term": "Average stated confidence",
+        "measures": "The probability the model gave the class it decided on, averaged over "
+                    "every image.",
+        "ideal": "Equal to the accuracy — the model is as sure, on average, as it is right.",
+        "reading": "Above the accuracy, the model is overconfident on average; below it, "
+                   "too cautious.",
+    }),
+    ("performance.confidence_gap", {
+        "term": "Confidence minus accuracy",
+        "measures": "Average stated confidence minus the share of decisions that were right.",
+        "ideal": "0 — the model is exactly as confident, on average, as it is accurate.",
+        "reading": "Positive is overconfidence, negative is caution. An average: a model can "
+                   "be overconfident on its surest calls and cautious on the rest and still "
+                   "net zero, which is what the expected calibration error catches.",
+    }),
+    ("performance.n_calibration", {
+        "term": "Images in the calibration check",
+        "measures": "How many labelled images the calibration numbers were computed over.",
+        "ideal": "No ideal value; more images narrow the interval and lower the error a "
+                 "calibrated model would show by chance.",
+        "reading": "Read the calibration error against it: at a few hundred images, an "
+                   "error of 0.05 can be chance.",
+    }),
+    ("performance.bins", {
+        "term": "Confidence groups",
+        "measures": "Into how many equal-width ranges of stated confidence the images were "
+                    "sorted to compare confidence with accuracy.",
+        "ideal": "No ideal value; ten is the usual convention.",
+        "reading": "A setting, not a result: a different grouping gives a somewhat different "
+                   "error, which is why the error is compared with a control grouped the same way.",
+    }),
+
     # ---------- fairness ----------------------------------------------------
     ("fairness.accuracy_gap", {
         "term": "Subgroup accuracy gap",
@@ -491,6 +572,7 @@ METRIC_NAMES: dict[str, str] = {
     "label_space": "Classes the model and the data share",
     "preprocessing": "Preprocessing against the model's own",
     "top1_accuracy": "Classification accuracy",
+    "calibration": "Calibration of the stated confidence",
     "skin_tone_ita": "Accuracy across skin tones",
     "corruption_stability": "Stability under image corruption",
     "gradcam_faithfulness": "Grad-CAM faithfulness",

@@ -71,6 +71,10 @@ METRIC_REGISTRY: dict[str, MetricSpec | str] = {
     "performance.classification": MetricSpec(
         "verifai.metrics.performance.classification:run", "performance", "top1_accuracy",
         subaspect="discrimination", requires="probs"),
+    # probabilities only: runs on any model that returns scores
+    "performance.calibration": MetricSpec(
+        "verifai.metrics.performance.calibration:run", "performance", "calibration",
+        subaspect="calibration", requires="probs"),
     "explainability.gradcam": MetricSpec(
         "verifai.metrics.explainability.gradcam:run", "explainability", "gradcam_faithfulness",
         subaspect="faithfulness", modalities=("pixels",), requires="gradients"),

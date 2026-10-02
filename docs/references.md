@@ -149,6 +149,32 @@ write `[1]` in a page and link it here.
     and reported as one.
 
 
+**[53] Expected calibration error** · *Verified* {#ref-53}
+:   Naeini, M. P., Cooper, G. F. & Hauskrecht, M. **Obtaining Well Calibrated Probabilities Using
+    Bayesian Binning.** *Proceedings of the AAAI Conference on Artificial Intelligence* **29**(1)
+    (2015). [doi:10.1609/aaai.v29i1.9602](https://doi.org/10.1609/aaai.v29i1.9602)
+
+    Used as: the definition of the expected calibration error that `performance.calibration`
+    reports (step F3). Taken from the AAAI proceedings page 2026-10-02.
+
+**[54] Consistency resampling** · *Verified* {#ref-54}
+:   Bröcker, J. & Smith, L. A. **Increasing the Reliability of Reliability Diagrams.** *Weather
+    and Forecasting* **22**(3), 651–661 (2007).
+    [doi:10.1175/WAF993.1](https://doi.org/10.1175/WAF993.1)
+
+    Used as: the control the calibration error is compared with — outcomes redrawn from the
+    model's own stated probabilities, so the model is calibrated by construction. Taken from the
+    record the American Meteorological Society deposited with Crossref 2026-10-02; the journal
+    page refuses automated access.
+
+**[55] Brier score** · *Verified* {#ref-55}
+:   Brier, G. W. **Verification of Forecasts Expressed in Terms of Probability.** *Monthly
+    Weather Review* **78**(1), 1–3 (1950).
+    [doi:10.1175/1520-0493(1950)078<0001:VOFEIT>2.0.CO;2](https://doi.org/10.1175/1520-0493(1950)078%3C0001:VOFEIT%3E2.0.CO;2)
+
+    Used as: the Brier score `performance.calibration` reports. Taken from the publisher's
+    Crossref record 2026-10-02, as for [54].
+
 ## Reporting and evaluation methodology
 
 **[14] TRIPOD+AI** · *Verified* {#ref-14}
@@ -175,9 +201,13 @@ you do, which is the whole point of the status column.
 
 ### Calibration and decision quality
 
-**[15] Calibration of modern neural networks** · *Compiled* {#ref-15}
+**[15] Calibration of modern neural networks** · *Verified* {#ref-15}
 :   Guo, C., Pleiss, G., Sun, Y. & Weinberger, K. Q. **On Calibration of Modern Neural
-    Networks.** *ICML* (2017). [arXiv:1706.04599](https://arxiv.org/abs/1706.04599)
+    Networks.** *Proceedings of the 34th International Conference on Machine Learning*, PMLR
+    **70**, 1321–1330 (2017). [arXiv:1706.04599](https://arxiv.org/abs/1706.04599) · verified
+    against the PMLR proceedings page and the arXiv record 2026-10-02, when
+    `performance.calibration` began to use its reliability diagram and ten-bin calibration
+    error (step F3)
 
     Used as: the basis for expected calibration error and the reliability curve. Also the
     source of the finding that modern networks are systematically overconfident, which is why

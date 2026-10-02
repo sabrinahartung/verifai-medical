@@ -3090,3 +3090,82 @@ def test_a_pillar_groups_its_findings_by_sub_aspect_in_report_order():
         ("declared origin", ["provenance"])]
     old = [{"metric": "top1_accuracy"}]               # a report from before step F2
     assert by_subaspect(old) == [(None, old)]
+
+
+# --- F3: calibration --------------------------------------------------------------
+class _ScriptedModel:
+    """Returns, for each payload, the probabilities the test scripted for it."""
+    classes = ["a", "b"]
+    access = "probs"
+
+    def __init__(self, weights=None):
+        self.weights = weights or {}
+
+    def predict_probs(self, payload):
+        return dict(payload)
+
+    def decide(self, probs, meta=None):
+        return max(probs, key=lambda c: probs[c] * self.weights.get(c, 1.0))
+
+    def rank(self, probs, meta=None):
+        return sorted(probs, key=lambda c: probs[c] * self.weights.get(c, 1.0), reverse=True)
+
+
+class _ScriptedData:
+    """Samples whose payload is the probability dict itself."""
+    meta: dict = {}
+
+    def __init__(self, rows):
+        from types import SimpleNamespace
+        self.samples = [SimpleNamespace(id=f"s{i}", label=lab, meta=None, p=p)
+                        for i, (p, lab) in enumerate(rows)]
+
+    def __iter__(self):
+        return iter(self.samples)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def load(self, s):
+        return s.p
+
+
+def _calibration_rows(confidence, right_share, n=400):
+    """`n` images at one stated confidence for `a`, `right_share` of them truly `a`."""
+    k = round(n * right_share)
+    p = {"a": confidence, "b": round(1 - confidence, 6)}
+    return [(p, "a")] * k + [(p, "b")] * (n - k)
+
+
+def test_calibration_tells_an_overconfident_model_from_a_calibrated_one():
+    from verifai.metrics._baseline import attach
+    from verifai.metrics.performance.calibration import run
+    honest = run(_ScriptedModel(), _ScriptedData(_calibration_rows(0.8, 0.8)), {"seed": 1})
+    proud = run(_ScriptedModel(), _ScriptedData(_calibration_rows(0.95, 0.7)), {"seed": 1})
+    for f in (honest, proud):
+        attach(f)
+        assert f.verdict == "measured" and f.subaspect is None   # the runner sets it, not the metric
+        assert "[" in f.summary and "400 images" in f.summary
+    assert honest.value["ece"] < 0.01
+    assert not honest.details["baseline"]["cleared"], "a calibrated model is not called miscalibrated"
+    assert abs(proud.value["ece"] - 0.25) < 0.01 and proud.value["confidence_gap"] > 0.2
+    assert proud.details["baseline"]["cleared"] and "overconfident" in proud.summary
+    assert honest.value["ece_if_calibrated"] > 0, "a calibrated model's error is not zero on 400 images"
+    assert [r["id"] for r in proud.details["per_example"]][:2] == ["s0", "s1"]
+
+
+def test_calibration_scores_the_decided_class_not_the_most_probable_one():
+    """With decision weights, the class acted on is not the argmax; its stated
+    probability is the one whose honesty matters."""
+    from verifai.metrics.performance.calibration import run
+    rows = [({"a": 0.6, "b": 0.4}, "b")] * 50
+    plain = run(_ScriptedModel(), _ScriptedData(rows), {"seed": 1})
+    weighted = run(_ScriptedModel({"b": 2.0}), _ScriptedData(rows), {"seed": 1})
+    assert plain.value["mean_confidence"] == 0.6 and plain.value["confidence_gap"] == 0.6
+    assert weighted.value["mean_confidence"] == 0.4 and weighted.value["confidence_gap"] == -0.6
+
+
+def test_calibration_below_thirty_images_is_a_plausibility_check():
+    from verifai.metrics.performance.calibration import run
+    f = run(_ScriptedModel(), _ScriptedData(_calibration_rows(0.9, 0.5, n=12)), {"seed": 1})
+    assert f.verdict == "insufficient" and "plausibility check" in f.summary

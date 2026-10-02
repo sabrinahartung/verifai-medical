@@ -78,6 +78,36 @@ Prevalence
 
 ---
 
+Calibration
+:   Do the probabilities mean what they say? Among the cases a model calls 90% likely, about
+    90% should actually be that class. A model can rank cases perfectly and still be badly
+    calibrated — discrimination and calibration are independent properties, and the second is
+    the first to break when the model meets a new population. On the ISIC model's HAM10000 run
+    the stated confidence averages 0.859 while the model is right 0.806 of the time:
+    overconfident by about five points.
+
+Reliability curve
+:   Calibration, drawn. The images are grouped by how sure the model said it was; each point
+    is one group, stated confidence across, the share actually right up. The diagonal is
+    perfect. Above it, the model is underconfident; below it, overconfident — which in a triage
+    tool means false reassurance. Each point carries an interval, and a group of a dozen images
+    says little.
+
+ECE (expected calibration error)
+:   The average gap between stated confidence and accuracy over those groups, weighted by how
+    many images each holds. If a group of 100 images is given 0.9 confidence and 70 are right,
+    it contributes a gap of 0.2. **0 is ideal, but never reached**: on a finite sample even a
+    perfectly calibrated model shows some error, so the number is read against a control — the
+    error a calibrated model reaches by chance on the same images. On the ISIC model's HAM10000
+    run: 0.054 [0.04–0.07], against 0.024 for a calibrated model.
+
+Brier score
+:   The squared distance between the predicted probabilities and what happened, summed over the
+    classes and averaged over images. **0 is ideal, 2 the worst.** It moves with both
+    discrimination and calibration at once, which makes it a good summary and a poor diagnosis —
+    read it with the reliability curve, not instead of it. 0.269 [0.24–0.29] on the ISIC model's
+    HAM10000 run.
+
 ## How sure are we?
 
 Confidence interval (CI)
@@ -441,27 +471,6 @@ tier each lands in). Worked examples here are **illustrative**, not measurements
 project's runs — where a number is real, it says so.
 
 ### Calibration
-
-Calibration
-:   Do the probabilities mean what they say? Among the cases a model calls 90% likely, about
-    90% should actually be that class. A model can rank cases perfectly and still be badly
-    calibrated — discrimination and calibration are independent properties, and the second is
-    the first to break when the model meets a new population.
-
-Reliability curve
-:   Calibration, drawn. Predicted probability on the x-axis, observed frequency on the y-axis.
-    The diagonal is perfect. Above it, the model is underconfident; below it, overconfident —
-    which in a triage tool means false reassurance.
-
-ECE (expected calibration error)
-:   The average gap between predicted and observed, weighted by how many cases fall in each
-    bin. **0 is ideal.** If a bin of 100 cases is given 0.9 confidence and only 70 are right,
-    that bin contributes a gap of 0.2.
-
-Brier score
-:   Mean squared error of the probabilities themselves. **0 is ideal.** It moves with both
-    discrimination and calibration at once, which makes it a good summary and a poor diagnosis —
-    read it with the reliability curve, not instead of it.
 
 Calibration intercept and slope
 :   The two numbers external-validation studies report. Intercept says whether the model is

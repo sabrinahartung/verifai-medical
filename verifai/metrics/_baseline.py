@@ -123,6 +123,21 @@ def classification(value: dict) -> dict | None:
                       f"({count:,} of {n:,})", bool(side), claim, gap=round(acc - majority, 4))
 
 
+def calibration(value: dict) -> dict | None:
+    """Against a control: the error a calibrated model reaches by chance at this n."""
+    ece, null = value.get("ece"), value.get("ece_if_calibrated")
+    if ece is None or null is None:
+        return None
+    lo, hi = value.get("ece_ci") or (None, None)
+    above = ece > null
+    claim = above and (f"The stated confidence departs from the accuracy more than a perfectly "
+                       f"calibrated model's would on this many images: error {ece:.3f} "
+                       f"[{lo:.2f}–{hi:.2f}] against up to {null:.3f} by chance.")
+    return _reference("control", null, "the error a perfectly calibrated model reaches by "
+                      "chance on the same images, 95 times in 100", above, claim,
+                      gap=round(ece - null, 4))
+
+
 def skin_tone(value: dict) -> dict | None:
     if "gap_is_separated" not in value:
         return None
@@ -187,6 +202,7 @@ BY_FINDING = {
     "label_space": label_space_,
     "preprocessing": preprocessing,
     "top1_accuracy": classification,
+    "calibration": calibration,
     "skin_tone_ita": skin_tone,
     "corruption_stability": corruption,
     "membership_inference_auc": membership_inference,

@@ -45,6 +45,7 @@ METRIC_VERSIONS: dict[str, int] = {
     "performance.classification": 4,
     "explainability.gradcam": 5,        # 2: every test image, against a random control
                                         # 4: per-image scores in the run's case table
+    "performance.calibration": 1,       # F3
     "robustness.corruption": 4,         # 3: an interval on the mean, and n
     "fairness.skin_tone": 5,           # 4: no dataset named in its text; intervals in the summary
     "privacy.mia": 4,

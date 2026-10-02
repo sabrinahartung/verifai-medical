@@ -7,7 +7,7 @@
 
 !!! abstract "This page is the plan"
     Everything below the "What has been built" table is **planned, not built**. For what runs
-    today, read [The pillars → Running today](pillars.md#running-today-ten-metrics) — ten
+    today, read [The pillars → Running today](pillars.md#running-today-eleven-metrics) — eleven
     metrics — or [Current results](results.md) for the numbers they produced. How the parts
     already built work in detail: the [architecture decisions](adr/index.md).
 
@@ -38,7 +38,7 @@ Four things have to become true for that:
    are built (M4), and so is what can be verified about a model someone else trained (M5,
    Phase B), and so is resolving a Hub link into a draft scenario and the `hf_image` adapter, with a Hub model this project neither trained nor picked evaluated end to end (M5, Phase C).*
 2. **Any medical domain.** Images, text, later speech and generated text — with the
-   metric catalogue expanded far beyond the ten metrics that exist today.
+   metric catalogue expanded far beyond the eleven metrics that exist today.
 3. **Two honest entry states.** *The model is trained and ready to load*, or *the
    model must be trained first and the data is here.* Both end in the same report.
    *Planned as M8 (Phase D).*
@@ -79,8 +79,8 @@ The route there is the [milestone table](#milestones): M5 to M12, one row each.
 
 ## Where things stand (2026-10-02)
 
-**27 artifact folders — 16 models in 27 configurations, 6 of them active — 191 contract
-tests, three evaluation sets, ten metrics.** [Current results](results.md) has the
+**27 artifact folders — 16 models in 27 configurations, 6 of them active — 203 contract
+tests, three evaluation sets, eleven metrics.** [Current results](results.md) has the
 measurements; this is what they add up to. Latest release: [v0.4.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.4.0),
 which closes M5: a model from the Hub that this project neither trained nor picked, evaluated end
 to end. Next: [M6](#m6-in-steps), every metric that needs only a model's probabilities, then the rest of
@@ -592,14 +592,14 @@ aspect → sub-aspect → per-modality tree, extended to generative AI and to a 
 pillar, and kept in the medical domain.
 
 **The full catalogue — fifty-seven metrics, each with what it establishes and what it needs —
-is [The pillars](pillars.md).** Ten are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
+is [The pillars](pillars.md).** Eleven are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
 and says only what order to build in and why.
 
 ```mermaid
 flowchart TB
     R["Report"] --> I["integrity"] & P["performance"] & F["fairness"] & B["robustness"] & X["explainability"] & V["privacy"] & S["safety"]
     I --> I1["row overlap ✅"] & I2["corpus overlap"] & I3["compatibility"]
-    P --> P1["discrimination ✅"] & P2["calibration"] & P3["decision quality"] & P4["uncertainty"]
+    P --> P1["discrimination ✅"] & P2["calibration ✅"] & P3["decision quality"] & P4["uncertainty"]
     F --> F1["group"] & F2["individual"] & F3["data ✅"]
     B --> B1["natural ✅"] & B2["adversarial"]
     X --> X1["faithfulness ✅"] & X2["complexity"] & X3["robustness"] & X4["sanity"]
@@ -630,14 +630,14 @@ Two schema changes, both small:
 
 #### The catalogue by milestone
 
-Every metric in [the pillars](pillars.md) — 57, of which 10 are shipped — and the milestone that brings it. Tiers, not a queue:
+Every metric in [the pillars](pillars.md) — 57, of which 11 are shipped — and the milestone that brings it. Tiers, not a queue:
 everything in a tier is independent of everything else in it. Set 2026-10-02, when the catalogue
 was moved ahead of everything else after M5.
 
 | Tier | Needs | Count | Metrics | Scheduled in |
 |---|---|---|---|---|
-| shipped | — | **10** | split leakage · provenance · corpus ancestry · label space · preprocessing · top-1 accuracy · skin-tone accuracy · corruption stability · Grad-CAM faithfulness · membership inference | in every active report |
-| **1** | nothing new: a model's probabilities | **7** | calibration · discrimination (ROC/PR-AUC) · operating points & net benefit · PPV at a stated prevalence · selective prediction · group fairness · data representation | **M6** · 0.5.0 |
+| shipped | — | **11** | split leakage · provenance · corpus ancestry · label space · preprocessing · top-1 accuracy · calibration (F3) · skin-tone accuracy · corruption stability · Grad-CAM faithfulness · membership inference | in every active report |
+| **1** | nothing new: a model's probabilities | **7** (1 shipped) | calibration ✅ · discrimination (ROC/PR-AUC) · operating points & net benefit · PPV at a stated prevalence · selective prediction · group fairness · data representation | **M6** · 0.5.0 |
 | **2** | Phase A's access levels; Quantus for the explanation checks | **9** | adversarial (FGSM · PGD · DeepFool) · corruption severity sweep · insertion+deletion faithfulness · explanation complexity · randomisation · stability · axiomatic · calibration by group · near-duplicates | **M7** · 0.6.0 |
 | **3**, with the data on hand | a ViT, sex and age columns, training members of a model trained here | **6** | `transformer_attribution` · explanation agreement · intersectional gaps · per-group membership attack · shadow membership attack · attribute inference | **M7** · 0.6.0 |
 | **3**, waiting for data | data this project does not hold yet | **4** | individual fairness (counterfactual images) · acquisition shift (a site or device column) · localisation (lesion masks) · memorisation (a model trained with canaries) | unscheduled; each when its data arrives |
@@ -657,7 +657,7 @@ Planned 2026-10-02. One branch and one pull request per step, as in Phase C.
 |---|---|---|
 | **F1** ✅ | **Groundwork before the catalogue grows.** `per_example` capped and moved into one per-case table per run, written once and referenced by the metrics (from D5). Every snapshot records the metric versions behind its numbers, and the comparison view refuses to plot two runs whose versions differ — the same rule as the manifest hash, one level down. One **conformance test over the registry** replaces per-metric tests, plus a test that no glossary pattern is shadowed by an earlier one | report size stops growing with metrics × `n`; a version mismatch blocks a comparison with its reason; the conformance test covers all ten shipped metrics. *Done 2026-10-02. The per-case rows of the three metrics that keep them — classification, skin tone and now Grad-CAM, keyed by image id — moved into one `cases.csv` per run; the six active reports went from 3.6 MB to about 0.24 MB together, with every value, verdict and summary unchanged. Each metric has a measurement version beside its version: read off each module's history, all are on their first except Grad-CAM (2026-09-25). Snapshots record which metric every number came from and its measurement version; older ones are dated against the history in the registry, and the comparison leaves out only the values taken the old way. The conformance test found two real gaps — three count-only integrity checks and the unchecked preparation check declared no direction — now declared as `NO_DIRECTION`; the second matters, since its zeros would otherwise rank an unchecked run as clean* |
 | **F2** ✅ | **`Finding.subaspect`**, and the report groups pillar → sub-aspect → metric | every shipped metric declares one, taken from [the pillars](pillars.md); the report reads unchanged with one metric per sub-aspect. *Done 2026-10-02. The vocabulary is `SUBASPECTS` in `verifai/core/findings.py`, taken from the catalogue; each registry entry declares one and the runner sets it on every finding, the gate's *not computable* rows included. A test holds the registry and `docs/pillars.md` to the same sub-aspects. The report heads a pillar's metrics by sub-aspect only where it holds more than one — integrity, today — so every other pillar reads as before. Every metric's report version +1; no measurement changed, and the six active re-runs reproduced every value* |
-| **F3** | **`performance.calibration`.** Expected calibration error with a bootstrap interval, Brier score, and a reliability chart; per class | measured on all six active configurations; Derm7pt shows whether calibration breaks under the shift Experiment 7 measured |
+| **F3** ✅ | **`performance.calibration`.** Expected calibration error with a bootstrap interval, Brier score, and a reliability chart; per class | measured on all six active configurations; Derm7pt shows whether calibration breaks under the shift Experiment 7 measured. *Done 2026-10-02. The reference is a control measured in the same run — the error a perfectly calibrated model reaches by chance, by consistency resampling — because the error is never 0 on a finite sample. On HAM10000: the ISIC model 0.054 against 0.024, the ViT 0.042 against 0.011, the original checkpoint 0.024 against 0.024, the one model whose calibration is not distinguishable from perfect on the archive it trained on. On Derm7pt every model is overconfident: ISIC 0.116, original 0.138, ViT 0.197 — the most accurate model there states the least honest percentages, 0.938 confidence against 0.742 accuracy. Calibration broke under the shift, as expected. The `line` chart gained intervals and a diagonal for the reliability chart; Guo et al. [15] verified, three references added [53]–[55]* |
 | **F4** | **`fairness.group` and `fairness.data_representation`.** Sensitivity, specificity and PPV per sex, age band and body site, with Wilson intervals; a gap is claimed only when the groups' intervals separate. And who is in the test set at all, per group, so an empty or tiny group reads as such | HAM10000 grouped by sex, age band and site; Derm7pt by sex only, saying why |
 | **F5** | **`performance.discrimination` and `performance.prevalence_ppv`.** ROC-AUC and PR-AUC per class with Hanley–McNeil intervals; PPV recomputed at a stated prevalence, so a figure from an enriched test set is not read as one from a clinic | per-class AUCs with intervals on all six active configurations |
 | **F6** | **`performance.operating_points` and `performance.selective_prediction`.** The sensitivity/specificity frontier, Youden's J and net benefit across a range of harm ratios — a curve, never a chosen point; and accuracy against coverage when the model may abstain on its least confident cases | melanoma's curve on all six; the `×30` decision rule placed on it |

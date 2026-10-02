@@ -81,6 +81,7 @@ metrics:
   - "integrity.label_space"
   - "integrity.preprocessing"
   - "performance.classification"
+  - "performance.calibration"
   - "explainability.gradcam"     # a ViT: reports not computable, with the reason
   - "robustness.corruption"
   - "fairness.skin_tone"
