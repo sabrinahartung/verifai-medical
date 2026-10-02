@@ -1,16 +1,33 @@
 {
   "schema": 1,
   "metric_versions": {
-    "explainability.gradcam": 3,
+    "explainability.gradcam": 4,
     "fairness.skin_tone": 4,
-    "integrity.corpus_ancestry": 1,
-    "integrity.label_space": 1,
-    "integrity.preprocessing": 1,
-    "integrity.provenance": 1,
+    "integrity.corpus_ancestry": 2,
+    "integrity.label_space": 2,
+    "integrity.preprocessing": 2,
+    "integrity.provenance": 2,
     "integrity.split_leakage": 2,
     "performance.classification": 3,
     "privacy.mia": 3,
     "robustness.corruption": 3
+  },
+  "measurement_versions": {
+    "explainability.gradcam": 2,
+    "fairness.skin_tone": 1,
+    "integrity.corpus_ancestry": 1,
+    "integrity.label_space": 1,
+    "integrity.preprocessing": 1,
+    "integrity.provenance": 1,
+    "integrity.split_leakage": 1,
+    "performance.classification": 1,
+    "privacy.mia": 1,
+    "robustness.corruption": 1
+  },
+  "measurement_since": {
+    "explainability.gradcam": {
+      "2": "2026-09-25T00:14:03+02:00"
+    }
   },
   "projects": [
     {

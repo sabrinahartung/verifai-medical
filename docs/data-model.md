@@ -195,7 +195,20 @@ before the change keep rendering.
 
 ## Comparing runs
 
-Every evaluation writes a snapshot to `history/`. The comparison view groups them by the
+Every evaluation writes a snapshot to `history/`. Since step F1 a snapshot also records, for
+every number it keeps, the metric it came from (`key_metric`) and that metric's measurement
+version (`measurement_versions`); a snapshot from before is dated against the measurement
+history in `model_registry.json`. The comparison sets a value only beside values taken under
+the same measurement version, and leaves the rest of the run in.
+
+Beside `report.json`, a run writes **`cases.csv`**: one row per case, keyed by its `id`, with a
+column `<finding>.<field>` for every per-case field of every metric that keeps one — the
+classification's prediction and confidence, the skin-tone estimate, Grad-CAM's per-image
+deletion scores. A finding records which columns are its own in `details["cases"]`. The rows
+were inside `report.json` until step F1, where each such metric added a copy that grew with the
+number of cases.
+
+The comparison view groups snapshots by the
 evaluation set's content hash and separates three questions. Whether a run may be plotted at all is
 decided by its snapshot's `integrity`: the worst of its integrity checks, as the report's banner
 takes it, with the check that decided it in `integrity_by`, so a run blocked for its preprocessing

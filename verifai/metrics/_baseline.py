@@ -35,6 +35,12 @@ from typing import Any
 from verifai.metrics._common import class_name
 
 
+# What a finding declares as `details["better"]` when none of its numbers has a
+# better direction — a count of training manifests or of classes. Declared, not
+# omitted, so the conformance test can tell "nothing here is ranked" from "forgot".
+NO_DIRECTION: dict[str, str] = {}
+
+
 def _reference(kind: str, value: Any, basis: str, cleared: bool,
                claim: str | None = None, gap: float | None = None) -> dict:
     return {"kind": kind, "value": value, "basis": basis, "cleared": bool(cleared),

@@ -582,7 +582,7 @@ Release **0.7.0** closes M8.
   stays torch-free, which makes Streamlit Community Cloud the self-enforcing gate.
 - *Scheduled as [M10](#milestones).* **The case view.** A finding → its failure clusters → one
   case, the same evidence indexed by case instead of by metric —
-  [a worked example](case-view.md). It needs `per_example` kept (step D5) and the findings
+  [a worked example](case-view.md). It needs `per_example` kept — the case table, since step F1 — and the findings
   layer's rule templates (M9), which are the same feature.
 
 ### Phase F — the metric catalogue: the taxonomy becomes data
@@ -655,7 +655,7 @@ Planned 2026-10-02. One branch and one pull request per step, as in Phase C.
 
 | Step | Delivers | Done when |
 |---|---|---|
-| **F1** | **Groundwork before the catalogue grows.** `per_example` capped and moved into one per-case table per run, written once and referenced by the metrics (from D5). Every snapshot records the metric versions behind its numbers, and the comparison view refuses to plot two runs whose versions differ — the same rule as the manifest hash, one level down. One **conformance test over the registry** replaces per-metric tests, plus a test that no glossary pattern is shadowed by an earlier one | report size stops growing with metrics × `n`; a version mismatch blocks a comparison with its reason; the conformance test covers all ten shipped metrics |
+| **F1** ✅ | **Groundwork before the catalogue grows.** `per_example` capped and moved into one per-case table per run, written once and referenced by the metrics (from D5). Every snapshot records the metric versions behind its numbers, and the comparison view refuses to plot two runs whose versions differ — the same rule as the manifest hash, one level down. One **conformance test over the registry** replaces per-metric tests, plus a test that no glossary pattern is shadowed by an earlier one | report size stops growing with metrics × `n`; a version mismatch blocks a comparison with its reason; the conformance test covers all ten shipped metrics. *Done 2026-10-02. The per-case rows of the three metrics that keep them — classification, skin tone and now Grad-CAM, keyed by image id — moved into one `cases.csv` per run; the six active reports went from 3.6 MB to about 0.24 MB together, with every value, verdict and summary unchanged. Each metric has a measurement version beside its version: read off each module's history, all are on their first except Grad-CAM (2026-09-25). Snapshots record which metric every number came from and its measurement version; older ones are dated against the history in the registry, and the comparison leaves out only the values taken the old way. The conformance test found two real gaps — three count-only integrity checks and the unchecked preparation check declared no direction — now declared as `NO_DIRECTION`; the second matters, since its zeros would otherwise rank an unchecked run as clean* |
 | **F2** | **`Finding.subaspect`**, and the report groups pillar → sub-aspect → metric | every shipped metric declares one, taken from [the pillars](pillars.md); the report reads unchanged with one metric per sub-aspect |
 | **F3** | **`performance.calibration`.** Expected calibration error with a bootstrap interval, Brier score, and a reliability chart; per class | measured on all six active configurations; Derm7pt shows whether calibration breaks under the shift Experiment 7 measured |
 | **F4** | **`fairness.group` and `fairness.data_representation`.** Sensitivity, specificity and PPV per sex, age band and body site, with Wilson intervals; a gap is claimed only when the groups' intervals separate. And who is in the test set at all, per group, so an empty or tiny group reads as such | HAM10000 grouped by sex, age band and site; Derm7pt by sex only, saying why |
@@ -1050,9 +1050,10 @@ bigger than a ResNet18:
   ~3.5× on MPS on top of the device fix. *Closed for performance and robustness in [step C3](#phase-c-resolving-a-model-and-the-adapter-catalogue) (2026-09-30); Grad-CAM's masking passes and fairness still run one image at a time.*
 - `fairness/skin_tone_ita.py` recomputes the clean prediction that
   `performance/classification.py` already made — 2 redundant passes of 7.
-- `details["per_example"]` is written for every sample **by every metric**, so a fifty-metric
-  report multiplies a file that already grows linearly in `n`. It needs a cap, or to become
-  opt-in per metric, before the catalogue lands. *Scheduled: [step D5](#phase-d-the-two-entry-tracks-one-command).*
+- `details["per_example"]` was written for every sample by the metrics that keep per-case rows
+  (three of ten: classification, skin tone, Grad-CAM), inside `report.json`, so each such metric
+  added a copy that grew linearly in `n`. *Closed in [step F1](#m6-in-steps) (2026-10-02): the rows
+  move into one `cases.csv` per run, and `report.json` keeps only which columns are whose.*
 
 ## Tooling — moved to uv (done 2026-09-24)
 

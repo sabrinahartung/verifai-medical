@@ -41,7 +41,7 @@ and `run_active.py` skip it.
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (191 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (197 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -178,8 +178,10 @@ Data flows one way: **scenario YAML → runner → metrics → `Finding`s → `R
   determinism. Bigger run = longer manifest, nothing else. A dataset derives its class list from
   its own labels (or `dataset.classes`) and must **never** import it from a model — that
   backwards dependency existed once and is asserted against in `tests/`.
-- `verifai/export/artifacts.py` — writes `report.json` + `card.json` (+ `plots/`) under
-  `showcase/artifacts/<scenario>/`, plus one immutable snapshot per run in `history/`.
+- `verifai/export/artifacts.py` — writes `report.json` + `card.json` (+ `plots/`, + `cases.csv`,
+  the per-case rows of every metric that keeps them) under `showcase/artifacts/<scenario>/`, plus
+  one immutable snapshot per run in `history/`. Since F1 a snapshot also records which metric
+  each number came from (`key_metric`) and its measurement version.
   `snapshot_metrics()` flattens each finding's numeric leaves to `<pillar>.<path>` generically,
   so a new metric becomes comparable without this module knowing about it. Every snapshot
   carries the evaluation manifest's **content hash** and the integrity verdict — the worst of the
@@ -272,7 +274,14 @@ with, and the claim when the interval clears it; only those are marked establish
 report's pillar cards. List its
 id under `metrics:` in the scenario. **Bump that version whenever what the metric reports
 changes** — a new sample, a field, a fixed bug, a verdict's wording — then run
-`scripts/run_active.py`. Each report records the versions and the checkpoint hash that produced it,
+`scripts/run_active.py`. A metric also has a **measurement version** (`MEASUREMENT_VERSIONS`),
+bumped only when what its number *means* changes — another sample, method or a value-moving
+fix — with the date in `MEASUREMENT_SINCE`. The comparison never sets a value beside one taken
+under another measurement version; a wording change leaves it alone, so it never empties a
+comparison. `test_every_registered_metric_conforms` checks the whole registry at once: a new
+metric needs no contract test of its own, but must declare `better` — `NO_DIRECTION` (`{}`)
+when none of its numbers is ranked. Per-case rows go in `details["per_example"]` (one dict per
+case, with `id`); the exporter moves them into the run's `cases.csv`. Each report records the versions and the checkpoint hash that produced it,
 so an active report left behind says so; an unbumped version makes a stale report look current. To be rendered, return a chart
 spec in `Finding.details["chart"]` (optionally `["chart2"]`); `showcase/app.py::render_chart`
 supports `kind` of `bar` | `line` | `heatmap` | `scale` | `images` and falls back to `st.json`.

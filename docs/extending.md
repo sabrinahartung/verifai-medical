@@ -153,7 +153,7 @@ flowchart TB
     B["2 · register in METRIC_REGISTRY"]
     C["3 · list the id under metrics: in a scenario"]
     D["4 · return details['explain'] + details['chart']"]
-    V["5 · give it a version in verifai/core/suite.py<br/>and bump it whenever its output changes"]
+    V["5 · give it a version and a measurement version<br/>in verifai/core/suite.py"]
     A --> B --> C --> D --> V
     V --> E["renders in the dashboard<br/><b>no app code changed</b>"]
     style E fill:#CDE8D5,stroke:#2E9E5B,color:#1a1a2e

@@ -865,7 +865,7 @@ it.**
   rather than settling it — fifteen models read differently from twenty-four artifacts.
 - ~~**Is the case view or the coverage map the better next build?**~~ Both answer *"what am I
   actually looking at"*. Coverage is cheaper and blocked on Phase A; the case view is expensive
-  and blocked on `per_example` surviving the [scaling gap](ROADMAP.md#known-scaling-gaps).
+  and was blocked on `per_example` surviving the [scaling gap](ROADMAP.md#known-scaling-gaps) (closed by step F1, 2026-10-02).
   *Settled 2026-09-29:* the coverage map shipped in M4; the case view is
   [M10](ROADMAP.md#milestones), after the findings layer.
 - **Who declares a project?** The entity model needs one above the model, and today it would be

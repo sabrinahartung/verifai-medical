@@ -43,7 +43,7 @@ from typing import Any
 
 import yaml
 
-from verifai.core.suite import METRIC_VERSIONS
+from verifai.core.suite import MEASUREMENT_SINCE, MEASUREMENT_VERSIONS, METRIC_VERSIONS
 
 REGISTRY_PATH = Path("showcase/artifacts/model_registry.json")
 SCHEMA = 1
@@ -226,6 +226,11 @@ def build_registry(scenarios_dir: str | Path = "scenarios", root: str | Path = "
         # The current version of every metric, so the showcase — which never
         # imports the engine — can tell a report produced by an older one.
         "metric_versions": dict(sorted(METRIC_VERSIONS.items())),
+        # What each metric's numbers mean, and since when — so the comparison can
+        # date a snapshot written before snapshots recorded it (step F1).
+        "measurement_versions": dict(sorted(MEASUREMENT_VERSIONS.items())),
+        "measurement_since": {m: {str(v): s for v, s in sorted(h.items())}
+                              for m, h in sorted(MEASUREMENT_SINCE.items())},
         "projects": [{"name": n, "models": ks} for n, ks in sorted(projects.items())],
         "models": models,
     }
