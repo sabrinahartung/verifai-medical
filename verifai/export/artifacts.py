@@ -112,7 +112,7 @@ def write_cases(data: dict, base: Path) -> Path | None:
         path.unlink(missing_ok=True)   # a run with no per-case rows leaves none behind
         return None
     with open(path, "w", encoding="utf-8", newline="") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")   # as git stores it; \r\n would show as a change
         w.writerow(["id", *columns])
         for case_id, row in rows.items():
             w.writerow([case_id, *(row.get(c, "") for c in columns)])

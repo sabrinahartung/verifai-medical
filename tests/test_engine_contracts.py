@@ -2919,6 +2919,7 @@ def test_per_case_rows_move_into_one_table_per_run(tmp_path):
     assert "per_example" not in json.dumps(data), "per-case rows stay out of report.json"
     perf = data["findings"][0]["details"]["cases"]
     assert perf == {"file": CASES_FILE, "columns": ["top1_accuracy.pred", "top1_accuracy.correct"]}
+    assert b"\r" not in (base / CASES_FILE).read_bytes(), "plain \\n line ends, as git stores them"
     rows = list(_csv.DictReader((base / CASES_FILE).open(encoding="utf-8")))
     assert [x["id"] for x in rows] == ["a", "b", "c"], "one row per case, in first-seen order"
     b = rows[1]
