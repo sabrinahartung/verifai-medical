@@ -198,6 +198,7 @@ METRIC_REGISTRY = {
     "performance.my_metric": MetricSpec(
         "verifai.metrics.performance.my_metric:run",
         pillar="performance", finding="my_metric",   # the Finding it returns
+        subaspect="calibration",                     # from SUBASPECTS, as the catalogue names it
         tasks=("classification",),                   # which tasks it belongs to
         modalities=None,                             # None = any payload; ("pixels",) for images
         requires="probs"),                           # the lowest access level it needs

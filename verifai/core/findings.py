@@ -41,6 +41,21 @@ Verdict = Literal["measured", "insufficient", "unavailable", "invalid"]
 # `verifai.models.base.Task`).
 Domain = Literal["image", "text", "tabular", "llm"]
 
+# The level between a pillar and a metric, as the catalogue in docs/pillars.md names
+# it (step F2): what *kind* of question about the pillar a metric answers. In
+# report order — integrity reads split, origin, archives, then compatibility, as
+# ADR 0002 fixed it. At ten metrics a flat list per pillar was fine; the
+# catalogue's fifty-seven need the middle level, or a pillar becomes a wall.
+SUBASPECTS: dict[str, tuple[str, ...]] = {
+    "integrity": ("row overlap", "declared origin", "corpus overlap", "compatibility"),
+    "performance": ("discrimination", "calibration", "decision quality", "uncertainty",
+                    "generative"),
+    "fairness": ("data", "group", "individual", "generative"),
+    "robustness": ("natural", "adversarial", "generative"),
+    "explainability": ("faithfulness", "complexity", "robustness", "sanity", "generative"),
+    "privacy": ("membership", "memorisation", "inference"),
+}
+
 
 @dataclass
 class Finding:
@@ -52,6 +67,10 @@ class Finding:
     summary: str = ""               # one human-readable sentence
     details: dict[str, Any] = field(default_factory=dict)
     plots: list[str] = field(default_factory=list)  # relative paths under the report's plot dir
+    # One of SUBASPECTS[pillar]. Declared by the metric's registry entry and set by
+    # the runner, so the row a metric gets when it cannot run has one too. `None`
+    # in reports written before step F2.
+    subaspect: str | None = None
 
 
 @dataclass

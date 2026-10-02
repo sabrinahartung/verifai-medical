@@ -66,10 +66,14 @@ inline — nothing here is aspirational unless it is labelled.
     before it has ever said anything.
 
 `Finding.subaspect`
-: Optional, and the grouping level between pillar and metric — `calibration` under
-    performance, `adversarial` under robustness, `randomisation` under explainability. At six
-    metrics a flat list per pillar was fine; at the [catalogue's](pillars.md) fifty-seven it is a
-    wall, so the dashboard groups pillar → sub-aspect → metric.
+: The level between pillar and metric: what *kind* of question about the pillar a metric
+    answers — `calibration` under performance, `adversarial` under robustness, `sanity` under
+    explainability. The vocabulary is `SUBASPECTS` in `verifai/core/findings.py`, taken from
+    the [catalogue](pillars.md); a metric's registry entry declares one and the runner sets
+    it on every finding the metric yields, including the row it gets when it cannot run. A
+    report's pillar section groups its metrics under a heading per sub-aspect when it holds
+    more than one, as integrity does. At six metrics a flat list per pillar was fine; at the
+    catalogue's fifty-seven it is a wall. `None` in reports written before step F2.
 
 `Verdict`
 : `measured` · `insufficient` · `unavailable` · `invalid`
