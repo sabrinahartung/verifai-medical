@@ -120,6 +120,9 @@ class ImageClassifier:
         # {"source", "where", "spec"} — see `verifai.models.preprocessing`. Set by
         # the loader; `integrity.preprocessing` compares against it.
         self.reference_preprocessing: dict | None = None
+        # The Hub model card's header at the pinned revision, for a model loaded
+        # from the Hub (`verifai.models.hub_card`); None for a local file.
+        self.hub_card: dict | None = None
 
     @property
     def metadata(self) -> dict:
@@ -333,6 +336,8 @@ def load(spec: dict[str, Any]) -> ImageClassifier:
     )
     if spec.get("repo_id") and not (weights_path and Path(weights_path).exists()):
         clf.reference_preprocessing = _hub_processor(spec["repo_id"], spec.get("revision"))
+        from verifai.models.hub_card import read_hub_card
+        clf.hub_card = read_hub_card(spec["repo_id"], spec.get("revision"))
     return clf
 
 

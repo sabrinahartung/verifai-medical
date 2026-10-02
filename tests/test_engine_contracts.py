@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -1597,6 +1598,61 @@ def test_a_model_belongs_to_one_project(tmp_path):
         build_registry(sc, root=tmp_path)
 
 
+def _write_named(dir_, name, model_name=None, **model):
+    import yaml as _yaml
+    m = {"weights_path": "ck/a.pt", **model}
+    if model_name:
+        m["name"] = model_name
+    sc = {"name": name, "label": f"{name} label", "project": "P", "model": m,
+          "dataset": {"manifest": "m.csv", "id": "d"}, "metrics": ["x.y"]}
+    (dir_ / f"{name}.yaml").write_text(_yaml.safe_dump(sc), encoding="utf-8")
+
+
+def test_a_model_has_one_declared_name(tmp_path):
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_named(sc, "a", "Net A")
+    _write_named(sc, "b", "Net B")
+    with pytest.raises(ValueError, match="named 2 ways"):
+        build_registry(sc, root=tmp_path)
+
+
+def test_a_model_is_never_named_after_one_of_its_configurations(tmp_path):
+    """Regression: the original checkpoint's page was headed "Original checkpoint —
+    Derm7pt", the label of whichever configuration sorted first, so the model and
+    one of its runs read as the same thing."""
+    pytest.importorskip("yaml")
+    from verifai.export.model_registry import build_registry
+    sc = tmp_path / "scenarios"; sc.mkdir()
+    _write_named(sc, "a")
+    _write_named(sc, "b", "Net", arch="resnet18")          # one configuration names it
+    (m,) = build_registry(sc, root=tmp_path)["models"]
+    assert m["name"] == "Net"
+    assert m["declared"]["arch"] == "resnet18"
+    (sc / "b.yaml").unlink()
+    (m,) = build_registry(sc, root=tmp_path)["models"]
+    assert m["name"] == "a.pt", "no declared name and no trainer: the file, not a run's label"
+    real = {m["checkpoint"].get("repo_id"): m["name"] for m in
+            json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())["models"]}
+    assert real["sabrinahartung1010/skin-lesion-resnet18"] == \
+        "Skin-Lesion ResNet18 (HAM10000, class-weighted)", "the Hub card's own title"
+
+
+def test_a_hub_card_header_and_title_are_read_and_the_prose_is_not():
+    from verifai.models.hub_card import parse_card
+    text = (REPO / "model_cards" / "skin-lesion-resnet18" / "README.md").read_text(encoding="utf-8")
+    card = parse_card(text)
+    assert card["license"] == "cc-by-nc-4.0"
+    assert card["datasets"] == ["marmal88/skin_cancer"]
+    assert card["title"] == "Skin-Lesion ResNet18 (HAM10000, class-weighted)"
+    assert set(card) <= {"present", "title", "license", "datasets", "tags", "base_model",
+                         "library_name", "pipeline_tag"}, "only fixed header fields, no prose"
+    # one string where the Hub means a list; and a card with no header at all
+    assert parse_card("---\ndatasets: x/y\n---\n")["datasets"] == ["x/y"]
+    assert parse_card("# Just a title\n\nProse.") == {"present": True, "title": "Just a title"}
+
+
 def test_models_without_declared_weights_are_never_merged(tmp_path):
     """Two scenarios that name no weights are not therefore the same model.
     An invented shared identity would let a comparison treat them as one."""
@@ -1663,7 +1719,7 @@ def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, r
     calls = []
     def fake_download(**kwargs):
         calls.append(kwargs)
-        if kwargs["filename"] == "preprocessor_config.json":
+        if kwargs["filename"] in ("preprocessor_config.json", "README.md"):
             raise EntryNotFoundError("this repository ships none")
         return str(weights)
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
@@ -1673,10 +1729,13 @@ def test_the_hub_download_fetches_the_declared_revision(tmp_path, monkeypatch, r
     if revision:
         spec["revision"] = revision
     clf = load(spec)
-    # the weights, then the repository's processor (C4) — both at the same revision
+    # the weights, then the repository's processor (C4) and its model card — all
+    # at the same revision
     assert calls == [{"repo_id": "org/net", "filename": "w.pt", "revision": revision},
                      {"repo_id": "org/net", "filename": "preprocessor_config.json",
-                      "revision": revision}]
+                      "revision": revision},
+                     {"repo_id": "org/net", "filename": "README.md", "revision": revision}]
+    assert clf.hub_card == {"present": False, "repo_id": "org/net", "revision": revision}
     assert clf.reference_preprocessing is None
 
 
@@ -2429,10 +2488,12 @@ def test_resolving_the_projects_own_hub_checkpoint_reproduces_its_scenario():
     api = _FakeApi([".gitattributes", "README.md", "resnet18_ham10000_classweights.pt"],
                    card=card, sha="d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506")
     fetch = _fetcher({})
+    readme = (REPO / "model_cards" / "skin-lesion-resnet18" / "README.md").read_text(encoding="utf-8")
     d = RS.resolve("hf:sabrinahartung1010/skin-lesion-resnet18", api=api, fetch_json=fetch,
+                   fetch_text=lambda repo, f, rev: readme,
                    dataset_manifest="data/manifests/ham10000_test.csv")
     m = d.scenario["model"]
-    for key in ("loader", "id", "repo_id", "filename", "revision", "device"):
+    for key in ("name", "loader", "id", "repo_id", "filename", "revision", "device"):
         assert m[key] == real["model"][key], key
     # the card's header names the training data and the licence ...
     assert m["trained_on"]["corpora"] == real["model"]["trained_on"]["corpora"]
@@ -2658,8 +2719,18 @@ def test_the_hf_loader_fetches_the_declared_revision(tmp_path, monkeypatch):
         return real_proc(local)
     monkeypatch.setattr(T.AutoModelForImageClassification, "from_pretrained", model_fp)
     monkeypatch.setattr(T.AutoImageProcessor, "from_pretrained", proc_fp)
-    load({"repo_id": "someone/m", "revision": "a" * 40, "device": "cpu"})
-    assert asked == [("model", "someone/m", "a" * 40), ("processor", "someone/m", "a" * 40)]
+    import huggingface_hub
+    card = tmp_path / "README.md"
+    card.write_text("---\nlicense: apache-2.0\n---\n# Tiny\n", encoding="utf-8")
+
+    def card_download(**kw):
+        asked.append(("card", kw["repo_id"], kw["revision"]))
+        return str(card)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", card_download)
+    clf = load({"repo_id": "someone/m", "revision": "a" * 40, "device": "cpu"})
+    assert asked == [("model", "someone/m", "a" * 40), ("processor", "someone/m", "a" * 40),
+                     ("card", "someone/m", "a" * 40)]
+    assert clf.hub_card["license"] == "apache-2.0" and clf.hub_card["title"] == "Tiny"
 
 
 # --- C4: the preprocessing, checked against the model's own ------------------------
@@ -2761,3 +2832,66 @@ def test_a_hub_state_dict_reads_its_repositorys_processor_at_the_pinned_revision
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", offline)
     with pytest.raises(OSError):
         I._hub_processor("someone/m", "a" * 40)      # a failed lookup is never "absent"
+
+
+# --- the model card view: facts a machine can check, each with its source ----------
+def _card_for(repo_or_key):
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    model = next(m for m in reg["models"]
+                 if repo_or_key in (m["key"], m["checkpoint"].get("repo_id")))
+    reports = MC.reports_of(model)
+    report = MC.reference_report(model, reports)
+    facts = {(s, f.label): f for s, rows in MC.facts(model, report).items() for f in rows}
+    return MC, model, reports, facts
+
+
+def test_the_hub_models_card_quotes_its_own_card_and_says_what_cannot_be_checked():
+    MC, model, reports, facts = _card_for("sabrinahartung1010/skin-lesion-resnet18")
+    lic = facts[("General", "Licence")]
+    assert lic.value == "CC BY-NC 4.0" and "model card's header" in lic.source
+    assert facts[("General", "Trained")].value == "elsewhere"
+    assert facts[("Model", "Architecture")].value == "ResNet18 (declared)", \
+        "a state_dict records no architecture: the scenario's word, marked as such"
+    assert facts[("Training data", "Image-by-image check")].value.startswith("not possible")
+    assert facts[("Model", "Preparation check")].value == "nothing to check against"
+    assert MC.hub_card_url(model, MC.reference_report(model, reports)).endswith(
+        "/blob/d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506/README.md"), "the card at the evaluated commit"
+
+
+def test_a_model_trained_here_is_described_from_its_training_record():
+    MC, model, reports, facts = _card_for("skin_cancer_isic")
+    assert facts[("Model", "Architecture")].source.startswith("The training record")
+    assert facts[("Training data", "Corpus")].value.endswith("21,770 images")
+    assert facts[("Training data", "Image-by-image check")].value.startswith("possible")
+    assert facts[("General", "Licence")].value == "not declared"
+
+
+def test_every_fact_has_a_source_and_no_card_states_a_result():
+    """The card says what a model is. A number from a report on it would read as
+    the model's score; that is the report's business, beside every other pillar."""
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    reg = json.loads((REPO / "showcase/artifacts/model_registry.json").read_text())
+    for model in reg["models"]:
+        reports = MC.reports_of(model)
+        for rows in MC.facts(model, MC.reference_report(model, reports)).values():
+            for f in rows:
+                assert f.source.strip(), f"{model['key']}: {f.label} has no source"
+        for r in reports.values():
+            line = MC.evaluation_line(r)
+            assert not re.search(r"\d\.\d", line), f"{model['key']}: a value in {line!r}"
+
+
+def test_a_model_never_evaluated_says_its_run_time_facts_are_not_read_yet():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    import model_card as MC
+    model = {"name": "X", "key": "x", "sha256": None, "trained_by": None, "provenance": None,
+             "declared": {}, "configurations": [],
+             "checkpoint": {"kind": "hub", "repo_id": "o/x", "revision": "b" * 40}}
+    facts = {f.label: f.value for rows in MC.facts(model, None).values() for f in rows}
+    assert facts["Licence"] == facts["Classes"] == MC.NOT_YET

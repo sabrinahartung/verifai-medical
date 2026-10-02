@@ -22,6 +22,8 @@ seed: 42
 sample_size: null          # the whole Derm7pt manifest (1,003 images)
 
 model:
+  # the model card's own title; every configuration of these weights must agree
+  name: "Skin-Lesion ResNet18 (HAM10000, class-weighted)"
   loader: "verifai.models.image:load"
   id: "skin-lesion-resnet18"
   repo_id: "sabrinahartung1010/skin-lesion-resnet18"

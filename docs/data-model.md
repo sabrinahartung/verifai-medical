@@ -105,6 +105,12 @@ preprocessing — so a report says exactly how its images were prepared
 same six fields whatever produced it — `resize`, `center_crop`, `resample`, `rescale_factor`,
 `mean`, `std` (`verifai/models/preprocessing.py`) — and `integrity.preprocessing` compares it
 with the model's own processor, its Hub `preprocessor_config.json` or its training record.
+For a model loaded from the Hub it also records `hub_card`: the header fields of the
+repository's model card (`license`, `datasets`, `tags`, `base_model`, `library_name`,
+`pipeline_tag`) and its title, read at the pinned revision when the run starts
+(`verifai/models/hub_card.py`), or `present: false` when the repository has none. The prose is
+never read. The model card view quotes these, so the showcase stays offline and the card it
+shows is the one at the commit that was evaluated.
 
 ## The `explain` contract
 
@@ -247,6 +253,12 @@ status and no score: whether a configuration is evaluated is decided by whether 
 below exists. Written by `verifai/export/model_registry.py`. Each configuration carries its
 `status` (`active` or `archived`), each model whether any configuration is active, and the file
 carries the current version of every metric.
+
+A model's `name` is the `model.name` its scenarios declare, which all of them must agree on;
+failing that, the label of the scenario that trained it, then the repository or file the
+weights come from — never a configuration's label, since a model is not one of its runs.
+`declared` carries what the scenarios state about the checkpoint itself (`loader`, `arch`,
+`architecture`, `trained_on`), which the model card view quotes, marked as declared.
 
 Every `report.json` records, in `meta`, the `metric_versions` and the `checkpoint` (path and
 content hash) it was produced with. Set against the registry, that is how the app tells a current

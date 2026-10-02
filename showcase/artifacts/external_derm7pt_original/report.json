@@ -16878,6 +16878,26 @@
       },
       "preprocessing_sha256": "f170e3fa7a42b9b3"
     },
+    "hub_card": {
+      "present": true,
+      "license": "cc-by-nc-4.0",
+      "datasets": [
+        "marmal88/skin_cancer"
+      ],
+      "tags": [
+        "dermatology",
+        "skin-lesion",
+        "ham10000",
+        "resnet18",
+        "torchvision",
+        "education"
+      ],
+      "library_name": "pytorch",
+      "pipeline_tag": "image-classification",
+      "title": "Skin-Lesion ResNet18 (HAM10000, class-weighted)",
+      "repo_id": "sabrinahartung1010/skin-lesion-resnet18",
+      "revision": "d6f877a88a282d2fa491a43b8bdd2bcd5bc8d506"
+    },
     "coverage": [
       {
         "metric": "integrity.split_leakage",
@@ -16963,5 +16983,5 @@
       }
     ]
   },
-  "created_at": "2026-09-30T21:27:03.945542+00:00"
+  "created_at": "2026-10-01T19:44:43.081848+00:00"
 }

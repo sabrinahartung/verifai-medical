@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from verifai.core.integrity import REPO_ROOT, load_corpora
+from verifai.models.hub_card import parse_card
 
 TODO = "TODO"
 WEIGHT_SUFFIXES = (".pt", ".pth", ".bin", ".safetensors")
@@ -196,6 +197,12 @@ def _hub_fetch_json(repo: str, filename: str, revision: str) -> dict[str, Any]:
                                            revision=revision)).read_text(encoding="utf-8"))
 
 
+def _hub_fetch_text(repo: str, filename: str, revision: str) -> str:
+    from huggingface_hub import hf_hub_download
+    return Path(hf_hub_download(repo_id=repo, filename=filename,
+                                revision=revision)).read_text(encoding="utf-8")
+
+
 def _card_field(card: Any, key: str) -> Any:
     if card is None:
         return None
@@ -220,17 +227,19 @@ def _classes_from_config(config: dict[str, Any]) -> list[str] | None:
 def resolve(ref: str, *, dataset_manifest: str | None = None,
             corpora: dict[str, dict[str, Any]] | None = None,
             api: Any = None,
-            fetch_json: Callable[[str, str, str], dict[str, Any]] | None = None) -> Draft:
+            fetch_json: Callable[[str, str, str], dict[str, Any]] | None = None,
+            fetch_text: Callable[[str, str, str], str] | None = None) -> Draft:
     """Resolve a model reference into a draft scenario.
 
     `api` and `fetch_json` exist for the tests, which run offline: `api` stands in
     for `huggingface_hub.HfApi()`, `fetch_json(repo, filename, revision)` for
-    reading a small JSON file from the repository.
+    reading a small JSON file from the repository, `fetch_text` for its README.
     """
     corpora = load_corpora() if corpora is None else corpora
     kind, where, rev = parse_ref(ref)
     if kind == "hub":
-        model, notes = _resolve_hub(where, rev, corpora, api, fetch_json or _hub_fetch_json)
+        model, notes = _resolve_hub(where, rev, corpora, api, fetch_json or _hub_fetch_json,
+                                    fetch_text or _hub_fetch_text)
     else:
         model, notes = _resolve_local(where)
     classes = model.get("classes")
@@ -254,7 +263,8 @@ def resolve(ref: str, *, dataset_manifest: str | None = None,
     return Draft(scenario=scenario, source=ref, notes=notes)
 
 
-def _resolve_hub(repo: str, rev: str | None, corpora, api, fetch_json) -> tuple[dict, list[str]]:
+def _resolve_hub(repo: str, rev: str | None, corpora, api, fetch_json,
+                 fetch_text) -> tuple[dict, list[str]]:
     if api is None:
         from huggingface_hub import HfApi
         api = HfApi()
@@ -317,6 +327,14 @@ def _resolve_hub(repo: str, rev: str | None, corpora, api, fetch_json) -> tuple[
                  **_state_dict_fields(), **prep, "device": "auto"}
         notes.append("no config.json: a bare state_dict, which records no architecture, class "
                      "order or preprocessing")
+    # The model page is headed by `model.name`. The card's own title is the
+    # author's name for the model; without one the page falls back to the
+    # repository name until somebody declares it.
+    title = (parse_card(fetch_text(repo, "README.md", sha)).get("title")
+             if "README.md" in files else None)
+    if title:
+        model = {"name": title, **model}
+        notes.append(f"name from the model card's title: {title}")
     model["trained_on"] = trained_on
     model["licence"] = licence or todo(
         "the model card states no licence. Find out whether evaluating the model and "

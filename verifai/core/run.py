@@ -319,6 +319,10 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
               # how the model turns a payload into input — Phase B's fingerprint
               "model": dict(getattr(model, "metadata", None) or {})},
     )
+    # The Hub card's header as it was at the evaluated commit — the model card
+    # view quotes it, and the showcase never contacts the Hub itself.
+    if getattr(model, "hub_card", None) is not None:
+        report.meta["hub_card"] = model.hub_card
 
     ctx = {"scenario": scenario, "seed": seed, "plot_dir": scenario.get("_plot_dir", "plots")}
     outcome: dict[str, list[str]] = {}

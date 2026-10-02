@@ -135,10 +135,14 @@ def load(spec: dict[str, Any]) -> HFImageClassifier:
         raise ValueError(f"scenario architecture {spec['architecture']!r} is not the "
                          f"repository's ({', '.join(archs)})")
 
-    return HFImageClassifier(
+    clf = HFImageClassifier(
         model, processor, device=resolve_device(spec.get("device", "auto")),
         cam_layer=spec.get("cam_layer"),
         decision_weights=spec.get("decision_weights"),
         context_prior=load_context_prior(spec.get("context_prior")),
         prior_strength=float(spec.get("prior_strength", 1.0)),
     )
+    if not spec.get("weights_path"):
+        from verifai.models.hub_card import read_hub_card
+        clf.hub_card = read_hub_card(spec["repo_id"], rev)
+    return clf
