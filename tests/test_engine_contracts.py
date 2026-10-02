@@ -3011,8 +3011,10 @@ def test_every_registered_metric_conforms():
     from verifai.core.suite import MEASUREMENT_VERSIONS, METRIC_VERSIONS
     from verifai.export.artifacts import _flatten
     from verifai.metrics._baseline import BY_FINDING
+    from verifai.core.findings import SUBASPECTS
     for mid, spec in METRIC_REGISTRY.items():
         assert isinstance(spec, MetricSpec), mid
+        assert spec.subaspect in SUBASPECTS[spec.pillar], f"{mid}: sub-aspect {spec.subaspect!r}"
         assert mid in METRIC_VERSIONS and mid in MEASUREMENT_VERSIONS, mid
         assert spec.finding in METRIC_NAMES, f"{mid}: no human name for {spec.finding!r}"
         assert spec.finding in BY_FINDING, f"{mid}: no reference function"
@@ -3026,6 +3028,7 @@ def test_every_registered_metric_conforms():
         for f in report["findings"]:
             where = f"{s}/{f['metric']}"
             assert f["summary"].strip(), where
+            assert f.get("subaspect") in SUBASPECTS[f["pillar"]], f"{where}: no sub-aspect"
             d = f.get("details") or {}
             if f["value"] is None:
                 assert d.get("reason") or d.get("requires"), f"{where}: no value and no reason"
@@ -3046,3 +3049,44 @@ def test_no_glossary_pattern_is_hidden_behind_an_earlier_one():
     for j, later in enumerate(patterns):
         for earlier in patterns[:j]:
             assert not fnmatch(later, earlier), f"{later!r} is shadowed by the earlier {earlier!r}"
+
+
+def test_the_registry_and_the_catalogue_name_the_same_sub_aspects():
+    """docs/pillars.md is the catalogue; the code must not drift from it. Every
+    row's sub-aspect is in the vocabulary, and a shipped metric is registered
+    under the sub-aspect its row names."""
+    import re
+    from verifai.core.findings import SUBASPECTS
+    from verifai.core.run import METRIC_REGISTRY
+    text = (REPO / "docs" / "pillars.md").read_text(encoding="utf-8")
+    text = text[text.index("### 🔒 Integrity — can any of this be believed?"):]
+    pillar, rows = None, {}
+    for line in text.splitlines():
+        m = re.match(r"^### \S+ (\w+)", line)
+        if m:
+            pillar = m.group(1).lower()
+            continue
+        m = re.match(r"^\| `([a-z_0-9]+)`\s*\|\s*([^|]+?)\s*\|.*\|\s*([^|]*)\|\s*$", line)
+        if m and pillar in SUBASPECTS and re.search(r"tier \d|\*\*shipped\*\*", m.group(3)):
+            rows[m.group(1)] = (pillar, m.group(2).strip())
+    assert len(rows) >= 50, "the catalogue was not read"
+    for name, (pil, sub) in rows.items():
+        assert sub in SUBASPECTS[pil], f"catalogue row {name!r}: {sub!r} is not a {pil} sub-aspect"
+    for mid, spec in METRIC_REGISTRY.items():
+        assert rows.get(spec.finding) == (spec.pillar, spec.subaspect), \
+            f"{mid}: registered as {spec.subaspect!r}, catalogued as {rows.get(spec.finding)}"
+
+
+def test_a_pillar_groups_its_findings_by_sub_aspect_in_report_order():
+    pytest.importorskip("streamlit")
+    sys.path.insert(0, str(REPO / "showcase"))
+    from views.report import by_subaspect
+    fs = [{"metric": "split_leakage", "subaspect": "row overlap"},
+          {"metric": "label_space", "subaspect": "compatibility"},
+          {"metric": "provenance", "subaspect": "declared origin"},
+          {"metric": "preprocessing", "subaspect": "compatibility"}]
+    assert [(s, [f["metric"] for f in g]) for s, g in by_subaspect(fs)] == [
+        ("row overlap", ["split_leakage"]), ("compatibility", ["label_space", "preprocessing"]),
+        ("declared origin", ["provenance"])]
+    old = [{"metric": "top1_accuracy"}]               # a report from before step F2
+    assert by_subaspect(old) == [(None, old)]

@@ -86,7 +86,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "row overlap"
     },
     {
       "pillar": "integrity",
@@ -120,7 +121,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "declared origin"
     },
     {
       "pillar": "integrity",
@@ -152,7 +154,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "corpus overlap"
     },
     {
       "pillar": "integrity",
@@ -186,7 +189,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "compatibility"
     },
     {
       "pillar": "integrity",
@@ -251,7 +255,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "compatibility"
     },
     {
       "pillar": "performance",
@@ -661,7 +666,8 @@
           ]
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "discrimination"
     },
     {
       "pillar": "robustness",
@@ -757,7 +763,8 @@
           "gap": 0.166
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "natural"
     },
     {
       "pillar": "fairness",
@@ -873,7 +880,8 @@
           ]
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "data"
     }
   ],
   "meta": {
@@ -887,14 +895,14 @@
     },
     "label": "ISIC corpus — as deployed",
     "metric_versions": {
-      "integrity.split_leakage": 2,
-      "integrity.provenance": 2,
-      "integrity.corpus_ancestry": 2,
-      "integrity.label_space": 2,
-      "integrity.preprocessing": 2,
-      "performance.classification": 3,
-      "robustness.corruption": 3,
-      "fairness.skin_tone": 4
+      "integrity.split_leakage": 3,
+      "integrity.provenance": 3,
+      "integrity.corpus_ancestry": 3,
+      "integrity.label_space": 3,
+      "integrity.preprocessing": 3,
+      "performance.classification": 4,
+      "robustness.corruption": 4,
+      "fairness.skin_tone": 5
     },
     "metric_ids": {
       "split_leakage": "integrity.split_leakage",
@@ -1029,5 +1037,5 @@
       }
     ]
   },
-  "created_at": "2026-10-02T16:41:02.493697+00:00"
+  "created_at": "2026-10-02T18:04:56.809084+00:00"
 }

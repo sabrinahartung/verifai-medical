@@ -33,19 +33,21 @@ from __future__ import annotations
 # Version 3 (2026-09-25): summaries a first-time reader can read — class names in
 # words, three decimals, thousands separated, en-dash intervals. Robustness also
 # gains an interval on its mean and states n.
+# Version +1 for every metric (2026-10-02, step F2): each finding carries its
+# sub-aspect. Measurement versions are unchanged — no number moved.
 METRIC_VERSIONS: dict[str, int] = {
-    "integrity.split_leakage": 2,
-    "integrity.provenance": 2,          # 2: declares that none of its counts is ranked
-    "integrity.corpus_ancestry": 2,     # 2: likewise
-    "integrity.label_space": 2,         # 2: likewise
-    "integrity.preprocessing": 2,       # C4: the preprocessing against the model's own
+    "integrity.split_leakage": 3,
+    "integrity.provenance": 3,          # 2: declares that none of its counts is ranked
+    "integrity.corpus_ancestry": 3,     # 2: likewise
+    "integrity.label_space": 3,         # 2: likewise
+    "integrity.preprocessing": 3,       # C4: the preprocessing against the model's own
                                         # 2: an unchecked run's zeros are not ranked
-    "performance.classification": 3,
-    "explainability.gradcam": 4,        # 2: every test image, against a random control
+    "performance.classification": 4,
+    "explainability.gradcam": 5,        # 2: every test image, against a random control
                                         # 4: per-image scores in the run's case table
-    "robustness.corruption": 3,         # 3: an interval on the mean, and n
-    "fairness.skin_tone": 4,           # 4: no dataset named in its text; intervals in the summary
-    "privacy.mia": 3,
+    "robustness.corruption": 4,         # 3: an interval on the mean, and n
+    "fairness.skin_tone": 5,           # 4: no dataset named in its text; intervals in the summary
+    "privacy.mia": 4,
 }
 
 

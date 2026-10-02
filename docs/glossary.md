@@ -344,6 +344,14 @@ Coverage
     6 measured · 1 not enough data · 2 not requested* — it counts what was measured, never what
     passed.
 
+Sub-aspect
+:   The level between a pillar and a metric: what kind of question about the pillar a
+    metric answers. Integrity asks four — *row overlap* (did test images appear in training?),
+    *declared origin* (where did the model come from?), *corpus overlap* (could its training
+    archive contain the test images?) and *compatibility* (do the classes and the image
+    preparation match?). A report groups a pillar's metrics under them once a pillar holds more
+    than one kind of question.
+
 Measurement version
 :   Every metric carries two version numbers. Its *version* changes with anything it reports,
     down to a reworded sentence, and is how a report knows it is behind. Its *measurement

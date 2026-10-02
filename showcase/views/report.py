@@ -31,6 +31,19 @@ from render import breadcrumb, metric_name, placeholder, render_finding
 from routing import go_to_model, go_to_overview, go_to_project
 
 
+def by_subaspect(findings: list[dict]) -> list[tuple[str | None, list[dict]]]:
+    """A pillar's findings grouped by sub-aspect, each group where it first appears.
+
+    The order is the report's own — the scenario's metric order, which follows
+    the catalogue — so the showcase needs no copy of the vocabulary. Findings
+    from before step F2 carry none and form one unnamed group.
+    """
+    groups: dict[str | None, list[dict]] = {}
+    for f in findings:
+        groups.setdefault(f.get("subaspect"), []).append(f)
+    return list(groups.items())
+
+
 def _integrity_banner(state: str, finding: dict | None):
     """Hold the page when the measurement itself is unusable or unverified.
 
@@ -349,8 +362,14 @@ def dashboard(card: dict):
         # Every section links back up: with each explanation open the page runs
         # to eleven screens, and the glance list is where a reader re-chooses.
         st.caption(f"{PILLAR_QUESTION[p]} · [↑ At a glance](#at-a-glance)")
-        for f in items:
-            render_finding(f, base)
+        groups = by_subaspect(items)
+        for sub, group in groups:
+            # A heading per sub-aspect only where a pillar has more than one: a
+            # pillar with one kind of question reads exactly as it did.
+            if sub and len(groups) > 1:
+                st.markdown(f"#### {sub[:1].upper() + sub[1:]}")
+            for f in group:
+                render_finding(f, base)
 
     st.divider()
     placeholder("tensions")

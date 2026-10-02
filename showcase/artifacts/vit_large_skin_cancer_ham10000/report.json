@@ -23,7 +23,8 @@
         "note": "Declare integrity.train_manifests (or a training: block) to enable.",
         "baseline": null
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "row overlap"
     },
     {
       "pillar": "integrity",
@@ -57,7 +58,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "declared origin"
     },
     {
       "pillar": "integrity",
@@ -91,7 +93,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "corpus overlap"
     },
     {
       "pillar": "integrity",
@@ -131,7 +134,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "compatibility"
     },
     {
       "pillar": "integrity",
@@ -203,7 +207,8 @@
           "gap": null
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "compatibility"
     },
     {
       "pillar": "performance",
@@ -616,7 +621,8 @@
           ]
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "discrimination"
     },
     {
       "pillar": "explainability",
@@ -630,7 +636,8 @@
         "architecture": "ViTForImageClassification",
         "baseline": null
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "faithfulness"
     },
     {
       "pillar": "robustness",
@@ -726,7 +733,8 @@
           "gap": 0.073
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "natural"
     },
     {
       "pillar": "fairness",
@@ -842,7 +850,8 @@
           ]
         }
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "data"
     },
     {
       "pillar": "privacy",
@@ -856,7 +865,8 @@
         "access": "weights",
         "baseline": null
       },
-      "plots": []
+      "plots": [],
+      "subaspect": "membership"
     }
   ],
   "meta": {
@@ -870,16 +880,16 @@
     },
     "label": "ViT-Large (Hub) — HAM10000 test",
     "metric_versions": {
-      "integrity.split_leakage": 2,
-      "integrity.provenance": 2,
-      "integrity.corpus_ancestry": 2,
-      "integrity.label_space": 2,
-      "integrity.preprocessing": 2,
-      "performance.classification": 3,
-      "explainability.gradcam": 4,
-      "robustness.corruption": 3,
-      "fairness.skin_tone": 4,
-      "privacy.mia": 3
+      "integrity.split_leakage": 3,
+      "integrity.provenance": 3,
+      "integrity.corpus_ancestry": 3,
+      "integrity.label_space": 3,
+      "integrity.preprocessing": 3,
+      "performance.classification": 4,
+      "explainability.gradcam": 5,
+      "robustness.corruption": 4,
+      "fairness.skin_tone": 5,
+      "privacy.mia": 4
     },
     "metric_ids": {
       "split_leakage": "integrity.split_leakage",
@@ -1037,5 +1047,5 @@
       }
     ]
   },
-  "created_at": "2026-10-02T16:46:07.092629+00:00"
+  "created_at": "2026-10-02T18:14:15.870753+00:00"
 }

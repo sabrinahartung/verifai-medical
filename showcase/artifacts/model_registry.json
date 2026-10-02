@@ -1,16 +1,16 @@
 {
   "schema": 1,
   "metric_versions": {
-    "explainability.gradcam": 4,
-    "fairness.skin_tone": 4,
-    "integrity.corpus_ancestry": 2,
-    "integrity.label_space": 2,
-    "integrity.preprocessing": 2,
-    "integrity.provenance": 2,
-    "integrity.split_leakage": 2,
-    "performance.classification": 3,
-    "privacy.mia": 3,
-    "robustness.corruption": 3
+    "explainability.gradcam": 5,
+    "fairness.skin_tone": 5,
+    "integrity.corpus_ancestry": 3,
+    "integrity.label_space": 3,
+    "integrity.preprocessing": 3,
+    "integrity.provenance": 3,
+    "integrity.split_leakage": 3,
+    "performance.classification": 4,
+    "privacy.mia": 4,
+    "robustness.corruption": 4
   },
   "measurement_versions": {
     "explainability.gradcam": 2,

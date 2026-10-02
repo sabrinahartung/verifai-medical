@@ -41,6 +41,9 @@ class MetricSpec:
     tasks: tuple[str, ...] = ("classification",)
     modalities: tuple[str, ...] | None = None
     requires: str = "labels"
+    # one of `verifai.core.findings.SUBASPECTS[pillar]`; the runner sets it on
+    # every finding the metric yields, including the row it gets when it cannot run
+    subaspect: str | None = None
 
 
 # metric id -> MetricSpec. A plain "module:function" string is still accepted
@@ -49,35 +52,39 @@ class MetricSpec:
 METRIC_REGISTRY: dict[str, MetricSpec | str] = {
     # needs the manifests, not the model at all
     "integrity.split_leakage": MetricSpec(
-        "verifai.metrics.integrity.split_leakage:run", "integrity", "split_leakage"),
+        "verifai.metrics.integrity.split_leakage:run", "integrity", "split_leakage",
+        subaspect="row overlap"),
     "integrity.provenance": MetricSpec(
-        "verifai.metrics.integrity.provenance:run", "integrity", "provenance"),
+        "verifai.metrics.integrity.provenance:run", "integrity", "provenance",
+        subaspect="declared origin"),
     "integrity.corpus_ancestry": MetricSpec(
-        "verifai.metrics.integrity.corpus_ancestry:run", "integrity", "corpus_ancestry"),
+        "verifai.metrics.integrity.corpus_ancestry:run", "integrity", "corpus_ancestry",
+        subaspect="corpus overlap"),
     # needs what the adapter records about its preprocessing, and the model's side
     "integrity.preprocessing": MetricSpec(
         "verifai.metrics.integrity.preprocessing:run", "integrity", "preprocessing",
-        modalities=("pixels",)),
+        subaspect="compatibility", modalities=("pixels",)),
     # needs the model's class list, which every adapter declares
     "integrity.label_space": MetricSpec(
-        "verifai.metrics.integrity.label_space:run", "integrity", "label_space"),
+        "verifai.metrics.integrity.label_space:run", "integrity", "label_space",
+        subaspect="compatibility"),
     "performance.classification": MetricSpec(
         "verifai.metrics.performance.classification:run", "performance", "top1_accuracy",
-        requires="probs"),
+        subaspect="discrimination", requires="probs"),
     "explainability.gradcam": MetricSpec(
         "verifai.metrics.explainability.gradcam:run", "explainability", "gradcam_faithfulness",
-        modalities=("pixels",), requires="gradients"),
+        subaspect="faithfulness", modalities=("pixels",), requires="gradients"),
     "robustness.corruption": MetricSpec(
         "verifai.metrics.robustness.corruption:run", "robustness", "corruption_stability",
-        modalities=("pixels",), requires="probs"),
+        subaspect="natural", modalities=("pixels",), requires="probs"),
     "fairness.skin_tone": MetricSpec(
         "verifai.metrics.fairness.skin_tone_ita:run", "fairness", "skin_tone_ita",
-        modalities=("pixels",), requires="probs"),
+        subaspect="data", modalities=("pixels",), requires="probs"),
     # the attacker's signal is confidence, but telling members from non-members
     # needs to know who the members were
     "privacy.mia": MetricSpec(
         "verifai.metrics.privacy.mia:run", "privacy", "membership_inference_auc",
-        requires="training_data"),
+        subaspect="membership", requires="training_data"),
 }
 
 
@@ -338,6 +345,7 @@ def run_scenario(scenario: dict[str, Any]) -> Report:
         else:
             result = _load(spec)(model, dataset, ctx)
         for f in (result if isinstance(result, list) else [result]):
+            f.subaspect = f.subaspect or spec.subaspect
             attach_baseline(f)
             report.add(f)
             outcome.setdefault(metric_id, []).append(f.verdict)

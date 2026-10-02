@@ -262,7 +262,9 @@ To list a model *before* evaluating it, run `scripts/build_model_registry.py`; i
 not evaluated.
 
 **Adding a metric** = write `run(model, dataset, ctx) -> Finding | list[Finding]`, register it in
-`METRIC_REGISTRY` as a `MetricSpec` — `pillar`, the `finding` name it returns, `tasks`,
+`METRIC_REGISTRY` as a `MetricSpec` — `pillar`, the `finding` name it returns, its `subaspect`
+(from `SUBASPECTS` in `core/findings.py`, the one its row in `docs/pillars.md` names — a test
+holds the two together), `tasks`,
 `modalities` and the lowest access level it `requires` (a test fails on a bare string). The
 runner never calls a metric the model cannot support; it writes an `unavailable` finding under
 that name with the reason, and records every registered metric's status in
