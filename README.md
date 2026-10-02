@@ -166,8 +166,8 @@ That is a deliberate design decision, not obfuscation:
 - [x] Adapter contract + capability gating, so a metric that cannot run says why instead of vanishing ([ADR 0001](docs/adr/0001-capability-gating.md))
 - [x] Provenance, corpus ancestry and label-space checks, for models whose training data we cannot inspect — the original Hub checkpoint is the first ([ADR 0002](docs/adr/0002-verifying-a-foreign-model.md))
 - [x] Hugging Face model resolution (`hf:owner/repo`) and the `transformers` adapter: a ViT-Large this project neither trained nor picked, evaluated end to end, with a model card per model ([ADR 0003](docs/adr/0003-a-model-that-describes-itself.md))
+- [ ] The classification metric catalogue, next: calibration, discrimination, operating points, group fairness, then adversarial robustness and XAI evaluation — 22 metrics over two releases
 - [ ] One command — `verifai resolve / preflight / run` — and a step-by-step guide to evaluating your own model
-- [ ] A far larger metric catalogue: calibration, subgroup fairness, adversarial robustness, XAI evaluation
 - [ ] A second domain (chest X-ray), then text
 - [ ] Generative AI: contamination, groundedness, extraction — see the roadmap
 

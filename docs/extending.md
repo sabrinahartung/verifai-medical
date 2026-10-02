@@ -236,7 +236,7 @@ The first two rows are enforced since
 registry entry is a `MetricSpec`, and a test fails otherwise. `version` lives in
 `verifai/core/suite.py`, the reference, `better`, `explain`, glossary and name rows are tested;
 `cost` and the method record are not yet. Written down here
-because the [catalogue](pillars.md) is heading for fifty-one metrics, and fifty hand-written
+because the [catalogue](pillars.md) is heading for fifty-seven metrics, and fifty hand-written
 tests would not survive contact with the first refactor. One test over the registry checks all
 of them instead, so a new metric will be *done* when every line below is true:
 

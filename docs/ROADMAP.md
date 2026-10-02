@@ -83,7 +83,8 @@ The route there is the [milestone table](#milestones): M5 to M12, one row each.
 tests, three evaluation sets, ten metrics.** [Current results](results.md) has the
 measurements; this is what they add up to. Latest release: [v0.4.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.4.0),
 which closes M5: a model from the Hub that this project neither trained nor picked, evaluated end
-to end. Next: [M6](#milestones), one command and a guide to evaluating your own model. The four findings
+to end. Next: [M7](#m7-in-steps), every metric that needs only a model's probabilities, then the rest of
+the classification catalogue in M10 — reordered 2026-10-02, metrics before more models or tooling. The four findings
 below have not moved since 2026-09-16; the fifth is new with Phase B. What else changed is
 recorded in [What has been built](#what-has-been-built).
 
@@ -156,16 +157,23 @@ phase is; this says *when*, and why in that order. Set 2026-09-24.
 | ✅ | **Release 0.3.0** · 2026-09-29 | M3, M4 and M5 Phase B on `main` and the public app: one card per pillar, text written for a reader, the coverage map, capability gating, and the first model this project did not train, with what can and cannot be verified about it ([#11](https://github.com/sabrinahartung/verifai-medical/pull/11), after the version bump [#10](https://github.com/sabrinahartung/verifai-medical/pull/10)) | [v0.3.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.3.0). Phase B was taken into this release (decided 2026-09-29) rather than held for the next one |
 | ✅ | **M5 — Someone else's model**, Phases B and C · 2026-09-25 → 10-02 | **B** (#12, released with 0.3.0): provenance, corpus ancestry and label space as integrity findings, a preprocessing fingerprint in every report, and the original Hub checkpoint evaluated as the first model this project did not train — [ADR 0002](adr/0002-verifying-a-foreign-model.md). **C** ([steps C1–C6](#phase-c-resolving-a-model-and-the-adapter-catalogue), #16–#23): a pinned Hub revision that is actually loaded, the resolver that turns a Hub link into a *draft* scenario, the `hf_image` adapter, the preprocessing compared against the model's own, a model card per model — and, as the finish line, **a skin-lesion model from the Hub that this project neither trained nor picked, evaluated end to end**: a ViT-Large, [Experiment 9](results.md#experiment-9-a-model-this-project-neither-trained-nor-picked) — [ADR 0003](adr/0003-a-model-that-describes-itself.md) | the first model this repository did not train is evaluated; the first one it did not even pick is what C makes possible. Split from D on 2026-09-29, so the working Hub example ships without waiting for the command line |
 | ✅ | **Release 0.4.0** · 2026-10-02 | M5 Phase C on `main` and the public app: the resolver, the `hf_image` adapter, the preprocessing check, a model card on every model page, the original checkpoint on Derm7pt, and a ViT-Large from the Hub this project neither trained nor picked ([#25](https://github.com/sabrinahartung/verifai-medical/pull/25), after the version bump [#24](https://github.com/sabrinahartung/verifai-medical/pull/24)) | [v0.4.0](https://github.com/sabrinahartung/verifai-medical/releases/tag/v0.4.0). M5 is closed; the next release, 0.5.0, is M6 |
-| **M6** | **One command** — Phase D | [Steps D1–D7](#phase-d-the-two-entry-tracks-one-command): `verifai resolve / preflight / run`, the per-metric `cost` moved here from M4, `per_example` capped before the catalogue grows, the studio and preflight placeholders made real, local only, and a step-by-step guide to evaluating your own model. Released as 0.5.0 | preflight is only worth having once there is more than one kind of model to preflight, which C provides. Its finish line is C's demo reproduced from nothing by three commands |
-| **M7** | **The catalogue as data** — [Phase F](#phase-f-the-metric-catalogue-the-taxonomy-becomes-data), part 1 | `performance.calibration` and `fairness.group` in every active report; one conformance test over the whole registry in place of per-metric tests; `Finding.subaspect`; presets `quick · standard · full`, priced by D2's `cost`; every shipped metric's wording given its source (the note below). Released as 0.6.0 | criteria need something to judge first. Calibration is the first metric that would have exposed `melanoma ×30` without the specificity column beside it. Depends on M6 (`cost`, `per_example` capped) |
-| **M8** | **Measurement and judgement** — [Phase G](#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) | an active report shows criteria from a named, versioned profile, visibly apart from the measurement, each with its rationale, owner and source; criteria gated on the interval; the finer status vocabulary; a comparison levelled down to the weakest access level in it; the delta judgement — a model against its own previous version, with no authored threshold; `explain.impact`. Released as 0.7.0 | the judgement layer comes once there is a catalogue worth judging, and before the case view, whose sentences are its templates. Depends on M7 |
+| **M7** | **The catalogue, part 1: every metric that needs only probabilities** — [Phase F](#phase-f-the-metric-catalogue-the-taxonomy-becomes-data), tier 1 | [Steps F1–F9](#m7-in-steps): all seven tier-1 metrics — calibration, discrimination (ROC/PR-AUC), operating points and net benefit, PPV at a stated prevalence, selective prediction, group fairness, data representation — in every active report; and the groundwork fifty metrics need: per-case data capped (from M6's D5), metric versions recorded in every snapshot and checked by the comparison, one conformance test over the registry, `Finding.subaspect`, a `cost` per metric (from M6's D2) and presets `quick · standard · full`, and every metric's wording given its source. Released as 0.5.0 | moved ahead of M6 on 2026-10-02: more metrics before more models. Tier 1 needs only a model's probabilities, so it produces numbers for any model — including the Hub models whose reports are today mostly *not computable*. Calibration is the first metric that would have exposed `melanoma ×30` without the specificity column beside it |
+| **M10** | **The catalogue, part 2: depth** — Phase F, tiers 2–3 | the nine tier-2 metrics — adversarial robustness with its threat model in `value`, the corruption severity sweep, insertion and deletion faithfulness, explanation complexity, randomisation, stability and axiomatic checks through the Quantus adapter (wrapped, never forked), calibration by group, near-duplicates — and the six tier-3 metrics the data on hand allows: **`transformer_attribution`**, so a ViT such as the C5 demo model gets an explainability finding instead of *not computable* (asked for 2026-10-02), explanation agreement, intersectional gaps, per-group and shadow membership attacks, attribute inference. Released as 0.6.0 | moved up behind M7 on 2026-10-02, so the catalogue lands in two consecutive releases. New domains then inherit it instead of every metric being ported twice. Depends on M7 (the conformance test, sub-aspects, version checks) and C3 (batching); the attribution method enters the comparability key here, rather than waiting for M8 |
+| **M6** | **One command** — Phase D | [Steps D1–D7](#phase-d-the-two-entry-tracks-one-command): `verifai resolve / preflight / run`, the studio and preflight placeholders made real, local only, and a step-by-step guide to evaluating your own model. The per-metric `cost` (D2) and the `per_example` cap (D5) moved to M7 on 2026-10-02. Released as 0.7.0 | preflight is only worth having once there is more than one kind of model to preflight, which C provides. Its finish line is C's demo reproduced from nothing by three commands. Moved behind M7 and M10 on 2026-10-02: preflight then has the whole classification catalogue to price |
+| **M8** | **Measurement and judgement** — [Phase G](#phase-g-the-findings-layer-measurement-judgement-and-the-line-between-them) | an active report shows criteria from a named, versioned profile, visibly apart from the measurement, each with its rationale, owner and source; criteria gated on the interval; the finer status vocabulary; a comparison levelled down to the weakest access level in it; the delta judgement — a model against its own previous version, with no authored threshold; `explain.impact`. Released as 0.8.0 | the judgement layer comes once there is a catalogue worth judging, and before the case view, whose sentences are its templates. Depends on M7 and M10 |
 | ◆ | *Decision point: human-in-the-loop* | whether the reviewer-feedback idea *under consideration* (below this table) becomes a milestone | once the policy layer exists, it shows where a reviewer's feedback could live. After M8 |
-| **M9** | **The case view** — [Phase E](#phase-e-the-interface), second part | on the ISIC model's HAM10000 report: a finding → its failure clusters → one case, every sentence generated from a counted pattern ([a worked example](case-view.md)); the evaluation card export, the report as a document; Derm7pt stated as excluded by its licence. Released as 0.8.0 | depth before breadth: this is what makes the ten metrics that exist convincing. Depends on M8 (the rule templates) and D5 (`per_example` kept) |
-| **M10** | **The catalogue in depth** — Phase F, tiers 2–3 | adversarial robustness with its threat model in `value`; the Quantus adapter for explanation quality, wrapped and never forked; **`transformer_attribution`**, an explanation metric for Vision Transformers, so a ViT such as the C5 demo model gets an explainability finding instead of *not computable* (asked for 2026-10-02); the corruption severity sweep; near-duplicates; the privacy metrics the access level allows. Released as 0.9.0 | new domains then inherit the catalogue instead of every metric being ported twice. Depends on C3 (batching) and M8 (comparability keys that carry method and access) |
+| **M9** | **The case view** — [Phase E](#phase-e-the-interface), second part | on the ISIC model's HAM10000 report: a finding → its failure clusters → one case, every sentence generated from a counted pattern ([a worked example](case-view.md)); the evaluation card export, the report as a document; Derm7pt stated as excluded by its licence. Released as 0.9.0 | depth before breadth: this is what makes the ten metrics that exist convincing. Depends on M8 (the rule templates) and M7's F1 (`per_example` kept) |
 | **M11** | **A second domain: chest X-ray** — [Phase H](#phase-h-domains-chest-x-ray-then-text), part 1 | a chest X-ray project in the showcase with no change to the app; `fairness.subgroup` in place of the skin-tone proxy; the dataset's licence and its known label noise stated. Released as 0.10.0 | nearly free — same adapter, same manifest format — and it turns the domain-agnostic claim into a demonstration. Depends on M7 (`fairness.group`) |
 | **M12** | **Clinical text** — Phase H, part 2 | a text classifier from the Hub evaluated end to end: `hf_text`, a manifest loader with a `text` column, text perturbation, token occlusion; performance, fairness, privacy and integrity carried over unchanged | the real port, last because it needs the adapter pattern (M5) and deletion faithfulness generalised across modalities (M10) |
 | **1.0** | **[Where it lands](#where-it-lands-10)** | M12 done, and the project's name decided | the name moves every public address, so it is settled before the release that invites readers in |
 | after 1.0 | **Generative models and safety** — [Phase I](#phase-i-generative-ai-in-the-medical-domain) | `task: generation`, the seventh pillar, and speech classification with it | the chapter after this one: where the classification assumptions end |
+
+!!! info "Reordered 2026-10-02: the catalogue first"
+    After M5, the order became M7 → M10 → M6 → M8 → M9: more metrics before more models or
+    more tooling. The milestone numbers are kept, so every earlier reference to them still
+    means the same milestone; the table lists them in the order they are built. M6's per-metric
+    `cost` (D2) and `per_example` cap (D5) moved into M7, because the catalogue needs them first.
+    Where every metric in the catalogue is scheduled: [the table under Phase F](#the-catalogue-by-milestone).
 
 **Decided now, because later milestones depend on it** (2026-09-29). Each is a constraint on a
 step of M5 or M6 that would be expensive to change once a later milestone builds on it:
@@ -175,9 +183,9 @@ step of M5 or M6 that would be expensive to change once a later milestone builds
 - **C3 — batching** is also what the Quantus adapter (M10) needs; Quantus is batch-first.
 - **C1 — identity by commit sha** is the first field of the comparability key that M8 extends
   with access level and method configuration.
-- **D2 — `cost`** is what M7's presets are priced by.
+- **D2 — `cost`** is what M7's presets are priced by (moved into M7 as F7, 2026-10-02).
 - **D3 — preflight returns ordinary findings**, so M8's policy applies to them unchanged.
-- **D5 — `per_example` is kept, not dropped.** It moves into one per-case table per run,
+- **D5 — `per_example` is kept, not dropped** (moved into M7 as F1, 2026-10-02). It moves into one per-case table per run,
   written once and referenced by the metrics — what M9 indexes. A file, never a database.
 
 **Where each placeholder on screen gets filled.** Every component in `showcase/planned.py`
@@ -474,7 +482,7 @@ text dataset to evaluate it on.
 
 ### Phase D — the two entry tracks, one command
 
-!!! info "Planned 2026-09-29 (M6) — not started"
+!!! info "Planned 2026-09-29 (M6) — not started; moved behind M7 and M10 on 2026-10-02"
     Split from M5 on 2026-09-29. The finish line is C5's demo reproduced from nothing by
     three commands.
 
@@ -488,14 +496,14 @@ One dispatcher over scripts that already exist, not a second implementation of t
 | Step | Delivers | Done when |
 |---|---|---|
 | **D1** | **`verifai` as a command.** `[project.scripts] verifai = "verifai.cli:main"`, dispatching `resolve` (C2) and `run` (`scripts/run_scenario.py`). The scripts stay, as thin wrappers, so nothing documented breaks | `uv run verifai --help` lists the subcommands; the existing scripts still work |
-| **D2** | **A cost per metric**, moved here from M4: `MetricSpec.cost`, a rough count of forward passes per sample, so a run can be priced before it starts | every registry entry declares one, which a test asserts, as it does `requires` |
+| ~~D2~~ | *Moved to M7 as F7 on 2026-10-02.* **A cost per metric**, moved here from M4: `MetricSpec.cost`, a rough count of forward passes per sample, so a run can be priced before it starts | every registry entry declares one, which a test asserts, as it does `requires` |
 | **D3** | **`verifai preflight <scenario>`.** Provenance, corpus ancestry, label space and split integrity with **no** metric run, plus the estimated cost from D2. It calls the same code in `verifai/core/integrity.py` that the runner calls, so preflight and a real run cannot disagree. This is the command to run before a long evaluation | preflight on each active scenario prints the same integrity verdicts its report carries |
 | **D4** | **`verifai run`** trains first when the scenario has a `training:` block and the checkpoint is missing, then evaluates and exports. It refuses a `draft: true` scenario | a fresh clone runs the C5 demo from `resolve` to report with three commands |
-| **D5** | **`per_example` capped** before the catalogue grows. It is written by every metric for every sample today, a [known scaling gap](#known-scaling-gaps) that a fifty-metric report would multiply. It becomes capped, or opt-in per metric | report size stops growing with the number of metrics times `n`; the metrics that render per-image views still have what they need |
+| ~~D5~~ | *Moved to M7 as F1 on 2026-10-02.* **`per_example` capped** before the catalogue grows. It is written by every metric for every sample today, a [known scaling gap](#known-scaling-gaps) that a fifty-metric report would multiply. It becomes capped, or opt-in per metric | report size stops growing with the number of metrics times `n`; the metrics that render per-image views still have what they need |
 | **D6** | **The studio and preflight pages made real**, replacing the placeholders in `showcase/planned.py`. Local only: they appear only when `torch` and `verifai` are importable and `VERIFAI_STUDIO != 0`, so the public deploy, which has neither, never shows them | the public-path tests still pass with no torch installed; locally, the studio walks from a Hub link to a report |
 | **D7** | **A guide: evaluating your own model.** One page in the docs, written for someone who has never seen this repository, that walks from a fresh clone to a report in the app. Which command to run at each step and what each one prints; the draft the resolver writes, and how to answer each kind of `TODO` (class order, preprocessing, training data, licence, label map); what preflight says and when to stop there; roughly how long a run takes on a laptop CPU, on Apple silicon and on a free GPU; which files the run writes; and where the results then appear in the app — the model page with its card, the report, the comparison. It also says what to expect that may look like a failure and is not: a provisional banner for a model whose training data cannot be checked, metrics that come back *not computable* and why, a preparation check with nothing to compare against. Both entry tracks get their walk-through: a model that is trained, and one that has to be trained first. Linked from the README and the docs' front page. Added 2026-10-02 at Sabrina's request | someone new to the project follows the page alone, from a fresh clone to the C5 demo model's report in the local app, without asking anything; every command on it is the one D1–D4 ship and runs as written; `mkdocs build --strict` is clean |
 
-Release **0.5.0** closes M6.
+Release **0.7.0** closes M6.
 
 ### Phase E — the interface
 
@@ -547,7 +555,7 @@ Phase A is the *mechanism*. This is the *content* it exists to carry — the
 aspect → sub-aspect → per-modality tree, extended to generative AI and to a seventh
 pillar, and kept in the medical domain.
 
-**The full catalogue — fifty-one metrics, each with what it establishes and what it needs —
+**The full catalogue — fifty-seven metrics, each with what it establishes and what it needs —
 is [The pillars](pillars.md).** Ten are shipped; the rest are scheduled below. That page is the reference; this one is the plan,
 and says only what order to build in and why.
 
@@ -584,17 +592,42 @@ Two schema changes, both small:
 - the Phase-A registry entry grows `modalities` beside `tasks` and `requires` — which
   *is* the taxonomy's third row: one sub-aspect, a different implementation per modality.
 
-#### Build order
+#### The catalogue by milestone
 
-Tiers, not a queue: everything in a tier is independent of everything else in it.
+Every metric in [the pillars](pillars.md) — 57, of which 10 are shipped — and the milestone that brings it. Tiers, not a queue:
+everything in a tier is independent of everything else in it. Set 2026-10-02, when the catalogue
+was moved ahead of everything else after M5.
 
-| Tier | Needs | Metrics |
+| Tier | Needs | Count | Metrics | Scheduled in |
+|---|---|---|---|---|
+| shipped | — | **10** | split leakage · provenance · corpus ancestry · label space · preprocessing · top-1 accuracy · skin-tone accuracy · corruption stability · Grad-CAM faithfulness · membership inference | in every active report |
+| **1** | nothing new: a model's probabilities | **7** | calibration · discrimination (ROC/PR-AUC) · operating points & net benefit · PPV at a stated prevalence · selective prediction · group fairness · data representation | **M7** · 0.5.0 |
+| **2** | Phase A's access levels; Quantus for the explanation checks | **9** | adversarial (FGSM · PGD · DeepFool) · corruption severity sweep · insertion+deletion faithfulness · explanation complexity · randomisation · stability · axiomatic · calibration by group · near-duplicates | **M10** · 0.6.0 |
+| **3**, with the data on hand | a ViT, sex and age columns, training members of a model trained here | **6** | `transformer_attribution` · explanation agreement · intersectional gaps · per-group membership attack · shadow membership attack · attribute inference | **M10** · 0.6.0 |
+| **3**, waiting for data | data this project does not hold yet | **4** | individual fairness (counterfactual images) · acquisition shift (a site or device column) · localisation (lesion masks) · memorisation (a model trained with canaries) | unscheduled; each when its data arrives |
+| **4** | the text domain ([Phase H](#phase-h-domains-chest-x-ray-then-text)) | 1 | text perturbation; token occlusion is planned beside it in Phase H, not yet a catalogue row | **M12** |
+| **5** | the generative task ([Phase I](#phase-i-generative-ai-in-the-medical-domain)) | **20** | everything under `task: generation`, including the whole safety pillar | after 1.0 |
+
+So the next two releases bring **22 metrics**: the seven of tier 1 in M7, and fifteen in M10. That
+is the whole classification catalogue except the four that wait for data. The shadow membership
+attack runs only on a model trained here; for a third-party checkpoint it is
+`unavailable` by design, which is the finding.
+
+#### M7 in steps
+
+Planned 2026-10-02. One branch and one pull request per step, as in Phase C.
+
+| Step | Delivers | Done when |
 |---|---|---|
-| **1** | nothing new — can land before Phase A | calibration · ROC/PR discrimination · operating points & net benefit · selective prediction · PPV at a stated prevalence · group fairness · data representation · provenance ✅ · label space ✅ · preprocessing fingerprint ✅ |
-| **2** | Phase A capability gating | adversarial (FGSM · PGD · DeepFool) · corruption severity sweep · XAI complexity · XAI randomisation · XAI stability · insertion+deletion faithfulness · calibration by group · corpus ancestry ✅ · near-duplicates |
-| **3** | more data, masks, or a model we trained | individual fairness · intersectional gaps · acquisition shift · per-group MIA · shadow MIA · memorisation · attribute inference · localisation · explanation agreement |
-| **4** | the text domain ([Phase H](#phase-h-domains-chest-x-ray-then-text)) | text perturbation · token occlusion |
-| **5** | the generative task ([Phase I](#phase-i-generative-ai-in-the-medical-domain)) | everything under `task: generation`, including the whole safety pillar |
+| **F1** | **Groundwork before the catalogue grows.** `per_example` capped and moved into one per-case table per run, written once and referenced by the metrics (from D5). Every snapshot records the metric versions behind its numbers, and the comparison view refuses to plot two runs whose versions differ — the same rule as the manifest hash, one level down. One **conformance test over the registry** replaces per-metric tests, plus a test that no glossary pattern is shadowed by an earlier one | report size stops growing with metrics × `n`; a version mismatch blocks a comparison with its reason; the conformance test covers all ten shipped metrics |
+| **F2** | **`Finding.subaspect`**, and the report groups pillar → sub-aspect → metric | every shipped metric declares one, taken from [the pillars](pillars.md); the report reads unchanged with one metric per sub-aspect |
+| **F3** | **`performance.calibration`.** Expected calibration error with a bootstrap interval, Brier score, and a reliability chart; per class | measured on all six active configurations; Derm7pt shows whether calibration breaks under the shift Experiment 7 measured |
+| **F4** | **`fairness.group` and `fairness.data_representation`.** Sensitivity, specificity and PPV per sex, age band and body site, with Wilson intervals; a gap is claimed only when the groups' intervals separate. And who is in the test set at all, per group, so an empty or tiny group reads as such | HAM10000 grouped by sex, age band and site; Derm7pt by sex only, saying why |
+| **F5** | **`performance.discrimination` and `performance.prevalence_ppv`.** ROC-AUC and PR-AUC per class with Hanley–McNeil intervals; PPV recomputed at a stated prevalence, so a figure from an enriched test set is not read as one from a clinic | per-class AUCs with intervals on all six active configurations |
+| **F6** | **`performance.operating_points` and `performance.selective_prediction`.** The sensitivity/specificity frontier, Youden's J and net benefit across a range of harm ratios — a curve, never a chosen point; and accuracy against coverage when the model may abstain on its least confident cases | melanoma's curve on all six; the `×30` decision rule placed on it |
+| **F7** | **A `cost` per metric and presets** (from D2): `MetricSpec.cost`, a rough count of forward passes per sample, and `quick · standard · full` | every registry entry declares a cost, which the conformance test asserts; a scenario can name a preset instead of a metric list |
+| **F8** | **Every metric's wording given its source**, shipped and new, cited in [the references](references.md) and marked *Verified* only from the authors' own page | no metric's `explain` text without a citation where its method comes from the literature |
+| **F9** | **The record and release 0.5.0.** Experiment 10 in [Current results](results.md): what the new metrics show across the six active configurations; glossary entries for every new term; a version bump and `dev` → `main` | `mkdocs build --strict` is clean; v0.5.0 published |
 
 **Start with `performance.calibration`.** It would have exposed `melanoma ×30` without
 needing the specificity column beside it; calibration is the first thing to break under
