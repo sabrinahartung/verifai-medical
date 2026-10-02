@@ -297,6 +297,14 @@ Preprocessing check
     training record here, so its reports say the preprocessing *cannot be checked* — which is
     not the same as a match.
 
+Resolver · draft scenario
+:   The resolver turns a Hugging Face link into a *draft* scenario: everything the repository
+    says about the model at one commit — its class order, its preprocessing, its licence, what it
+    was trained on — filled in, and a `TODO` for everything it cannot say. A draft never runs; a
+    person answers the TODOs first. The C5 model resolved with twelve, all about the evaluation
+    rather than the model: which test set, and which of the test set's labels is which of the
+    model's classes.
+
 Model card
 :   What a model *is*, as opposed to how it did: where the weights come from and at which
     version, the licence, the architecture, the classes, how images are prepared, and what it

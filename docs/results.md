@@ -661,7 +661,7 @@ intervals. On melanoma, a J lead of 0.068 becomes a deficit of 0.022: it keeps i
 ## Experiment 9 — a model this project neither trained nor picked
 
 The finish line of Phase C (step C5, 2026-10-02): a skin-lesion classifier from the Hugging Face
-Hub, `Kuldeepmishra3/vit-large-skin-cancer-ham10000` at commit `21cb7e3` — a ViT-Large (303M
+Hub, `Kuldeepmishra3/vit-large-skin-cancer-ham10000` at commit `21cb7e3` [[52]](references.md#ref-52) — a ViT-Large (303M
 parameters), MIT-licensed, whose model card names `marmal88/skin_cancer`, the HAM10000
 repackaging, as its training data. It was chosen from the Hub's 235 skin-lesion image
 classifiers against the [C5 criteria](ROADMAP.md#phase-c-resolving-a-model-and-the-adapter-catalogue).

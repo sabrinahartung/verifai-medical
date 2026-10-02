@@ -156,7 +156,10 @@ apply to the scenario's `task:`, runs the integrity guard, then each metric in t
 `metrics:` list — except that a metric needing more access than the model gives is never called
 and becomes an `unavailable` finding with the reason — and writes the artifact folder, with a
 coverage row for every registered metric. How the gate decides:
-[ADR 0001](adr/0001-capability-gating.md). Because the showcase reads
+[ADR 0001](adr/0001-capability-gating.md). For a model from the Hub it first downloads the weights,
+the processor and the model card at the pinned commit, once per commit, and records the card's
+header in `report.meta.hub_card`; a model that is not yet a scenario starts one step earlier, with
+the resolver ([ADR 0003](adr/0003-a-model-that-describes-itself.md)). Because the showcase reads
 committed files, **pushing is deploying** — Streamlit Community Cloud redeploys on push.
 
 ## Measured performance

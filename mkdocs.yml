@@ -53,6 +53,7 @@ nav:
           - adr/index.md
           - "0001 · Capability gating": adr/0001-capability-gating.md
           - "0002 · Verifying a foreign model": adr/0002-verifying-a-foreign-model.md
+          - "0003 · A model that describes itself": adr/0003-a-model-that-describes-itself.md
   - Evaluation:
       - The pillars: pillars.md
       - Split integrity: integrity.md
