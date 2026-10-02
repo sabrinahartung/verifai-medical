@@ -5,7 +5,7 @@
 # checked against the six C5 criteria. None passed all six; this one passes every
 # required check and misses only the preference for a CNN: it is a Vision
 # Transformer, so Grad-CAM reports *not computable* — the explanation metric for
-# transformers is planned for M10 (`transformer_attribution`).
+# transformers is planned for M7 (`transformer_attribution`).
 #
 # Drafted by `scripts/resolve_model.py hf:Kuldeepmishra3/vit-large-skin-cancer-ham10000
 # --dataset data/manifests/ham10000_test.csv`. Resolved from the repository itself:
