@@ -146,6 +146,31 @@ almost always an artefact. Read sensitivity next to specificity or PPV, never al
 The order the work is done in. The [platform plan](#the-platform-plan) describes *what* each
 phase is; this says *when*, and why in that order. Set 2026-09-24.
 
+!!! tip "How to read this plan: phases, milestones, steps"
+    **Phases** (letters A–I) are *what* gets built, grouped by topic: Phase F is the metric
+    catalogue, Phase D the one command. They are described under
+    [the platform plan](#the-platform-plan). The letters were given when the plan was written
+    and keep that order, so they do not run in build order.
+
+    **Milestones** (M1–M12) are *when*: one release each, in the order they are built. A
+    milestone delivers a phase, a part of one, or two together — M5 was Phases B and C; Phase F
+    is split across M6 and M7.
+
+    **Steps** are a phase's letter and a number: **F1** is step 1 of Phase F, as C1–C6 were the
+    steps of Phase C. Each step is one branch and one pull request with its own finish line.
+
+    | Phase | Topic | Milestone |
+    |---|---|---|
+    | A | the two contracts, capability gating | M4 ✅ |
+    | B | what can be verified about someone else's model | M5 ✅ |
+    | C | resolving a Hub model, the `hf_image` adapter | M5 ✅ |
+    | E | the interface | ✅ first, and the case view in M10 |
+    | F | the metric catalogue | M6 (tier 1), M7 (tiers 2–3) |
+    | D | one command | M8 |
+    | G | measurement and judgement | M9 |
+    | H | new domains: chest X-ray, then text | M11, M12 |
+    | I | generative AI and safety | after 1.0 |
+
 | | Milestone | Delivers | Why in this position |
 |---|---|---|---|
 | ✅ | **Interface** · 2026-09-19 → 24 | Projects → models → a configuration's report; the report laid out for a first-time reader; the comparison turned around; the model registry. [UI/UX design](ui-ux-design.md) has the detail | Phase E ahead of Phase A, deliberately: every later phase ends on screen, and the screen could not yet say what a model was |
