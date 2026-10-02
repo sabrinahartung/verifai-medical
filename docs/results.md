@@ -691,7 +691,7 @@ check** is *measured* for the first time on a model from outside: the model's ow
 processor (224×224, mean and std 0.5) prepares every image, so there is nothing to get wrong.
 And **Grad-CAM is not computable**: a Vision Transformer has no convolutional layer for it to
 target, and the report says so instead of inventing a map. An explanation metric for
-transformers is planned for M10 (`transformer_attribution` in [the pillars](pillars.md)).
+transformers is planned for M7 (`transformer_attribution` in [the pillars](pillars.md)).
 
 ### Highest accuracy on the unseen clinic, and the accuracy trap again
 

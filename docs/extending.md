@@ -93,6 +93,7 @@ domain possible at all. Read off the metrics as they stand:
 | `dataset.load(sample)` → the payload (today a PIL image) | dataset | all |
 | `sample.id`, `sample.label`, `sample.meta` | sample | all |
 | `model.classes`, `model.predict_probs(payload)` | model | all |
+| `model.predict_probs_batch(payloads)` — optional; call it through `predict_many` | model | performance, robustness |
 | `model.decide(probs, meta=None)`, `model.rank(probs, meta=None)` | model | all |
 | `model.torch_module`, `model.cam_layer`, `model.to_tensor(payload)` | model | Grad-CAM only |
 | the payload being *pixels* | dataset | the ITA fairness metric only |
@@ -104,10 +105,45 @@ integrity checks do not touch the model's outputs at all: they need a payload, a
 probability vector and a decision rule. A text or audio adapter that returns
 `{class: probability}` from `predict_probs` would run them unchanged.
 
-The last two rows are the genuinely domain-bound part, and the roadmap's first phase turns
-that from an implicit assumption into a declared capability, so a metric whose requirement an
-adapter cannot meet is reported `unavailable` with a reason instead of crashing. Until then:
-if you write a metric that needs more than the first five rows, say so in its docstring.
+The rows that need the network itself or pixels are the genuinely domain-bound part. They are
+a declared capability, not an assumption: a metric registers the access level and the kind of
+data it needs, and the runner reports it `unavailable` with the reason when a model cannot meet
+it, rather than calling it and crashing ([ADR 0001](adr/0001-capability-gating.md)).
+
+## What a new metric can reuse
+
+Most of a new metric is already written. Before writing a helper, check these:
+
+| Need | Use | Where |
+|---|---|---|
+| scores for many images | `predict_many(model, imgs)` — batches when the adapter can, one at a time when it cannot | `verifai/metrics/_common.py` |
+| the model's decision for one case | `model.decide(probs, meta)` and `model.rank(probs, meta)` — never `argmax`, so a scenario's decision weights apply | the model adapter |
+| an interval on a proportion | `wilson(successes, n)` — sound at 0, at 1 and at small `n`, where the normal approximation is not | `verifai/metrics/_stats.py` |
+| an interval on an AUC | `auc_ci(auc, n_pos, n_neg)` — Hanley–McNeil | `_stats.py` |
+| an interval on a mean | `mean_ci(values)` — for paired differences, as Grad-CAM uses | `_stats.py` |
+| PPV where the model is deployed | `ppv_at_prevalence(sens, spec, prevalence)` — Bayes at a *stated* prevalence | `_stats.py` |
+| a number quoted with its interval | `fmt(value, ci)` → `0.638 [0.56–0.71]` | `_stats.py` |
+| a class id in a sentence | `class_name("melanocytic_Nevi")` → `melanocytic nevi` | `_common.py` |
+| what the number is compared with | a reference function in `BY_FINDING` — an ideal, chance, or a control measured in the same run; the runner attaches it to every finding, and only a reference that clears is marked *established* | `verifai/metrics/_baseline.py` |
+| a chart | `details["chart"]` with `kind` `bar` · `line` · `heatmap` · `scale` · `images`; a new kind means touching the app, so reuse one | `showcase/render.py::render_chart` |
+| a name and a reading in the comparison | an entry in `GLOSSARY` and in `METRIC_NAMES` | `verifai/core/glossary.py` |
+| a version | one line in `METRIC_VERSIONS`, bumped whenever what the metric reports changes | `verifai/core/suite.py` |
+| sample metadata | `sample.meta["sex"]`, `["age"]`, `["localization"]`, `["lesion_id"]` — whatever columns the manifest carries | the dataset |
+| image corruptions | `_noise`, `_blur`, `_bright`, `_jpeg` — the four the robustness metric applies; noise draws from the generator it is given | `_common.py` |
+
+### Ready per tier
+
+The [catalogue](pillars.md) sorts the planned metrics into tiers by what they need. Against what
+exists today:
+
+| Tier | Milestone | What exists | What is still to build |
+|---|---|---|---|
+| **1** — probabilities only | M6 | everything above: probabilities, labels, metadata, intervals | a bootstrap interval for calibration error (step F3); sub-aspects, versions in snapshots and the conformance test (F1, F2) |
+| **2** — attacks, explanation quality | M7 | gradients through `model.torch_module` for the attacks; Grad-CAM's deletion test to generalise | **the Quantus adapter**: one module that wraps Quantus unmodified (it is LGPL-3.0); the attribution method in the comparability key |
+| **3** — with the data on hand | M7 | a ViT, sex and age columns, the training members of the models trained here | the attribution method for transformers (`transformer_attribution`) |
+
+The schedule, and the four tier-3 metrics that wait for data:
+[the catalogue by milestone](ROADMAP.md#the-catalogue-by-milestone).
 
 ## Adding a metric
 
@@ -236,7 +272,7 @@ The first two rows are enforced since
 registry entry is a `MetricSpec`, and a test fails otherwise. `version` lives in
 `verifai/core/suite.py`, the reference, `better`, `explain`, glossary and name rows are tested;
 `cost` and the method record are not yet. Written down here
-because the [catalogue](pillars.md) is heading for fifty-one metrics, and fifty hand-written
+because the [catalogue](pillars.md) is heading for fifty-seven metrics, and fifty hand-written
 tests would not survive contact with the first refactor. One test over the registry checks all
 of them instead, so a new metric will be *done* when every line below is true:
 

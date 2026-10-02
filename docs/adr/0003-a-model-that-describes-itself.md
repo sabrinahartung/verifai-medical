@@ -142,7 +142,7 @@ out of the comparison with that reason.
   it; nothing verifies it, and without an image list leakage on an overlapping corpus cannot be
   ruled out ([ADR 0002](0002-verifying-a-foreign-model.md)).
 - **A Vision Transformer has no Grad-CAM.** It reports *not computable*; `transformer_attribution`
-  is planned for M10.
+  is planned for M7.
 - **A run needs the network once per commit** for the card and the processor, as it already did
   for the weights; cached files serve later runs.
 - **Per-class comparison splits across naming schemes.** Two models scored on one test set that

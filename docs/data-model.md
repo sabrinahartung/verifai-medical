@@ -68,7 +68,7 @@ inline — nothing here is aspirational unless it is labelled.
 `Finding.subaspect`
 : Optional, and the grouping level between pillar and metric — `calibration` under
     performance, `adversarial` under robustness, `randomisation` under explainability. At six
-    metrics a flat list per pillar was fine; at the [catalogue's](pillars.md) fifty-one it is a
+    metrics a flat list per pillar was fine; at the [catalogue's](pillars.md) fifty-seven it is a
     wall, so the dashboard groups pillar → sub-aspect → metric.
 
 `Verdict`

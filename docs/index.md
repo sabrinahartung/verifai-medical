@@ -118,7 +118,7 @@ than blended. The vocabulary is the same on every page:
 | **Running today** · **shipped** | implemented, registered, and producing findings in the artifacts committed to this repository |
 | **Planned** | designed and argued for, and not yet written. A heading or a lead line says so before you read the section |
 
-Ten metrics run today; the catalogue plans fifty-one. A document that read as though all of it
+Ten metrics run today; the catalogue plans forty-seven more. A document that read as though all of it
 existed would be the same kind of overclaim this project was built to catch — so
 [The pillars](pillars.md) opens with what runs, and [the roadmap](ROADMAP.md) is the only page
 that is a plan from top to bottom.

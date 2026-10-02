@@ -179,7 +179,7 @@ a **counted pattern** and not a cause.
 
 ## What this page is asking for
 
-*Scheduled as [M9](ROADMAP.md#milestones), directly after the findings layer (M8), which supplies the rule templates.*
+*Scheduled as [M10](ROADMAP.md#milestones), directly after the findings layer (M9), which supplies the rule templates.*
 
 Three things, in increasing cost:
 
