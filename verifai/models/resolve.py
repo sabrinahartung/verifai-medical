@@ -123,7 +123,8 @@ def _trained_on(card_datasets: list[str], corpora: dict[str, dict[str, Any]]) ->
                      f"delete this key: an unlisted corpus stays unknown"), [note])
     corpora_ids = sorted(set(resolved.values()))
     return ({"corpora": corpora_ids,
-             "basis": "model card metadata (datasets: " + ", ".join(card_datasets) + ")"},
+             "basis": "model card metadata (datasets: "
+                      + ", ".join(f"`{d}`" for d in card_datasets) + ")"},
             [note])
 
 
