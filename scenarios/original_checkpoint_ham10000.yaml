@@ -71,6 +71,7 @@ metrics:
   - "integrity.label_space"
   - "integrity.preprocessing"
   - "performance.classification"
+  - "performance.calibration"
   - "explainability.gradcam"
   - "robustness.corruption"
   - "fairness.skin_tone"

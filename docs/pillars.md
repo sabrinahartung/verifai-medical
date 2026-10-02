@@ -36,17 +36,17 @@ four cannot:
 
 !!! tip "How to read this page"
     **Running today** means implemented, registered, and producing findings in the published
-    artifacts — ten metrics. **Planned** means designed and argued for, and not yet written.
+    artifacts — eleven metrics. **Planned** means designed and argued for, and not yet written.
     Every table row carries its own status, and the [roadmap](ROADMAP.md) holds the order.
     The distinction is kept visible on purpose: a catalogue that reads as though it all exists
     would be the same kind of overclaim this project was built to catch.
 
 ---
 
-## Running today — ten metrics
+## Running today — eleven metrics
 
 Everything in this section is implemented, registered, and producing findings in the published
-artifacts. One metric per pillar, and five for integrity — the split check, the three checks
+artifacts. One metric per pillar, two for performance, and five for integrity — the split check, the three checks
 added for models this project did not train
 ([ADR 0002](adr/0002-verifying-a-foreign-model.md)), and the preprocessing check. Each states its own evidence gate, and none of them scores the
 model against a threshold — the vocabulary is `measured` · `insufficient` · `unavailable` ·
@@ -128,6 +128,28 @@ flowchart LR
     badly without moving the headline at all.
 
 Evidence gate: `insufficient` below **n = 30**.
+
+### Performance — `calibration`
+
+Whether the model's stated confidence means what it says: when it calls an image a melanoma at
+90%, is it right about nine times in ten? Measured over the class the model decides on, through
+the decision rule, never `argmax`. Since step F3 (2026-10-02):
+
+- **Expected calibration error** over ten confidence bins [[53]](references.md#ref-53)
+  [[15]](references.md#ref-15), with a 95% bootstrap interval, and a **reliability chart**: stated
+  confidence against the share actually right, per bin, with Wilson intervals and the diagonal
+  where the two agree.
+- **The control it is read against.** The error is biased upwards on any finite sample — a
+  perfectly calibrated model never scores 0 — so it is compared with the error a calibrated model
+  reaches by chance on the same images: the outcomes are redrawn from the model's own stated
+  confidences, a thousand times, and the 95th percentile is the bar
+  [[54]](references.md#ref-54). Miscalibration is *established* only above it.
+- **Brier score** [[55]](references.md#ref-55), with an interval, and **calibration in the large**
+  per class: the average probability the model gives each class against how often it occurs.
+
+On the ISIC model's HAM10000 run the stated confidence averages 0.859 against an accuracy of 0.806:
+overconfident by 5.3 points, with an error of 0.054 [0.04–0.07] against 0.024 for a calibrated
+model. Evidence gate: `insufficient` below **n = 30**.
 
 ### Fairness — `skin_tone_ita`
 
@@ -292,7 +314,7 @@ reason, never a silent absence and never an invented number.
 | Metric | Sub-aspect | What it establishes | Status |
 |---|---|---|---|
 | `top1_accuracy` | discrimination | top-1 and balanced accuracy, per-class sensitivity / specificity / PPV with Wilson intervals, top-3 differential accuracy | **shipped** |
-| `calibration` | calibration | do the probabilities mean what they say: reliability curve, ECE, MCE, Brier score, calibration intercept and slope [[15]](references.md#ref-15) [[16]](references.md#ref-16) | tier 1 |
+| `calibration` | calibration | do the probabilities mean what they say: reliability curve, ECE against a calibrated control, Brier score, calibration in the large per class [[15]](references.md#ref-15) [[53]](references.md#ref-53)–[[55]](references.md#ref-55) — **shipped** in F3; the maximum calibration error and calibration intercept and slope [[16]](references.md#ref-16) are not yet | **shipped** |
 | `discrimination_auc` | discrimination | per-class ROC-AUC *and* PR-AUC with intervals — PR-AUC because ROC flatters a model on an imbalanced class | tier 1 |
 | `operating_points` | decision quality | the sensitivity/specificity frontier, Youden's J, and net benefit across a range of harm ratios [[17]](references.md#ref-17). It reports the **curve**, never a chosen point: which harm ratio applies is the reader's judgement, not the metric's | tier 1 |
 | `prevalence_ppv` | decision quality | PPV at a *stated deployment* prevalence rather than the test set's, because the same model has a different PPV in a screening clinic and a referral clinic | tier 1 |

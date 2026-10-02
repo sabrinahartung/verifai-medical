@@ -673,6 +673,247 @@
       "subaspect": "discrimination"
     },
     {
+      "pillar": "performance",
+      "metric": "calibration",
+      "domain": "image",
+      "value": {
+        "ece": 0.0544,
+        "ece_ci": [
+          0.0414,
+          0.0726
+        ],
+        "ece_if_calibrated": 0.024,
+        "brier": 0.2694,
+        "brier_ci": [
+          0.2442,
+          0.2946
+        ],
+        "mean_confidence": 0.8591,
+        "confidence_gap": 0.0527,
+        "n_calibration": 1493,
+        "bins": 10,
+        "per_class_calibration": {
+          "actinic_keratoses": {
+            "predicted": 0.0257,
+            "observed": 0.0355,
+            "observed_ci": [
+              0.0272,
+              0.0461
+            ]
+          },
+          "basal_cell_carcinoma": {
+            "predicted": 0.0525,
+            "observed": 0.0509,
+            "observed_ci": [
+              0.0409,
+              0.0633
+            ]
+          },
+          "benign_keratosis-like_lesions": {
+            "predicted": 0.1109,
+            "observed": 0.1052,
+            "observed_ci": [
+              0.0906,
+              0.1217
+            ]
+          },
+          "dermatofibroma": {
+            "predicted": 0.0176,
+            "observed": 0.0087,
+            "observed_ci": [
+              0.0051,
+              0.0148
+            ]
+          },
+          "melanocytic_Nevi": {
+            "predicted": 0.6292,
+            "observed": 0.6758,
+            "observed_ci": [
+              0.6517,
+              0.6991
+            ]
+          },
+          "melanoma": {
+            "predicted": 0.1455,
+            "observed": 0.1092,
+            "observed_ci": [
+              0.0943,
+              0.126
+            ]
+          },
+          "vascular_lesions": {
+            "predicted": 0.0186,
+            "observed": 0.0147,
+            "observed_ci": [
+              0.0098,
+              0.0222
+            ]
+          }
+        }
+      },
+      "verdict": "measured",
+      "summary": "Expected calibration error 0.054 [0.04–0.07] over 1,493 images: the model's stated confidence averages 0.859 against an accuracy of 0.806, overconfident by 5.3 points. A perfectly calibrated model would reach up to 0.024 on this many images by chance alone. Furthest off on average: melanocytic nevi, given 0.629 on average and present in 0.676 of the images.",
+      "details": {
+        "explain": {
+          "what": "When the model calls an image a melanoma with 90% confidence, is it right about nine times in ten? That is calibration: whether the model's percentages mean what they say. Two models can have the same accuracy while one says 90% when it is right half the time — and a reader, or a doctor, acts on the percentage. The expected calibration error averages the gap between stated confidence and actual accuracy across the images; the Brier score measures how far the probabilities sit from what happened.",
+          "how": "Each point is a group of images the model was similarly sure about: how sure it said it was (across) against how often it was right (up), with a 95% interval. On the dashed diagonal, confidence and accuracy agree. Points below it mean the model was overconfident there; above it, too cautious. Points from few images have wide intervals, and a gap inside the interval is no evidence of anything. The result above also gives the error a perfectly calibrated model would show on this many images by chance — the real error only means something above that.",
+          "limits": "Calibration is about the model's percentages, not its decisions: a well-calibrated model can still miss most melanomas, and a badly calibrated one can rank cases well. It is measured on these images, at this mix of diagnoses; at a clinic with another mix the same model can be calibrated differently. And the ten groups are a convention — other groupings give somewhat different numbers, which is why the error is compared with a control measured the same way, never with zero."
+        },
+        "better": {
+          "ece": "lower",
+          "brier": "lower"
+        },
+        "reliability": [
+          {
+            "from": 0.3,
+            "to": 0.4,
+            "n": 19,
+            "confidence": 0.36386865691134807,
+            "accuracy": 0.21052631578947367,
+            "accuracy_ci": [
+              0.0851,
+              0.4333
+            ]
+          },
+          {
+            "from": 0.4,
+            "to": 0.5,
+            "n": 79,
+            "confidence": 0.45936373140238507,
+            "accuracy": 0.31645569620253167,
+            "accuracy_ci": [
+              0.2245,
+              0.4255
+            ]
+          },
+          {
+            "from": 0.5,
+            "to": 0.6,
+            "n": 113,
+            "confidence": 0.5458350629933113,
+            "accuracy": 0.5575221238938053,
+            "accuracy_ci": [
+              0.4656,
+              0.6457
+            ]
+          },
+          {
+            "from": 0.6,
+            "to": 0.7,
+            "n": 106,
+            "confidence": 0.6474335148649396,
+            "accuracy": 0.5566037735849056,
+            "accuracy_ci": [
+              0.4617,
+              0.6475
+            ]
+          },
+          {
+            "from": 0.7,
+            "to": 0.8,
+            "n": 117,
+            "confidence": 0.7503107256359525,
+            "accuracy": 0.6752136752136753,
+            "accuracy_ci": [
+              0.586,
+              0.7533
+            ]
+          },
+          {
+            "from": 0.8,
+            "to": 0.9,
+            "n": 148,
+            "confidence": 0.8573158198111767,
+            "accuracy": 0.7297297297297297,
+            "accuracy_ci": [
+              0.653,
+              0.7948
+            ]
+          },
+          {
+            "from": 0.9,
+            "to": 1.0,
+            "n": 911,
+            "confidence": 0.9818103827707854,
+            "accuracy": 0.9506037321624589,
+            "accuracy_ci": [
+              0.9345,
+              0.9629
+            ]
+          }
+        ],
+        "chart": {
+          "kind": "line",
+          "diagonal": true,
+          "title": "Stated confidence against accuracy — 1,493 images in 7 groups",
+          "x": [
+            0.3639,
+            0.4594,
+            0.5458,
+            0.6474,
+            0.7503,
+            0.8573,
+            0.9818
+          ],
+          "y": [
+            0.2105,
+            0.3165,
+            0.5575,
+            0.5566,
+            0.6752,
+            0.7297,
+            0.9506
+          ],
+          "y_lo": [
+            0.0851,
+            0.2245,
+            0.4656,
+            0.4617,
+            0.586,
+            0.653,
+            0.9345
+          ],
+          "y_hi": [
+            0.4333,
+            0.4255,
+            0.6457,
+            0.6475,
+            0.7533,
+            0.7948,
+            0.9629
+          ],
+          "hover": [
+            "stated 0.36, right 0.21 on 19 images",
+            "stated 0.46, right 0.32 on 79 images",
+            "stated 0.55, right 0.56 on 113 images",
+            "stated 0.65, right 0.56 on 106 images",
+            "stated 0.75, right 0.68 on 117 images",
+            "stated 0.86, right 0.73 on 148 images",
+            "stated 0.98, right 0.95 on 911 images"
+          ],
+          "x_title": "Stated confidence",
+          "y_title": "Share actually right"
+        },
+        "baseline": {
+          "kind": "control",
+          "value": 0.024,
+          "basis": "the error a perfectly calibrated model reaches by chance on the same images, 95 times in 100",
+          "cleared": true,
+          "claim": "The stated confidence departs from the accuracy more than a perfectly calibrated model's would on this many images: error 0.054 [0.04–0.07] against up to 0.024 by chance.",
+          "gap": 0.0304
+        },
+        "cases": {
+          "file": "cases.csv",
+          "columns": [
+            "calibration.confidence",
+            "calibration.brier"
+          ]
+        }
+      },
+      "plots": [],
+      "subaspect": "calibration"
+    },
+    {
       "pillar": "explainability",
       "metric": "gradcam_faithfulness",
       "domain": "image",
@@ -1084,6 +1325,7 @@
       "integrity.label_space": 3,
       "integrity.preprocessing": 3,
       "performance.classification": 4,
+      "performance.calibration": 1,
       "explainability.gradcam": 5,
       "robustness.corruption": 4,
       "fairness.skin_tone": 5,
@@ -1096,6 +1338,7 @@
       "label_space": "integrity.label_space",
       "preprocessing": "integrity.preprocessing",
       "top1_accuracy": "performance.classification",
+      "calibration": "performance.calibration",
       "gradcam_faithfulness": "explainability.gradcam",
       "corruption_stability": "robustness.corruption",
       "skin_tone_ita": "fairness.skin_tone",
@@ -1189,6 +1432,14 @@
         "reachable": true
       },
       {
+        "metric": "performance.calibration",
+        "pillar": "performance",
+        "finding": "calibration",
+        "requires": "probs",
+        "status": "measured",
+        "reachable": true
+      },
+      {
         "metric": "explainability.gradcam",
         "pillar": "explainability",
         "finding": "gradcam_faithfulness",
@@ -1222,5 +1473,5 @@
       }
     ]
   },
-  "created_at": "2026-10-02T18:12:30.096918+00:00"
+  "created_at": "2026-10-02T19:34:07.563481+00:00"
 }

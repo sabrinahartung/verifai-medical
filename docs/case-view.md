@@ -5,8 +5,8 @@
     below are **fabricated for the purpose of designing the interface**, in the same spirit as
     the `sample: true` flag that makes the app put a warning banner on placeholder data. Nothing here
     may be quoted as a result. For measurements that are real, read
-    [Current results](results.md); for the ten metrics that actually run, read
-    [The pillars → Running today](pillars.md#running-today-ten-metrics).
+    [Current results](results.md); for the eleven metrics that actually run, read
+    [The pillars → Running today](pillars.md#running-today-eleven-metrics).
 
     This page exists because "a Sonar-style case view" is easy to say and hard to picture. It
     is a sketch of the destination, not a commitment to it — the reasoning behind it is in
