@@ -21,26 +21,14 @@ import json
 
 import streamlit as st
 
-from catalog import (ACCESS_LABEL, COVERAGE, PILLARS, PILLAR_QUESTION, VERDICT, VERDICT_ORDER,
+from catalog import (ACCESS_LABEL, COVERAGE, PILLARS, PILLAR_QUESTION, VERDICT,
+                     coverage_counts, integrity_state,
                      normalise_verdict)
 from registry import (dataset_name, decision_rule, is_archived, load_registry,
                       model_of_scenario, out_of_date)
+from model_card import card_dialog
 from render import breadcrumb, metric_name, placeholder, render_finding
 from routing import go_to_model, go_to_overview, go_to_project
-
-
-def integrity_state(findings: list[dict]) -> tuple[str, dict | None]:
-    """The report's integrity status, and the finding that decided it.
-
-    No integrity finding at all is `unavailable` — an evaluation that never
-    checked its split has exactly the standing of one that could not.
-    """
-    items = [f for f in findings if f.get("pillar") == "integrity"]
-    if not items:
-        return "unavailable", None
-    worst = max(items, key=lambda f: VERDICT_ORDER.get(
-        normalise_verdict(f.get("verdict"), "integrity"), 1))
-    return normalise_verdict(worst.get("verdict"), "integrity"), worst
 
 
 def _integrity_banner(state: str, finding: dict | None):
@@ -94,10 +82,15 @@ def _identity(card: dict, report: dict, model: dict | None, config: dict | None)
     if card.get("description"):
         st.caption(card["description"])
     if model and config:
-        st.markdown(
+        left, right = st.columns([5, 1.2], vertical_alignment="center")
+        left.markdown(
             f"A configuration of **{model['name']}** · decision rule: "
             f"{decision_rule(config['decision_weights'])} · scored on the "
             f"{dataset_name(ev.get('manifest'))}" + (f" ({n:,} images)" if n else ""))
+        if right.button("Model card", icon="🪪", key="model_card",
+                        help="What this model is — source, licence, classes, input, training "
+                             "data — each line read from a file."):
+            card_dialog(model, config["scenario"])
     else:
         # An evaluation no registered model claims keeps the identifiers it has.
         st.markdown(f"**Model:** `{report['model_id']}` · **Dataset:** `{report['dataset_id']}`"
@@ -204,14 +197,6 @@ def reference_line(f: dict, hits: list[dict] | None, integrity: str) -> str | No
 
 
 MODALITY_WORD = {"pixels": "images", "tokens": "text", "rows": "tables", "audio": "audio"}
-
-
-def coverage_counts(rows: list[dict]) -> dict[str, int]:
-    """How many registered metrics stand where. Counts completeness, never quality."""
-    out: dict[str, int] = {}
-    for r in rows:
-        out[r["status"]] = out.get(r["status"], 0) + 1
-    return out
 
 
 def _coverage_map(meta: dict):

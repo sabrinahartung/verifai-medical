@@ -57,6 +57,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n100",
       "name": "fine-tuned, n=100",
@@ -113,6 +117,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n2000",
       "name": "fine-tuned, n=2,000",
@@ -169,6 +177,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n500",
       "name": "fine-tuned, n=500",
@@ -225,6 +237,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_ft_n7014",
       "name": "fine-tuned, n=7,014",
@@ -281,6 +297,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n100",
       "name": "linear probe, n=100",
@@ -337,6 +357,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n2000",
       "name": "linear probe, n=2,000",
@@ -393,6 +417,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n500",
       "name": "linear probe, n=500",
@@ -449,6 +477,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "curve_probe_n7014",
       "name": "linear probe, n=7,014",
@@ -549,9 +581,19 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18",
+        "trained_on": {
+          "corpora": [
+            "ham10000"
+          ],
+          "basis": "documented by its training notebook, which trains on the `train` split of `marmal88/skin_cancer`, a repackaging of HAM10000"
+        }
+      },
       "project": "Skin lesion classification",
       "trained_by": null,
-      "name": "Original checkpoint — Derm7pt",
+      "name": "Skin-Lesion ResNet18 (HAM10000, class-weighted)",
       "provenance": null,
       "identified": true,
       "active": true
@@ -632,6 +674,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_clean",
       "name": "HAM10000 corpus (clean split)",
@@ -688,6 +734,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_focal",
       "name": "Focal loss (γ=2)",
@@ -819,6 +869,13 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18",
+        "trained_on": [
+          "isic2019"
+        ]
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic",
       "name": "ISIC corpus",
@@ -892,6 +949,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic_probe",
       "name": "Linear probe (frozen features)",
@@ -952,6 +1013,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet50"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_isic_r50",
       "name": "ResNet50 · ISIC corpus",
@@ -1011,6 +1076,10 @@
           ]
         }
       ],
+      "declared": {
+        "loader": "verifai.models.image:load",
+        "arch": "resnet18"
+      },
       "project": "Skin lesion classification",
       "trained_by": "skin_cancer_oversample",
       "name": "Balanced oversampling",

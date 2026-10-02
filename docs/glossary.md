@@ -297,6 +297,15 @@ Preprocessing check
     training record here, so its reports say the preprocessing *cannot be checked* — which is
     not the same as a match.
 
+Model card
+:   What a model *is*, as opposed to how it did: where the weights come from and at which
+    version, the licence, the architecture, the classes, how images are prepared, and what it
+    was trained on. On this site every line of it is read from a file — the scenario, the
+    training record, the report, or the header of the model card its author published on the
+    Hugging Face Hub — and says which. It carries no result: the original checkpoint's card
+    states CC BY-NC 4.0 and HAM10000, and that no image-by-image check is possible, but not its
+    accuracy, which belongs in a report beside every other pillar.
+
 Provisional
 :   A report whose split could not be verified. Its results are measured correctly, but they may
     include memory rather than generalisation, so a yellow banner says so and every

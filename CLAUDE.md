@@ -41,7 +41,7 @@ and `run_active.py` skip it.
 Big/statistically meaningful runs go through `scripts/run_on_free_gpu.ipynb` (Colab/Kaggle) —
 same code path, only more rows in the manifest.
 
-Contract tests live in `tests/` (184 of them, no network or checkpoint needed):
+Contract tests live in `tests/` (191 of them, no network or checkpoint needed):
 
 ```bash
 uv run pytest -q
@@ -229,6 +229,18 @@ Every scenario also declares a top-level `project:` — the problem it belongs t
 them: `"Skin lesion classification"`). The overview groups models by it. All configurations of
 one checkpoint must agree on it; the registry builder raises if they do not. Like `card.group`
 it is presentation: it never widens what may be compared.
+
+A scenario may declare `model.name` — the model's own name, which heads its page and its model
+card. All configurations of one checkpoint must agree on it, as on `project:`; without one the
+page falls back to the trainer's label, then the repository or file name, never a
+configuration's label. The resolver drafts it from the Hub card's title.
+
+The **model card view** (`showcase/model_card.py`) heads the model page and opens from every
+report. It states only facts a machine can check, each with its source on hover — the
+registry, the training record, the report's `meta` and its `hub_card` — and names **no
+result**: an evaluation appears there as its integrity state and coverage counts only, since
+a number on the card would read as the model's score. Prose such as intended use is linked
+to, never restated.
 
 Every scenario also declares `status: active | archived`. **Active** configurations are kept
 current: `scripts/run_active.py` re-runs exactly them. **Archived** ones are the record of an

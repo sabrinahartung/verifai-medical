@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import streamlit as st
 
+from model_card import evaluation_line, reference_report, render_card, reports_of
 from render import breadcrumb, placeholder
-from registry import (dataset_name, decision_rule, describe, evaluated_ids, find_model,
-                      load_registry)
+from registry import dataset_name, decision_rule, find_model, load_registry
 from routing import (current, go_to_compare, go_to_overview, go_to_project,
                      go_to_report)
 
@@ -33,52 +33,7 @@ def by_evaluation_set(model: dict) -> list[tuple[str | None, list[dict]]]:
             for m in order]
 
 
-def _identity(model: dict):
-    ck = model["checkpoint"]
-    if ck["kind"] == "local" and model.get("sha256"):
-        st.caption(f"Weights file `{ck['path']}` · fingerprint `{model['sha256']}`",
-                   help="The fingerprint is a hash of the file's bytes. Two reports with the same "
-                        "fingerprint were made from exactly the same weights.")
-    elif ck["kind"] == "local":
-        st.caption(f"Checkpoint `{ck['path']}` · never hashed — no machine this registry was "
-                   f"built on had the file, so it is identified by its path only.")
-    elif ck["kind"] == "hub":
-        rev = ck.get("revision")
-        where = f"`{ck['repo_id']}/{ck.get('filename')}`"
-        st.caption(f"Hugging Face {where} · "
-                   + (f"revision `{rev}`" if rev else
-                      "revision **unpinned** — the Hub copy can change under this name, so "
-                      "these reports may not describe what the link serves today."))
-    else:
-        st.warning("No weights are declared for this model, so it has no identity: it cannot "
-                   "be told apart from another model and is never compared as the same one.")
-
-
-def _training_record(model: dict):
-    prov = model.get("provenance")
-    if not prov:
-        st.markdown(":gray[Not trained in this repository. No training record is declared, "
-                    "so what it was trained on is not known here.]")
-        return
-    st.markdown(describe(prov))
-    m = prov.get("manifests") or {}
-    bits = []
-    # The training set is already named in the line above; only what it adds.
-    if m.get("val"):
-        bits.append(f"checkpoint chosen on the {dataset_name(m['val'])}"
-                    + (f" ({prov['val_images']:,} images)" if prov.get("val_images") else ""))
-    for k, label in (("epochs", "epochs"), ("image_size", "px"), ("seed", "seed")):
-        if prov.get(k) is not None:
-            bits.append(f"{prov[k]} {label}" if k != "seed" else f"seed {prov[k]}")
-    if bits:
-        st.caption(" · ".join(bits))
-    if prov.get("note"):
-        st.caption(f"Trainer's note: *{prov['note']}*")
-    if model.get("trained_by"):
-        st.caption(f"Training recipe: `scenarios/{model['trained_by']}.yaml`.")
-
-
-def _configuration_row(c: dict, done: bool, key: str):
+def _configuration_row(c: dict, report: dict | None, key: str):
     with st.container(border=True):
         left, right = st.columns([5, 1.6], vertical_alignment="center")
         with left:
@@ -86,8 +41,12 @@ def _configuration_row(c: dict, done: bool, key: str):
             st.caption(f"Decision rule: {decision_rule(c['decision_weights'])}"
                        + ("  \n:gray[Archived — kept as the record, not re-run]"
                           if c.get("status") == "archived" else "  \nActive — re-run as the metrics change"))
+            # Whether the evaluation can be read, and how much of it was measured —
+            # never one of its results, which would read as the model's score.
+            if report is not None:
+                st.caption(evaluation_line(report))
         with right:
-            if done:
+            if report is not None:
                 if st.button("Open report →", key=key):
                     go_to_report(c["scenario"])
             else:
@@ -111,17 +70,15 @@ def page():
                 (model["project"], lambda: go_to_project(model["project"]))],
                here=model["name"])
     st.title(model["name"])
-    _identity(model)
+    reports = reports_of(model)
     if not model.get("active"):
         st.info("**Archived model.** None of its configurations is re-run as the metrics change; "
                 "its reports are the record of what was measured when they were made.", icon="📦")
 
-    st.subheader("What it is")
-    _training_record(model)
+    st.subheader("Model card")
+    render_card(model, reference_report(model, reports))
 
-    evaluated = evaluated_ids()
-    configs = model["configurations"]
-    done = [c for c in configs if c["scenario"] in evaluated]
+    done = [c for c in model["configurations"] if c["scenario"] in reports]
 
     st.subheader("Configurations")
     st.caption("The same weights, read with a different decision rule or scored on a "
@@ -132,7 +89,7 @@ def page():
         st.markdown(f"**Scored on the {dataset_name(manifest)}**",
                     help=f"Manifest: `{(manifest or 'unknown').rsplit('/', 1)[-1]}`")
         for c in group:
-            _configuration_row(c, c["scenario"] in evaluated, key=f"cfg_{c['scenario']}")
+            _configuration_row(c, reports.get(c["scenario"]), key=f"cfg_{c['scenario']}")
 
     if len(done) >= 2:
         st.caption("Configurations scored on the same images can be compared directly; "
