@@ -1,0 +1,69 @@
+# The C5 demo model on Derm7pt: the fair test of it.
+#
+# Same weights, same revision and same label map as vit_large_skin_cancer_ham10000.yaml,
+# which records how the model was chosen and how each of the resolver's TODOs was
+# answered. Its card names HAM10000 as its training data, and Derm7pt shares no archive
+# with HAM10000 (data/corpora.yaml), so here corpus ancestry can answer where on the
+# HAM10000 test set it cannot. Derm7pt has no actinic keratoses: one of the model's seven
+# classes is never scored, which the label-space finding states.
+name: external_derm7pt_vit_large
+label: "ViT-Large (Hub) — Derm7pt"
+project: "Skin lesion classification"
+status: active
+domain: image
+seed: 42
+sample_size: null          # the whole Derm7pt manifest (1,003 images)
+
+model:
+  name: "ViT-Large — Skin Cancer Classification (HAM10000)"
+  loader: "verifai.models.hf_image:load"
+  id: "vit-large-skin-cancer-ham10000"
+  repo_id: "Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+  revision: "21cb7e3988db0869def888bf3d056888dc3e9497"
+  architecture: "ViTForImageClassification"
+  classes: [akiec, bcc, bkl, df, mel, nv, vasc]
+  device: "auto"
+  trained_on:
+    corpora: [ham10000]
+    basis: "model card metadata (datasets: `marmal88/skin_cancer`)"
+  licence: "mit"
+
+dataset:
+  loader: "verifai.datasets.loaders:load_image_manifest"
+  id: "derm7pt-external"
+  manifest: "data/manifests/derm7pt_test.csv"
+  images_dir: "data/raw/derm7pt_release_v0/images"
+  source: "Derm7pt (Kawahara et al. 2019) — external"
+  corpus: derm7pt
+  label_map:
+    basal_cell_carcinoma: bcc
+    benign_keratosis-like_lesions: bkl
+    dermatofibroma: df
+    melanocytic_Nevi: nv
+    melanoma: mel
+    vascular_lesions: vasc
+
+card:
+  group: "External validation — Derm7pt (unseen clinic)"
+  lineage: "ViT-Large · Hub model"
+  name: "ViT-Large (Hub) — Derm7pt"
+  emoji: "🌍"
+  description: "The Hub ViT-Large on Derm7pt, a clinic its training data does not include. Beside the ISIC model and the original checkpoint on the same images: a comparison leakage cannot inflate."
+  hf_url: "https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+
+metrics:
+  - "integrity.split_leakage"
+  - "integrity.provenance"
+  - "integrity.corpus_ancestry"
+  - "integrity.label_space"
+  - "integrity.preprocessing"
+  - "performance.classification"
+  - "robustness.corruption"
+  - "fairness.skin_tone"
+not_requested:
+  explainability.gradcam: >-
+    Derm7pt's licence forbids redistributing its images, and a Grad-CAM overlay is a
+    derived image, so none is rendered
+  privacy.mia: >-
+    the membership attack needs this model's training members, which were never
+    published, and asks a different question from the one this external test asks

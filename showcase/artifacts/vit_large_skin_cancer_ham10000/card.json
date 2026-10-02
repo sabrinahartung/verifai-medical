@@ -1,0 +1,12 @@
+{
+  "id": "vit_large_skin_cancer_ham10000",
+  "name": "ViT-Large (Hub) — HAM10000 test",
+  "emoji": "🤗",
+  "domain": "image",
+  "dataset": "ham10000-clean-test",
+  "description": "A skin-lesion model from the Hugging Face Hub that this project neither trained nor picked, on the HAM10000 test set. Its card names HAM10000 as its training data and publishes no image list, so leakage cannot be ruled out.",
+  "sample": false,
+  "group": "Internal test — HAM10000 (split not checkable)",
+  "lineage": "ViT-Large · Hub model",
+  "hf_url": "https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+}

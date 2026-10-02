@@ -30,7 +30,8 @@
         "skin_cancer_isic",
         "skin_cancer_isic_probe",
         "skin_cancer_isic_r50",
-        "skin_cancer_oversample"
+        "skin_cancer_oversample",
+        "vit-large-skin-cancer-ham10000"
       ]
     }
   ],
@@ -1112,6 +1113,73 @@
       },
       "identified": true,
       "active": false
+    },
+    {
+      "identity": "hub:Kuldeepmishra3/vit-large-skin-cancer-ham10000@21cb7e3988db0869def888bf3d056888dc3e9497",
+      "sha256": null,
+      "checkpoint": {
+        "kind": "hub",
+        "repo_id": "Kuldeepmishra3/vit-large-skin-cancer-ham10000",
+        "filename": null,
+        "revision": "21cb7e3988db0869def888bf3d056888dc3e9497"
+      },
+      "key": "vit-large-skin-cancer-ham10000",
+      "configurations": [
+        {
+          "scenario": "external_derm7pt_vit_large",
+          "label": "ViT-Large (Hub) — Derm7pt",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/derm7pt_test.csv",
+          "dataset_id": "derm7pt-external",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "integrity.preprocessing",
+            "performance.classification",
+            "robustness.corruption",
+            "fairness.skin_tone"
+          ]
+        },
+        {
+          "scenario": "vit_large_skin_cancer_ham10000",
+          "label": "ViT-Large (Hub) — HAM10000 test",
+          "status": "active",
+          "decision_weights": null,
+          "eval_manifest": "data/manifests/ham10000_test.csv",
+          "dataset_id": "ham10000-clean-test",
+          "metrics": [
+            "integrity.split_leakage",
+            "integrity.provenance",
+            "integrity.corpus_ancestry",
+            "integrity.label_space",
+            "integrity.preprocessing",
+            "performance.classification",
+            "explainability.gradcam",
+            "robustness.corruption",
+            "fairness.skin_tone",
+            "privacy.mia"
+          ]
+        }
+      ],
+      "declared": {
+        "loader": "verifai.models.hf_image:load",
+        "architecture": "ViTForImageClassification",
+        "trained_on": {
+          "corpora": [
+            "ham10000"
+          ],
+          "basis": "model card metadata (datasets: `marmal88/skin_cancer`)"
+        }
+      },
+      "project": "Skin lesion classification",
+      "trained_by": null,
+      "name": "ViT-Large — Skin Cancer Classification (HAM10000)",
+      "provenance": null,
+      "identified": true,
+      "active": true
     }
   ]
 }

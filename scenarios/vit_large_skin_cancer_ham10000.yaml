@@ -1,0 +1,87 @@
+# The C5 demo: a skin-lesion model from the Hugging Face Hub that this project neither
+# trained nor picked, evaluated end to end (docs/ROADMAP.md, Phase C, step C5).
+#
+# Chosen 2026-10-02 from a shortlist of the Hub's 235 skin-lesion image classifiers,
+# checked against the six C5 criteria. None passed all six; this one passes every
+# required check and misses only the preference for a CNN: it is a Vision
+# Transformer, so Grad-CAM reports *not computable* — the explanation metric for
+# transformers is planned for M10 (`transformer_attribution`).
+#
+# Drafted by `scripts/resolve_model.py hf:Kuldeepmishra3/vit-large-skin-cancer-ham10000
+# --dataset data/manifests/ham10000_test.csv`. Resolved from the repository itself:
+#   - revision pinned to commit 21cb7e3988db0869def888bf3d056888dc3e9497
+#   - model card datasets: marmal88/skin_cancer -> ham10000 (data/corpora.yaml hub_aliases)
+#   - licence from the model card: MIT
+#   - class order from config.json id2label; preprocessing from preprocessor_config.json
+#   - name from the model card's title
+#
+# The draft's 12 TODOs, and how each was answered:
+#   label, project        -> named below, as the other configurations are named
+#   dataset.id, images_dir, corpus
+#                         -> the same HAM10000 test set the ISIC model and the original
+#                            checkpoint are scored on, so all three share a comparison group
+#   dataset.label_map (7) -> the model's classes are HAM10000's own `dx` codes, which its card
+#                            spells out (akiec = Actinic Keratoses, …) and which the dataset's
+#                            metadata uses; each long name maps to its code, one to one
+#
+# Its card says it was trained on the HAM10000 data of marmal88/skin_cancer. The audit in
+# docs/ROADMAP.md found that repackaging covers this test set's images too, and no list of
+# training images is published: leakage cannot be ruled out, and the report says so. Read
+# its HAM10000 accuracy as an upper bound; the Derm7pt configuration is the fair test.
+name: vit_large_skin_cancer_ham10000
+label: "ViT-Large (Hub) — HAM10000 test"
+project: "Skin lesion classification"
+status: active
+domain: image
+seed: 42
+sample_size: null          # the whole test manifest (1,493 images)
+
+model:
+  name: "ViT-Large — Skin Cancer Classification (HAM10000)"
+  loader: "verifai.models.hf_image:load"
+  id: "vit-large-skin-cancer-ham10000"
+  repo_id: "Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+  revision: "21cb7e3988db0869def888bf3d056888dc3e9497"
+  architecture: "ViTForImageClassification"
+  classes: [akiec, bcc, bkl, df, mel, nv, vasc]
+  device: "auto"
+  trained_on:
+    corpora: [ham10000]
+    basis: "model card metadata (datasets: `marmal88/skin_cancer`)"
+  licence: "mit"
+
+dataset:
+  loader: "verifai.datasets.loaders:load_image_manifest"
+  id: "ham10000-clean-test"
+  manifest: "data/manifests/ham10000_test.csv"
+  images_dir: "data/raw/ham10000"
+  source: "HAM10000 (evaluation); training data named by the model card, no image list"
+  corpus: ham10000
+  label_map:
+    actinic_keratoses: akiec
+    basal_cell_carcinoma: bcc
+    benign_keratosis-like_lesions: bkl
+    dermatofibroma: df
+    melanocytic_Nevi: nv
+    melanoma: mel
+    vascular_lesions: vasc
+
+card:
+  group: "Internal test — HAM10000 (split not checkable)"
+  lineage: "ViT-Large · Hub model"
+  name: "ViT-Large (Hub) — HAM10000 test"
+  emoji: "🤗"
+  description: "A skin-lesion model from the Hugging Face Hub that this project neither trained nor picked, on the HAM10000 test set. Its card names HAM10000 as its training data and publishes no image list, so leakage cannot be ruled out."
+  hf_url: "https://huggingface.co/Kuldeepmishra3/vit-large-skin-cancer-ham10000"
+
+metrics:
+  - "integrity.split_leakage"
+  - "integrity.provenance"
+  - "integrity.corpus_ancestry"
+  - "integrity.label_space"
+  - "integrity.preprocessing"
+  - "performance.classification"
+  - "explainability.gradcam"     # a ViT: reports not computable, with the reason
+  - "robustness.corruption"
+  - "fairness.skin_tone"
+  - "privacy.mia"                # needs training members; the gate reports it unavailable
